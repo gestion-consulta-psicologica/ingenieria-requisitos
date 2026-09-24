@@ -2,7 +2,7 @@
 
 ## Equipo
 - Rafaella Diaz Miranda
-- Nicolas Rubio segundo apellido
+- Nicolas Rubio Yuen
 - David Bombal segundo apellido
 
 
