@@ -1,6 +1,5 @@
 # Clasificación de requisitos
  
-# Clasificación de requisitos
 
 ## Requisitos de producto
 
@@ -29,10 +28,10 @@
 
 | ID | Requisito |
 |---|---|
-| RY-01 | El proyecto deberá desarrollar una plataforma web para centralizar la gestión de reservas, pagos, asistencia e información clínica de los pacientes. |
+| RY-01 | El proyecto deberá desarrollar y documentar una plataforma web para la gestión de la consulta psicológica. |
 | RY-02 | El desarrollo deberá mantener trazabilidad entre las actividades del proceso TO-BE, los requisitos de producto y las historias de usuario. |
-| RY-03 | El sistema deberá ser desarrollado considerando la protección de la información personal y clínica de los pacientes durante todo el proyecto. |
-| RY-04 | El proyecto deberá contemplar una interfaz adaptable a dispositivos móviles para facilitar el acceso de pacientes y psicóloga. |
+| RY-03 | La documentación del proyecto deberá mantenerse actualizada conforme se modifiquen los requisitos o el proceso TO-BE. |
+| RY-04 | El equipo deberá mantener los artefactos del proyecto organizados y versionados en el repositorio definido para el desarrollo. |
  
 ## Requisito derivado
 
