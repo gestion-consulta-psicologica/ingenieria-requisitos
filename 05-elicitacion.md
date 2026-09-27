@@ -3,7 +3,7 @@
 ## Técnica 1: Entrevista estructurada mediante Google Forms
 - Participante: Psicóloga responsable de la consulta
 - **Fecha y modalidad:** 25 de septiembre de 2026, modalidad en línea mediante Google Forms.
-- **Evidencia:** Captura de pantalla de las respuestas obtenidas en Google Forms / archivo exportado de respuestas.
+- **Evidencia:** Respuestas exportadas de Google Forms(./evidencias/encuesta(1).xlsx)
 - **Hallazgos principales:**
   - La solicitud de horas se realiza actualmente mediante WhatsApp, ya sea al número personal de la psicóloga o al de la secretaria.
   - La disponibilidad y las horas reservadas se gestionan mediante una planilla Excel.
@@ -26,7 +26,7 @@
  
 ## Técnica 2: Revisión documental
 - Participante(s): Documentos y herramientas utilizadas actualmente por la psicóloga para gestionar la consulta.
-- Evidencia: Captura de la planilla Excel utilizada para organizar las horas y ficha de anamnesis utilizada para registrar información de pacientes.
+- Evidencia: Calendario utilizado para organizar las horas (./evidencias/calendario-excel.png) y [Ficha de anamnesis](./evidencias/Anamnesis%20(1)(1)(1).docx)
 - Hallazgos principales:
   - La agenda se organiza actualmente mediante una planilla Excel con días y bloques horarios.
   - La planilla permite visualizar disponibilidad y horas ocupadas.
