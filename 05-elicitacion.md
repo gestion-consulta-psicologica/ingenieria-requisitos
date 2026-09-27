@@ -3,7 +3,7 @@
 ## Técnica 1: Entrevista estructurada mediante Google Forms
 - Participante: Psicóloga responsable de la consulta
 - **Fecha y modalidad:** 25 de septiembre de 2026, modalidad en línea mediante Google Forms.
-- **Evidencia:** Respuestas exportadas de Google Forms(./evidencias/encuesta(1).xlsx)
+- **Evidencia:** [Respuestas exportadas de Google Forms](./evidencias/encuesta.xlsx)
 - **Hallazgos principales:**
   - La solicitud de horas se realiza actualmente mediante WhatsApp, ya sea al número personal de la psicóloga o al de la secretaria.
   - La disponibilidad y las horas reservadas se gestionan mediante una planilla Excel.
@@ -25,8 +25,8 @@
   - Entre los aspectos de calidad considerados importantes se mencionan facilidad de uso, rapidez de respuesta, disponibilidad, protección de la información, funcionamiento correcto y capacidad de adaptación.
  
 ## Técnica 2: Revisión documental
-- Participante(s): Documentos y herramientas utilizadas actualmente por la psicóloga para gestionar la consulta.
-- Evidencia: Calendario utilizado para organizar las horas (./evidencias/calendario-excel.png) y [Ficha de anamnesis](./evidencias/Anamnesis%20(1)(1)(1).docx)
+- Participante(s): Psicóloga responsable de la consulta, quien facilitó los documentos y herramientas utilizadas actualmente.
+- **Evidencia:** [Calendario utilizado para organizar las horas](./evidencias/calendario-excel.png) y [Ficha de anamnesis](./evidencias/Anamnesis.docx)
 - Hallazgos principales:
   - La agenda se organiza actualmente mediante una planilla Excel con días y bloques horarios.
   - La planilla permite visualizar disponibilidad y horas ocupadas.
@@ -45,5 +45,3 @@ El análisis considera la solicitud y coordinación de horas, confirmación de a
 También se identificó la necesidad de mantener un adecuado resguardo de la información personal y clínica utilizada durante el proceso.
 
 Los hallazgos obtenidos serán utilizados para modelar el proceso AS-IS, identificar problemas del proceso actual y posteriormente justificar las iniciativas de rediseño y la propuesta TO-BE.
- 
-Nota: esta elicitación no necesita estar atada a las actividades del TO-BE; pudo haberse realizado antes de definirlo.
