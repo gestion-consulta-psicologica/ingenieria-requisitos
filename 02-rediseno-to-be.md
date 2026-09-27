@@ -78,5 +78,3 @@ Nota: distingan tareas de usuario, de servicio y manuales con el marcador corres
 | Realizar atención psicológica | Realizar atención psicológica | La atención psicológica se mantiene como una actividad manual, ya que corresponde al servicio principal prestado por la psicóloga. |
 | Registrar asistencia en Excel | Registrar asistencia en sistema | La asistencia deja de registrarse en Excel y pasa a quedar almacenada en la plataforma. |
 | Actualizar ficha clínica | Actualizar ficha clínica en sistema centralizado | La información clínica se registra en la misma plataforma, integrada con la información administrativa del paciente. |ra queda registrada automáticamente al seleccionar una alternativa. |
-| Registrar estado de pago en Excel | Registrar estado de pago en sistema | El estado del pago queda asociado a la atención y al paciente dentro de la plataforma. |
-| Actualizar ficha clínica | Actualizar ficha clínica en sistema centralizado | La información clínica queda integrada con el resto de la información del paciente. |
