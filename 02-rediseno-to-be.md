@@ -50,11 +50,10 @@
   - Flexibilidad: mayor independencia del paciente durante la gestión de su hora.
  
 ## Diagrama TO-BE
-![Proceso TO-BE](./diagramas/TO-BW.png)
- 
-Archivo fuente: [`./diagramas/to-be.bpmn`](./diagramas/TO-BE.bpmn)
- 
-Nota: distingan tareas de usuario, de servicio y manuales con el marcador correspondiente.
+
+![Proceso TO-BE](./diagramas/TO-BE.png)
+
+Archivo fuente: [`./diagramas/TO-BE.bpmn`](./diagramas/TO-BE.bpmn)
  
 ## Actividades que cambian del AS-IS al TO-BE
 
