@@ -60,15 +60,23 @@ Nota: distingan tareas de usuario, de servicio y manuales con el marcador corres
 
 | Actividad en el AS-IS | Actividad en el TO-BE | Qué cambia |
 |---|---|---|
-| Solicitar hora por WhatsApp | Consultar disponibilidad y reservar hora en plataforma | El paciente deja de depender del contacto por WhatsApp y puede gestionar su hora directamente. |
-| Revisar disponibilidad en Excel | Consultar disponibilidad en sistema | La disponibilidad deja de revisarse manualmente en Excel y pasa a estar centralizada en la plataforma. |
-| Informar horarios disponibles | Mostrar horarios disponibles | El sistema presenta automáticamente las horas disponibles al paciente. |
-| Seleccionar horario | Seleccionar horario disponible | El paciente mantiene esta acción, pero ahora la realiza directamente en la plataforma. |
-| Registrar hora en Excel | Registrar reserva automáticamente | La reserva se guarda automáticamente al seleccionar el horario. |
-| Confirmar asistencia por WhatsApp | Enviar confirmación automática | El sistema envía la solicitud de confirmación sin intervención manual de secretaria o psicóloga. |
-| Responder confirmación | Confirmar o cancelar hora en plataforma | El paciente responde directamente en el sistema. |
-| Revisar nueva disponibilidad en Excel | Consultar nueva disponibilidad en sistema | Si se reagenda, la disponibilidad se obtiene desde la misma plataforma. |
-| Informar nuevos horarios disponibles | Mostrar nuevas alternativas disponibles | El sistema presenta automáticamente opciones de reagendamiento. |
-| Registrar nueva hora en Excel | Actualizar reserva automáticamente | La nueva hora queda registrada automáticamente al seleccionar una alternativa. |
+| Solicitar hora por WhatsApp | Consultar disponibilidad en plataforma | El paciente deja de solicitar la hora por WhatsApp y accede directamente a la plataforma para revisar opciones disponibles. |
+| Revisar disponibilidad en Excel | Consultar disponibilidad en sistema | La disponibilidad deja de revisarse manualmente en Excel y pasa a estar centralizada en el sistema. |
+| Informar horarios disponibles | Mostrar horarios disponibles | El sistema presenta automáticamente al paciente los horarios que se encuentran disponibles. |
+| Seleccionar horario | Seleccionar horario disponible | El paciente selecciona directamente en la plataforma el horario que desea reservar. |
+| Registrar hora en Excel | Registrar reserva automáticamente | El sistema registra automáticamente la reserva una vez seleccionado el horario. |
+| Confirmar asistencia por WhatsApp | Enviar solicitud de confirmación automática | El sistema envía automáticamente la solicitud de confirmación de la hora, sin intervención manual de la secretaria o psicóloga. |
+| Responder confirmación | Confirmar o cancelar hora en plataforma | El paciente indica directamente en la plataforma si mantiene o cancela la hora reservada. |
+| Solicitar cambio o cancelación | Solicitar reagendamiento o cancelación en plataforma | El paciente puede gestionar el cambio o la cancelación desde la plataforma, sin depender del contacto por WhatsApp. |
+| Revisar nueva disponibilidad en Excel | Consultar nueva disponibilidad en sistema | Cuando el paciente solicita reagendar, la disponibilidad se obtiene directamente desde el sistema. |
+| Informar nuevos horarios disponibles | Mostrar nuevas alternativas disponibles | El sistema presenta automáticamente las nuevas opciones disponibles para reagendar. |
+| Seleccionar horario | Seleccionar nuevo horario disponible | El paciente selecciona en la plataforma una nueva alternativa de horario. |
+| Registrar nueva hora en Excel | Actualizar reserva automáticamente | El sistema actualiza automáticamente la reserva con el nuevo horario seleccionado. |
+| Comprobar pago | Comprobar pago con apoyo del sistema | La psicóloga revisa el pago utilizando la información centralizada en la plataforma, reduciendo la dependencia de comprobantes enviados por WhatsApp. |
+| Registrar estado de pago en Excel | Registrar estado de pago en sistema | El estado del pago queda registrado dentro de la plataforma y asociado al paciente y a la atención correspondiente. |
+| Emitir boleta | Emitir boleta con apoyo del sistema | La emisión de la boleta se realiza desde la plataforma, reduciendo el trabajo administrativo asociado al proceso. |
+| Realizar atención psicológica | Realizar atención psicológica | La atención psicológica se mantiene como una actividad manual, ya que corresponde al servicio principal prestado por la psicóloga. |
+| Registrar asistencia en Excel | Registrar asistencia en sistema | La asistencia deja de registrarse en Excel y pasa a quedar almacenada en la plataforma. |
+| Actualizar ficha clínica | Actualizar ficha clínica en sistema centralizado | La información clínica se registra en la misma plataforma, integrada con la información administrativa del paciente. |ra queda registrada automáticamente al seleccionar una alternativa. |
 | Registrar estado de pago en Excel | Registrar estado de pago en sistema | El estado del pago queda asociado a la atención y al paciente dentro de la plataforma. |
 | Actualizar ficha clínica | Actualizar ficha clínica en sistema centralizado | La información clínica queda integrada con el resto de la información del paciente. |
