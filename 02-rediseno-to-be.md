@@ -10,7 +10,7 @@
  
 ## Iniciativas de rediseño
 ### Iniciativa 1: Autogestión de horas por parte del paciente
-- Actividad(es) del AS-IS que afecta: Solicitar hora por WhatsApp, Revisar disponibilidad en Excel, Informar horarios disponibles, Seleccionar horario y Registrar hora en Excel.
+- Actividad(es) del AS-IS que afecta: Solicitar hora por WhatsApp, Revisar disponibilidad en Excel, Informar horarios disponibles, Seleccionar horario, Registrar hora en Excel, Revisar nueva disponibilidad en Excel, Informar nuevos horarios disponibles y Registrar nueva hora en Excel.
 - Heurística aplicada: Tecnología integral.
 - Objetivo o mejora que resuelve: Permitir que el paciente consulte disponibilidad y gestione sus horas de manera más autónoma, reduciendo la dependencia de la secretaria o la psicóloga.
 - Efecto esperado:
@@ -30,7 +30,7 @@
   - Flexibilidad: posibilidad de responder la confirmación sin depender de contacto directo.
 
 ### Iniciativa 3: Centralización de la información de agenda, pagos y pacientes
-- Actividad(es) del AS-IS que afecta: Revisar disponibilidad en Excel, Registrar hora en Excel, Registrar estado de pago en Excel y Actualizar ficha clínica.
+- Actividad(es) del AS-IS que afecta: Revisar disponibilidad en Excel, Registrar hora en Excel, Registrar nueva hora en Excel, Registrar estado de pago en Excel y Actualizar ficha clínica.
 - Heurística aplicada: Integración.
 - Objetivo o mejora que resuelve: Evitar que la información administrativa y clínica se gestione mediante herramientas separadas.
 - Efecto esperado:
