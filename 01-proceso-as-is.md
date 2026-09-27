@@ -30,7 +30,6 @@ Los pagos son comprobados por la psicóloga y su estado se registra junto con la
  
 Archivo fuente: [`./diagramas/as-is.bpmn`](./diagramas/as-is.bpmn)
  
-Nota: distingan tareas de usuario, de servicio y manuales con el marcador correspondiente.
  
 ## Problemas identificados
 
