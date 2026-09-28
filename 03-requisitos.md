@@ -21,7 +21,7 @@
 | RP-14 | El sistema deberá apoyar la emisión de la boleta asociada a una atención pagada. | Funcional | Emitir boleta con apoyo del sistema |
 | RP-15 | El sistema deberá permitir registrar la asistencia del paciente a la atención psicológica. | Funcional | Registrar asistencia en sistema |
 | RP-16 | El sistema deberá permitir actualizar la ficha clínica del paciente dentro de la plataforma centralizada. | Funcional | Actualizar ficha clínica en sistema centralizado |
-| RP-17 | El sistema deberá proteger la confidencialidad de la información personal, administrativa y clínica de los pacientes mediante autenticación, permisos según el rol del usuario y cifrado de información sensible. | No funcional | Actualizar ficha clínica en sistema centralizado |
+| RP-17 | El sistema deberá proteger la confidencialidad de la información personal, administrativa y clínica de los pacientes. | No funcional | Actualizar ficha clínica en sistema centralizado |
 | RP-18 | La plataforma deberá ser utilizable desde dispositivos móviles para facilitar el acceso a la gestión de horas e información. | No funcional | Consultar disponibilidad en plataforma |
 | RP-19 | El sistema deberá responder las consultas de disponibilidad de horarios en un tiempo máximo de 2 segundos, permitiendo una interacción rápida para los usuarios. | No funcional | Consultar disponibilidad en plataforma |
 | RP-20 |El sistema deberá permitir que al menos el 90% de los usuarios complete las tareas principales de gestión de horas sin asistencia externa. | No funcional | Gestionar horas en plataforma |
@@ -43,13 +43,12 @@
 
 **Requisito derivado:** El sistema deberá restringir el acceso a la información clínica mediante autenticación y permisos según el rol del usuario.
 
-**Justificación:** Este requisito se deriva de la necesidad de controlar quién puede acceder a la información clínica de los pacientes, asegurando que cada usuario pueda visualizar únicamente la información correspondiente a sus permisos dentro del sistema.
-
+**Justificación:** Este requisito se deriva de la necesidad de controlar quién puede acceder a la información clínica de los pacientes, cada usuario pueda acceder únicamente a la información correspondiente a su rol dentro del sistema.
 
 ### Requisito derivado RD-02
 
 **Requisito origen:** RP-17 — El sistema deberá proteger la confidencialidad de la información personal, administrativa y clínica de los pacientes.
 
-**Requisito derivado:** El sistema deberá cifrar la información sensible almacenada dentro de la plataforma.
+**Requisito derivado:** El sistema deberá cifrar la información sensible almacenada en la plataforma.
 
 **Justificación:** Este requisito se deriva de la necesidad de proteger los datos personales y clínicos de los pacientes frente a accesos no autorizados, manteniendo la seguridad de la información almacenada.
