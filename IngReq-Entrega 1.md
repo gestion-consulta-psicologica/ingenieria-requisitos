@@ -3,7 +3,15 @@
 ## Equipo
 - Rafaella Diaz Miranda
 - Nicolas Rubio Yuen
-- David Bombal segundo apellido
+- David Bombal Gonzalez
+
+## Distribución de responsabilidades
+
+| Integrante | Responsabilidades |
+|---|---|
+| Rafaella Diaz Miranda | Participación en todas las etapas del proyecto: levantamiento de información, análisis del proceso AS-IS, propuesta TO-BE, definición de requisitos, historias de usuario y documentación del proyecto. |
+| Nicolas Rubio Yuen | Participación en todas las etapas del proyecto: levantamiento de información, análisis del proceso AS-IS, propuesta TO-BE, definición de requisitos, historias de usuario y documentación del proyecto. |
+| David Bombal Gonzalez | Participación en todas las etapas del proyecto: levantamiento de información, análisis del proceso AS-IS, propuesta TO-BE, definición de requisitos, historias de usuario y documentación del proyecto. |
 
 
 ## Proyecto
