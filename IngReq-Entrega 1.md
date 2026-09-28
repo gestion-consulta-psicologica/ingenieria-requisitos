@@ -9,10 +9,9 @@
 
 | Integrante | Responsabilidades |
 |---|---|
-| Rafaella Diaz Miranda | Participación en el levantamiento de información, análisis del proceso AS-IS, propuesta TO-BE, definición de requisitos, historias de usuario y documentación del proyecto. |
-| Nicolas Rubio Yuen | Participación en el levantamiento de información, análisis del proceso AS-IS, propuesta TO-BE, definición de requisitos, historias de usuario y documentación del proyecto. |
-| David Bombal Gonzalez | Participación en el levantamiento de información, análisis del proceso AS-IS, propuesta TO-BE, definición de requisitos, historias de usuario y documentación del proyecto. |
-
+| Rafaella Diaz Miranda | Desarrollo del documento **01-proceso-as-is.md** y apoyo en el levantamiento de información mediante la técnica de elicitación documentada en **05-elicitacion.md**. |
+| Nicolas Rubio Yuen | Desarrollo del documento **02-rediseno-to-be.md** y participación en la definición de requisitos del documento **03-requisitos.md**. |
+| David Bombal Gonzalez | Desarrollo del documento **04-historias-usuario.md** y apoyo en la definición de atributos de calidad del documento **06-atributos-calidad.md**. |
 
 ## Proyecto
 
