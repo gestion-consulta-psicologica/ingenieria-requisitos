@@ -24,7 +24,7 @@
 | RP-17 | El sistema deberá proteger la confidencialidad de la información personal, administrativa y clínica de los pacientes mediante autenticación, permisos según el rol del usuario y cifrado de información sensible. | No funcional | Actualizar ficha clínica en sistema centralizado |
 | RP-18 | La plataforma deberá ser utilizable desde dispositivos móviles para facilitar el acceso a la gestión de horas e información. | No funcional | Consultar disponibilidad en plataforma |
 | RP-19 | El sistema deberá responder las consultas de disponibilidad de horarios en un tiempo máximo de 2 segundos, permitiendo una interacción rápida para los usuarios. | No funcional | Consultar disponibilidad en plataforma |
-| RP-20 | El sistema deberá permitir que al menos el 90% de los usuarios complete las tareas principales de reserva y gestión de horas sin asistencia externa. | No funcional | Consultar disponibilidad en plataforma |
+| RP-20 |El sistema deberá permitir que al menos el 90% de los usuarios complete las tareas principales de gestión de horas sin asistencia externa. | No funcional | Consultar disponibilidad en plataforma |
 
 Así tu tabla completa quedaría:
 ## Requisitos de proyecto
