@@ -68,7 +68,7 @@ Archivo fuente: [`./diagramas/TO-BE.bpmn`](./diagramas/TO-BE.bpmn)
 | Registrar hora en Excel | Registrar reserva automáticamente | El registro manual de la hora en Excel es reemplazado por el registro automático de la reserva en el sistema. |
 | Confirmar asistencia por WhatsApp | Enviar solicitud de confirmación automática | La confirmación deja de enviarse manualmente por WhatsApp y pasa a ser enviada automáticamente por el sistema. |
 | Responder confirmación | Confirmar o cancelar hora en plataforma | El paciente deja de responder mediante mensajes y confirma o cancela directamente su hora desde la plataforma. |
-| Gestionar incumplimiento de confirmación | Registrar estado de confirmación en sistema | El sistema permite registrar si el paciente confirmó o no su asistencia, dejando disponible la información para la gestión de la reserva. |
+| Gestionar respuesta de confirmación | Registrar estado de confirmación en sistema | El sistema permite registrar si el paciente confirmó o no su asistencia, dejando disponible la información para la gestión de la reserva. |
 | Solicitar cambio o cancelación | Solicitar reagendamiento o cancelación en plataforma | El paciente puede solicitar directamente un reagendamiento o cancelación desde la plataforma, sin depender del contacto manual con la secretaria o psicóloga. |
 | Revisar nueva disponibilidad en Excel | Consultar nueva disponibilidad en sistema | La búsqueda de nuevas horas deja de realizarse manualmente en Excel y pasa a ser gestionada por el sistema. |
 | Informar nuevos horarios disponibles | Mostrar nuevas alternativas disponibles | El sistema presenta automáticamente las alternativas disponibles para reagendar, reemplazando la comunicación manual de nuevos horarios. |
