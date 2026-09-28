@@ -4,6 +4,8 @@
 - Participante: Psicóloga responsable de la consulta
 - **Fecha y modalidad:** 25 de septiembre de 2026, modalidad en línea mediante Google Forms.
 - **Evidencia:** [Respuestas exportadas de Google Forms](./evidencias/encuesta.xlsx)
+- - Capturas de las respuestas obtenidas mediante el formulario aplicado a la psicóloga.
+  - ![Evidencia formulario psicóloga](./evidencias/captura_formulario_psicologa.png)
 - **Hallazgos principales:**
   - La solicitud de horas se realiza actualmente mediante WhatsApp, ya sea al número personal de la psicóloga o al de la secretaria.
   - La disponibilidad y las horas reservadas se gestionan mediante una planilla Excel.
