@@ -9,9 +9,9 @@
 
 | Integrante | Responsabilidades |
 |---|---|
-| Rafaella Diaz Miranda | Participación en todas las etapas del proyecto: levantamiento de información, análisis del proceso AS-IS, propuesta TO-BE, definición de requisitos, historias de usuario y documentación del proyecto. |
-| Nicolas Rubio Yuen | Participación en todas las etapas del proyecto: levantamiento de información, análisis del proceso AS-IS, propuesta TO-BE, definición de requisitos, historias de usuario y documentación del proyecto. |
-| David Bombal Gonzalez | Participación en todas las etapas del proyecto: levantamiento de información, análisis del proceso AS-IS, propuesta TO-BE, definición de requisitos, historias de usuario y documentación del proyecto. |
+| Rafaella Diaz Miranda | Participación en el levantamiento de información, análisis del proceso AS-IS, propuesta TO-BE, definición de requisitos, historias de usuario y documentación del proyecto. |
+| Nicolas Rubio Yuen | Participación en el levantamiento de información, análisis del proceso AS-IS, propuesta TO-BE, definición de requisitos, historias de usuario y documentación del proyecto. |
+| David Bombal Gonzalez | Participación en el levantamiento de información, análisis del proceso AS-IS, propuesta TO-BE, definición de requisitos, historias de usuario y documentación del proyecto. |
 
 
 ## Proyecto
