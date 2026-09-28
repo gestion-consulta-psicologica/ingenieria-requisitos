@@ -21,6 +21,7 @@ Como paciente, quiero seleccionar un horario disponible, para reservar una hora 
 - CA1: El paciente puede seleccionar uno de los horarios disponibles mostrados por el sistema.
 - CA2: El sistema registra automáticamente la reserva correspondiente al horario seleccionado.
 - CA3: Una vez registrada la reserva, ese horario deja de aparecer como disponible para una nueva reserva.
+- CA4: Luego de registrar la reserva, el sistema envía automáticamente una solicitud de confirmación al paciente.
 
 ## HU-03 — Confirmar o cancelar una hora
 
@@ -91,14 +92,14 @@ Como psicóloga, quiero emitir la boleta con apoyo de la plataforma, para reduci
 - CA2: La boleta queda asociada a la atención correspondiente.
 - CA3: La información necesaria para su emisión puede obtenerse desde los datos registrados en el sistema.
 
-## HU-09 — Registrar asistencia
+## HU-09 — Registrar asistencia e inasistencia
 
-Como psicóloga, quiero registrar la asistencia del paciente en la plataforma, para mantener actualizado el estado de cada atención.
+Como psicóloga, quiero registrar la asistencia o inasistencia del paciente en la plataforma, para mantener actualizado el estado de cada atención.
 
 **Actividad TO-BE asociada:** Registrar asistencia en sistema
 
 **Criterios de aceptación:**
-- CA1: La psicóloga puede registrar si el paciente asistió a la atención.
+- CA1: La psicóloga puede registrar si el paciente asistió o no a la atención.
 - CA2: El registro de asistencia queda asociado al paciente y a la atención correspondiente.
 - CA3: La información queda almacenada en la plataforma para su consulta posterior.
 
