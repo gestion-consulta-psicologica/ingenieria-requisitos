@@ -21,10 +21,10 @@
 | RP-14 | El sistema deberá apoyar la emisión de la boleta asociada a una atención pagada. | Funcional | Emitir boleta con apoyo del sistema |
 | RP-15 | El sistema deberá permitir registrar la asistencia del paciente a la atención psicológica. | Funcional | Registrar asistencia en sistema |
 | RP-16 | El sistema deberá permitir actualizar la ficha clínica del paciente dentro de la plataforma centralizada. | Funcional | Actualizar ficha clínica en sistema centralizado |
-| RP-17 | El sistema deberá proteger la confidencialidad de la información personal, administrativa y clínica de los pacientes. | No funcional | Actualizar ficha clínica en sistema centralizado |
+| RP-17 | El sistema deberá proteger la confidencialidad de la información personal, administrativa y clínica de los pacientes. | No funcional | Gestionar acceso seguro a información clínicao |
 | RP-18 | La plataforma deberá ser utilizable desde dispositivos móviles para facilitar el acceso a la gestión de horas e información. | No funcional | Consultar disponibilidad en plataforma |
 | RP-19 | El sistema deberá responder las consultas de disponibilidad de horarios en un tiempo máximo de 2 segundos, permitiendo una interacción rápida para los usuarios. | No funcional | Consultar disponibilidad en plataforma |
-| RP-20 |El sistema deberá permitir que al menos el 90% de los usuarios complete las tareas principales de gestión de horas sin asistencia externa. | No funcional | Gestionar horas en plataforma |
+| RP-20 |El sistema deberá permitir que al menos el 90% de los usuarios complete las tareas principales de gestión de horas sin asistencia externa. | No funcional | Consultar disponibilidad en plataforma|
 
 ## Requisitos de proyecto
 
