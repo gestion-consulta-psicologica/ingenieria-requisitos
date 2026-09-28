@@ -37,8 +37,19 @@
  
 ## Requisito derivado
 
+### Requisito derivado RD-01
+
 **Requisito origen:** RP-17 — El sistema deberá proteger la confidencialidad de la información personal, administrativa y clínica de los pacientes.
 
 **Requisito derivado:** El sistema deberá restringir el acceso a la información clínica mediante autenticación y permisos según el rol del usuario.
 
-**Justificación:** Este requisito se deriva de la necesidad de proteger la confidencialidad de los datos del paciente. Para cumplir con RP-17, no basta con almacenar la información de forma centralizada; es necesario controlar quién puede acceder a los distintos tipos de información según su rol dentro del sistema.
+**Justificación:** Este requisito se deriva de la necesidad de controlar quién puede acceder a la información clínica de los pacientes, asegurando que cada usuario pueda visualizar únicamente la información correspondiente a sus permisos dentro del sistema.
+
+
+### Requisito derivado RD-02
+
+**Requisito origen:** RP-17 — El sistema deberá proteger la confidencialidad de la información personal, administrativa y clínica de los pacientes.
+
+**Requisito derivado:** El sistema deberá cifrar la información sensible almacenada dentro de la plataforma.
+
+**Justificación:** Este requisito se deriva de la necesidad de proteger los datos personales y clínicos de los pacientes frente a accesos no autorizados, manteniendo la seguridad de la información almacenada.
