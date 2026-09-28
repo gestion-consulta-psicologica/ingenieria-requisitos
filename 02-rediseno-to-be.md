@@ -68,7 +68,7 @@ Archivo fuente: [`./diagramas/TO-BE.bpmn`](./diagramas/TO-BE.bpmn)
 | Solicitar cambio o cancelación | Solicitar reagendamiento o cancelación en plataforma | El paciente puede gestionar el cambio o cancelación de una hora desde la plataforma sin depender del contacto manual con la secretaria o psicóloga. |
 | Revisar nueva disponibilidad en Excel | Consultar nueva disponibilidad en sistema | La búsqueda manual de nuevas horas en Excel es reemplazada por la consulta de disponibilidad dentro del sistema. |
 | Informar nuevos horarios disponibles | Mostrar nuevas alternativas disponibles | El sistema presenta automáticamente nuevas alternativas disponibles para reagendar una atención. |
-| Seleccionar nueva hora | Seleccionar nuevo horario disponible | El paciente selecciona directamente una nueva alternativa de horario dentro de la plataforma. |
+| Seleccionar horario | Seleccionar nuevo horario disponible | El paciente selecciona directamente una nueva alternativa de horario dentro de la plataforma. |
 | Registrar nueva hora en Excel | Actualizar reserva automáticamente | El cambio de horario deja de registrarse manualmente en Excel y la reserva se actualiza automáticamente. |
 | Comprobar pago | Comprobar pago con apoyo del sistema | La psicóloga mantiene la responsabilidad de verificar el pago, pero ahora consulta la información desde la plataforma. |
 | Registrar estado de pago en Excel | Registrar estado de pago en sistema | El estado del pago deja de almacenarse en Excel y pasa a quedar registrado dentro del sistema. |
