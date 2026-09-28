@@ -1,10 +1,10 @@
 # Elicitación de requisitos
  
-## Técnica 1: Entrevista estructurada mediante Google Forms
+## Técnica 1: Formulario estructurado mediante Google Forms
 - Participante: Psicóloga responsable de la consulta
 - **Fecha y modalidad:** 25 de septiembre de 2026, modalidad en línea mediante Google Forms.
 - **Evidencia:** [Respuestas exportadas de Google Forms](./evidencias/encuesta.xlsx)
-- - Capturas de las respuestas obtenidas mediante el formulario aplicado a la psicóloga.
+  - Capturas de las respuestas obtenidas mediante el formulario aplicado a la psicóloga.
   - ![Evidencia formulario psicóloga](./evidencias/captura_formulario_psicologa.png)
 - **Hallazgos principales:**
   - La solicitud de horas se realiza actualmente mediante WhatsApp, ya sea al número personal de la psicóloga o al de la secretaria.
@@ -39,8 +39,9 @@
   - La revisión documental confirma que se maneja información personal y clínica que requiere resguardo adecuado.
   - Actualmente la información de agenda y la información clínica se gestionan mediante herramientas separadas.
  
-## Acta de acuerdo
-A partir de la información levantada, se acuerda utilizar como base del proyecto el proceso actual de gestión de horas y pacientes de la consulta psicológica.
+## Acuerdo de alcance del proyecto
+
+A partir de la información levantada, se definió utilizar como base del proyecto el proceso actual de gestión de horas y pacientes de la consulta psicológica.
 
 El análisis considera la solicitud y coordinación de horas, confirmación de asistencia, registro y comprobación de pagos, gestión de reagendamientos e inasistencias, y consulta y actualización de información de pacientes.
 
