@@ -57,8 +57,6 @@ Archivo fuente: [`./diagramas/TO-BE.bpmn`](./diagramas/TO-BE.bpmn)
  
 ## Actividades que cambian del AS-IS al TO-BE
 
-## Actividades que cambian del AS-IS al TO-BE
-
 | Actividad en el AS-IS | Actividad en el TO-BE | Qué cambia |
 |---|---|---|
 | Solicitar hora por WhatsApp | Consultar disponibilidad en plataforma | El paciente deja de solicitar la hora mediante WhatsApp y accede directamente a la plataforma para iniciar la gestión de su reserva. |
