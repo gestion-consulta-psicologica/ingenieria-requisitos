@@ -81,4 +81,4 @@ Archivo fuente: [`./diagramas/TO-BE.bpmn`](./diagramas/TO-BE.bpmn)
 | Registrar asistencia en Excel | Registrar asistencia en sistema | La asistencia deja de registrarse en Excel y pasa a almacenarse directamente en la plataforma. |
 | Registrar inasistencia en Excel | Registrar inasistencia en sistema | La información de inasistencias queda almacenada centralizadamente para facilitar el seguimiento del paciente. |
 | Actualizar ficha clínica | Actualizar ficha clínica en sistema centralizado | La información clínica pasa a registrarse en una plataforma centralizada e integrada con la información administrativa del paciente. |
-| Gestionar agenda manualmente como secretaria | Supervisar gestión de agenda en plataforma | La secretaria deja de coordinar manualmente las horas y pasa a realizar tareas de apoyo y supervisión del sistema. |
+| Gestionar agenda manualmente como secretaria | Gestionar agenda mediante plataforma | La secretaria deja de coordinar manualmente las horas y utiliza la plataforma para apoyar la gestión de reservas y atención de pacientes. |
