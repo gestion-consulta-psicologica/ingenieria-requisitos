@@ -60,9 +60,9 @@ Archivo fuente: [`./diagramas/TO-BE.bpmn`](./diagramas/TO-BE.bpmn)
 | Actividad en el AS-IS | Actividad en el TO-BE | Qué cambia |
 |---|---|---|
 | Solicitar hora por WhatsApp | Consultar disponibilidad en plataforma | El paciente deja de solicitar la hora mediante WhatsApp y accede directamente a la plataforma para iniciar la gestión de su reserva. |
-| Recibir solicitud de hora por WhatsApp | Registrar solicitud de atención en plataforma | La solicitud deja de recibirse mediante mensajes manuales y pasa a gestionarse directamente dentro del sistema. |
+| Recibir solicitud de hora mediante WhatsApp | Registrar solicitud de atención en plataforma | La solicitud deja de recibirse mediante mensajes manuales y pasa a gestionarse directamente dentro del sistema. |
 | Revisar disponibilidad en Excel | Mostrar horarios disponibles | La revisión manual de disponibilidad en Excel desaparece. El sistema consulta la disponibilidad registrada y presenta automáticamente los horarios disponibles. |
-| Informar horarios disponibles | Mostrar horarios disponibles | La secretaria o psicóloga deja de informar manualmente los horarios, ya que el sistema los presenta automáticamente al paciente. |
+| Informar horarios disponibles | Mostrar horarios disponibles |La información de horarios deja de depender de comunicación manual, ya que el sistema la presenta automáticamente al paciente. |
 | Informar falta de disponibilidad por WhatsApp | Mostrar mensaje de indisponibilidad en plataforma | Cuando no existen horarios disponibles, el sistema informa automáticamente al paciente sin depender de comunicación manual. |
 | Seleccionar horario | Seleccionar horario disponible | El paciente mantiene la selección del horario, pero ahora la realiza directamente dentro de la plataforma. |
 | Registrar hora en Excel | Registrar reserva automáticamente | El registro manual de la hora en Excel es reemplazado por el registro automático de la reserva en el sistema. |
