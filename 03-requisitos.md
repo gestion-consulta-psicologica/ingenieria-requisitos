@@ -26,7 +26,6 @@
 | RP-19 | El sistema deberá responder las consultas de disponibilidad de horarios en un tiempo máximo de 2 segundos, permitiendo una interacción rápida para los usuarios. | No funcional | Consultar disponibilidad en plataforma |
 | RP-20 |El sistema deberá permitir que al menos el 90% de los usuarios complete las tareas principales de gestión de horas sin asistencia externa. | No funcional | Consultar disponibilidad en plataforma |
 
-Así tu tabla completa quedaría:
 ## Requisitos de proyecto
 
 | ID | Requisito |
