@@ -59,7 +59,7 @@ Archivo fuente: [`./diagramas/TO-BE.bpmn`](./diagramas/TO-BE.bpmn)
 
 | Actividad en el AS-IS | Actividad en el TO-BE | Qué cambia |
 |---|---|---|
-| Solicitar hora por WhatsApp | Consultar disponibilidad en plataforma | El paciente deja de solicitar la hora mediante WhatsApp y puede consultar directamente los horarios disponibles desde la plataforma. |
+| Solicitar hora por WhatsApp | Consultar disponibilidad en plataforma | El paciente deja de solicitar la hora mediante WhatsApp y accede directamente a la plataforma para gestionar su reserva. |
 | Revisar disponibilidad en Excel | Mostrar horarios disponibles | La revisión manual de disponibilidad en Excel desaparece y el sistema muestra automáticamente los horarios disponibles. |
 | Informar horarios disponibles | Mostrar horarios disponibles | La comunicación manual de horarios es reemplazada por la visualización automática de la disponibilidad en la plataforma. |
 | Seleccionar horario | Seleccionar horario disponible | El paciente mantiene la selección del horario, pero ahora la realiza directamente dentro de la plataforma. |
