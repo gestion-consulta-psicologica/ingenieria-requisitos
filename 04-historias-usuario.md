@@ -36,20 +36,20 @@ Como paciente, quiero seleccionar un horario disponible, para reservar una hora 
 
 ## HU-03 — Confirmar o cancelar una hora
 
-Como paciente, quiero confirmar o cancelar una hora que ya tengo reservada, para informar mi decisión sobre la atención y gestionar mi asistencia desde la plataforma.
+Como paciente, quiero confirmar si mantengo o no una hora que tengo reservada, para informar mi decisión sobre la atención y continuar con el proceso correspondiente desde la plataforma.
 
 **Actividad TO-BE asociada:** Confirmar o cancelar hora en plataforma.
 
 **Criterios de aceptación:**
 
-- **CA1 — Selección de respuesta:** Dado que el paciente tiene una hora reservada y ha recibido una solicitud de confirmación, cuando accede a la opción correspondiente en la plataforma, entonces el sistema le permite indicar si mantiene o cancela la hora reservada.
+- **CA1 — Selección de respuesta:** Dado que el paciente tiene una hora reservada y ha recibido una solicitud de confirmación, cuando accede a la opción correspondiente en la plataforma, entonces el sistema le permite indicar si mantiene o no mantiene la hora reservada.
 
 - **CA2 — Registro de respuesta:** Dado que el paciente ha seleccionado una respuesta, cuando confirma su decisión, entonces el sistema registra la respuesta asociada a la reserva.
 
-- **CA3 — Mantener la hora:** Dado que el paciente decide mantener su hora, cuando confirma su decisión en la plataforma, entonces el sistema conserva la reserva y el proceso continúa hacia el pago, según el flujo definido en el TO-BE.
+- **CA3 — Mantener la hora:** Dado que el paciente indica que mantiene su hora, cuando confirma su decisión en la plataforma, entonces el sistema conserva la reserva y permite continuar con el proceso de pago según el flujo definido en el TO-BE.
 
-- **CA4 — Cancelar la hora:** Dado que el paciente decide cancelar su hora, cuando confirma la cancelación en la plataforma, entonces el sistema registra la reserva como cancelada y libera el horario para una nueva reserva.
-
+- **CA4 — No mantener la hora:** Dado que el paciente indica que no mantiene su hora, cuando confirma su decisión en la plataforma, entonces el sistema permite continuar hacia el proceso de gestión de la reserva, donde el paciente puede solicitar su cancelación o reagendamiento.
+  
 ## HU-04 — Reagendar o cancelar una hora
 
 Como paciente, quiero gestionar una hora que tengo reservada desde la plataforma, para cancelarla o cambiarla por otro horario sin depender del contacto con la secretaria o la psicóloga.
@@ -60,19 +60,19 @@ Como paciente, quiero gestionar una hora que tengo reservada desde la plataforma
 
 - **CA1 — Selección de acción:** Dado que el paciente tiene una hora reservada, cuando accede a las opciones de gestión de su reserva, entonces el sistema le permite seleccionar entre reagendar o cancelar la hora.
 
-- **CA2 — Cancelación de reserva:** Dado que el paciente tiene una hora reservada y selecciona la opción de cancelación, cuando confirma su decisión, entonces el sistema registra la reserva como cancelada y libera el horario para una nueva reserva.
+- **CA2 — Cancelación de reserva:** Dado que el paciente ha seleccionado la opción de cancelación para una reserva existente, cuando confirma su decisión, entonces el sistema registra la reserva como cancelada y libera el horario para una nueva reserva.
 
-- **CA3 — Consulta de disponibilidad:** Dado que el paciente ha seleccionado la opción de reagendar, cuando solicita cambiar su hora, entonces el sistema consulta los horarios disponibles y presenta las alternativas que puede seleccionar.
+- **CA3 — Consulta de disponibilidad:** Dado que el paciente ha seleccionado la opción de reagendar, cuando solicita cambiar su hora, entonces el sistema consulta la disponibilidad registrada y obtiene las alternativas disponibles para realizar el cambio.
 
-- **CA4 — Visualización de alternativas:** Dado que existen horarios disponibles para el reagendamiento, cuando el sistema presenta los resultados de la consulta, entonces el paciente puede visualizar las alternativas disponibles para realizar el cambio.
+- **CA4 — Visualización de alternativas:** Dado que existen horarios disponibles para el reagendamiento, cuando el sistema presenta los resultados de la consulta, entonces el paciente puede visualizar las alternativas disponibles para seleccionar un nuevo horario.
 
-- **CA5 — Selección del nuevo horario:** Dado que el sistema muestra alternativas disponibles, cuando el paciente selecciona una de ellas, entonces el sistema muestra el horario seleccionado como opción para confirmar el reagendamiento.
+- **CA5 — Selección del nuevo horario:** Dado que el sistema muestra alternativas disponibles, cuando el paciente selecciona una de ellas, entonces el sistema identifica el horario seleccionado y lo presenta como opción para confirmar el reagendamiento.
 
 - **CA6 — Actualización de la reserva:** Dado que el paciente ha seleccionado un nuevo horario disponible, cuando confirma el cambio y el horario continúa disponible, entonces el sistema actualiza la reserva con el nuevo horario y libera el horario anterior.
 
 - **CA7 — Nuevo horario no disponible:** Dado que el horario seleccionado deja de estar disponible antes de completar el reagendamiento, cuando el paciente intenta confirmar el cambio, entonces el sistema no actualiza la reserva con ese horario e informa que debe seleccionar otra alternativa.
 
-- **CA8 — Sin horarios disponibles:** Dado que el paciente ha solicitado reagendar su hora y no existen nuevos horarios disponibles, cuando el sistema consulta la disponibilidad, entonces informa que no hay alternativas disponibles para realizar el cambio y conserva la reserva original.
+- **CA8 — Sin horarios disponibles:** Dado que el paciente ha solicitado reagendar su hora y no existen nuevos horarios disponibles, cuando el sistema consulta la disponibilidad, entonces informa que no hay alternativas disponibles y conserva la reserva original.
 
 ## HU-05 — Comprobar el pago
 
