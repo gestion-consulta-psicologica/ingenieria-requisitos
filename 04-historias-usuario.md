@@ -68,7 +68,7 @@ Como paciente, quiero gestionar una hora que tengo reservada desde la plataforma
 
 - **CA5 — Selección del nuevo horario:** Dado que el sistema muestra alternativas disponibles, cuando el paciente selecciona una de ellas, entonces el sistema identifica el horario seleccionado y lo presenta como opción para confirmar el reagendamiento.
 
-- **CA6 — Actualización de la reserva:** Dado que el paciente ha seleccionado un nuevo horario disponible, cuando confirma el cambio y el horario continúa disponible, entonces el sistema actualiza la reserva con el nuevo horario y libera el horario anterior.
+-  **CA6 — Actualización de la reserva:** Dado que el paciente ha seleccionado un nuevo horario disponible, cuando el sistema verifica que el horario continúa disponible y actualiza la reserva, entonces el sistema registra el nuevo horario y libera el horario anterior.
 
 - **CA7 — Nuevo horario no disponible:** Dado que el horario seleccionado deja de estar disponible antes de completar el reagendamiento, cuando el paciente intenta confirmar el cambio, entonces el sistema no actualiza la reserva con ese horario e informa que debe seleccionar otra alternativa.
 
