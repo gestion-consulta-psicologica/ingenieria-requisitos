@@ -1,0 +1,26 @@
+@startuml dss-02
+' DSS-02 — Emitir boleta (CU-08 / HU-08)
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+hide footbox
+title DSS-02 — Emitir boleta de honorarios
+
+actor "Psicóloga" as PSI
+participant ":Sistema de gestión\nde consulta" as SIS
+participant ":SII\n<<sistema externo>>" as SII
+
+PSI -> SIS : solicitar emisión de boleta de la atención
+alt el pago de la atención está en estado "pagado"
+  SIS --> PSI : boleta preparada (nombre y RUT del paciente, fecha de la atención, monto)
+  PSI -> SIS : aprobar emisión de la boleta
+  SIS -> SII : emitir boleta de honorarios electrónica
+  alt el SII acepta la boleta
+    SII --> SIS : boleta emitida con número de folio
+    SIS --> PSI : boleta emitida y asociada a la atención
+  else el SII no responde
+    SIS --> PSI : boleta pendiente de emisión
+  end
+else el pago no está verificado
+  SIS --> PSI : la atención no tiene el pago verificado
+end
+@enduml

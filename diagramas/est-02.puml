@@ -1,0 +1,20 @@
+@startuml est-02
+' EST-02 — Ciclo de vida de Pago
+skinparam shadowing false
+skinparam nodesep 80
+skinparam ranksep 60
+hide empty description
+title EST-02 — Ciclo de vida de Pago
+
+state "Pendiente" as PEN
+state "Pago incompleto" as INC
+state "Pagado" as PAG
+
+INC : psicóloga verifica nuevo comprobante [total comprobado < monto de la atención] / actualizar diferencia pendiente
+
+[*] --> PEN : se origina la atención\n/ registrar monto de la atención
+PEN --> PAG : psicóloga verifica comprobante\n[monto comprobado = monto de la atención]\n/ registrar monto pagado
+PEN --> INC : psicóloga verifica comprobante\n[monto comprobado < monto de la atención]\n/ informar diferencia pendiente
+INC --> PAG : psicóloga verifica nuevo comprobante\n[total comprobado = monto de la atención]\n/ registrar monto pagado
+PAG --> [*] : boleta emitida
+@enduml

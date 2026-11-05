@@ -1,0 +1,53 @@
+@startuml casos-de-uso
+' Diagrama de casos de uso — UML 2.0
+left to right direction
+skinparam shadowing false
+skinparam actorStyle stick
+skinparam packageStyle rectangle
+skinparam usecase {
+  BackgroundColor White
+  BorderColor Black
+  ArrowColor Black
+}
+
+title Casos de uso — Gestión de consulta psicológica
+
+actor "Paciente" as PAC
+actor "Psicóloga" as PSI
+actor "Servicio de mensajería\n<<sistema externo>>" as MSJ
+actor "SII\n<<sistema externo>>" as SII
+
+rectangle "Sistema de gestión de consulta psicológica" {
+  usecase "CU-01\nConsultar disponibilidad" as CU01
+  usecase "CU-02\nReservar hora" as CU02
+  usecase "CU-03\nConfirmar asistencia" as CU03
+  usecase "CU-04\nCancelar hora" as CU04
+  usecase "CU-05\nReagendar hora" as CU05
+  usecase "CU-06\nComprobar pago" as CU06
+  usecase "CU-07\nRegistrar estado de pago" as CU07
+  usecase "CU-08\nEmitir boleta" as CU08
+  usecase "CU-09\nRegistrar asistencia" as CU09
+  usecase "CU-10\nActualizar ficha clínica" as CU10
+}
+
+PAC --> CU01
+PAC --> CU02
+PAC --> CU03
+PAC --> CU04
+PAC --> CU05
+
+PSI --> CU06
+PSI --> CU07
+PSI --> CU08
+PSI --> CU09
+PSI --> CU10
+
+CU02 ..> CU01 : <<include>>
+CU05 ..> CU01 : <<include>>
+CU04 ..> CU03 : <<extend>>\n(paciente no asistirá)
+
+CU02 --> MSJ
+CU03 --> MSJ
+CU05 --> MSJ
+CU08 --> SII
+@enduml

@@ -1,0 +1,26 @@
+@startuml est-01
+' EST-01 — Ciclo de vida de Reserva
+skinparam shadowing false
+skinparam nodesep 80
+skinparam ranksep 60
+hide empty description
+title EST-01 — Ciclo de vida de Reserva
+
+state "Pendiente de confirmación" as PEN
+state "Confirmada" as CON
+state "Sin confirmar" as SIN
+state "Cancelada" as CAN
+
+PEN : llega la víspera de la atención / enviar solicitud de confirmación
+PEN : llega la mañana de la atención [sin respuesta] / enviar recordatorio
+
+[*] --> PEN : paciente reserva bloque horario\n/ ocupar bloque y enviar aviso de reserva
+PEN --> CON : paciente confirma asistencia
+PEN --> CAN : paciente informa que no asistirá\n/ liberar bloque
+PEN --> SIN : llega la hora de la atención\n[sin respuesta]\n/ registrar cargo de $5.000
+CON --> CAN : paciente cancela la hora\n/ liberar bloque
+CON -up-> PEN : paciente reagenda\n[nuevo bloque disponible]\n/ liberar bloque anterior\ny ocupar nuevo bloque
+CON --> [*] : llega la hora de la atención\n/ originar atención
+CAN --> [*]
+SIN --> [*]
+@enduml

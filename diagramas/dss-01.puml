@@ -1,0 +1,32 @@
+@startuml dss-01
+' DSS-01 — Confirmar asistencia (CU-03 / HU-03)
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+hide footbox
+title DSS-01 — Confirmar asistencia
+
+actor "Paciente" as PAC
+participant ":Sistema de gestión\nde consulta" as SIS
+participant ":Servicio de mensajería\n<<sistema externo>>" as MSJ
+
+note over SIS : Reserva en estado\n"pendiente de confirmación"
+
+SIS -> MSJ : enviar solicitud de confirmación (aviso de víspera)
+MSJ -> PAC : solicitud de confirmación de la hora
+
+alt el paciente confirma su asistencia
+  PAC -> SIS : confirmar asistencia
+  SIS --> PAC : reserva confirmada
+else el paciente responde que no asistirá
+  PAC -> SIS : informar que no asistirá
+  SIS --> PAC : reserva cancelada y bloque horario liberado
+else el paciente no responde
+  SIS -> MSJ : enviar recordatorio (mañana de la atención)
+  MSJ -> PAC : recordatorio de confirmación
+  opt el paciente no responde hasta la hora de la atención
+    note over SIS : la reserva queda "sin confirmar"\ny se registra un cargo de $5.000
+    SIS -> MSJ : enviar aviso de cargo por reserva de hora
+    MSJ -> PAC : aviso de cargo por reserva de hora
+  end
+end
+@enduml

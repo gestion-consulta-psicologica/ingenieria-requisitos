@@ -1,0 +1,116 @@
+@startuml modelo-dominio
+' Modelo de dominio — Gestión de consulta psicológica
+' Notación UML 2.0: clases del dominio con atributos, sin métodos ni visibilidad.
+
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam nodesep 60
+skinparam ranksep 70
+skinparam class {
+  BackgroundColor White
+  BorderColor Black
+  ArrowColor Black
+}
+hide empty methods
+hide circle
+
+title Modelo de dominio — Gestión de consulta psicológica
+
+class Psicologa {
+  nombreCompleto : Texto
+  rut : Texto
+  correo : Texto
+}
+
+class Paciente {
+  nombreCompleto : Texto
+  rut : Texto
+  fechaNacimiento : Fecha
+  direccion : Texto
+  escolaridad : Texto
+  ocupacion : Texto
+  telefono : Texto
+  correo : Texto
+}
+
+class BloqueHorario {
+  fecha : Fecha
+  horaInicio : Hora
+  horaTermino : Hora
+  modalidad : Modalidad
+}
+
+class Reserva {
+  fechaRegistro : FechaHora
+  estado : EstadoReserva
+}
+
+class SolicitudConfirmacion {
+  fechaEnvio : FechaHora
+  tipo : TipoSolicitud
+  respuesta : RespuestaConfirmacion
+}
+
+class Atencion {
+  tipoAtencion : Modalidad
+  monto : Monto
+  estado : EstadoAtencion
+}
+
+class Pago {
+  montoAtencion : Monto
+  montoPagado : Monto
+  estado : EstadoPago
+}
+
+class ComprobanteTransferencia {
+  monto : Monto
+  fechaTransferencia : Fecha
+  cuentaDestino : Texto
+}
+
+class Cargo {
+  monto : Monto
+  motivo : MotivoCargo
+  fecha : Fecha
+}
+
+class Boleta {
+  numeroFolio : Texto
+  fechaEmision : Fecha
+  monto : Monto
+  estado : EstadoBoleta
+}
+
+class FichaClinica {
+  fechaApertura : Fecha
+  motivoConsulta : Texto
+  antecedentesSaludMental : Texto
+  diagnosticos : Texto
+  medicamentos : Texto
+  datosAdultoResponsable : Texto
+}
+
+class RegistroEvolucion {
+  fecha : Fecha
+  observaciones : Texto
+  pruebasAplicadas : Texto
+}
+
+' --- Asociaciones ---
+Psicologa "1" -- "0..*" BloqueHorario : ofrece >
+Paciente "1" -- "0..*" Reserva : realiza >
+Reserva "0..*" -- "1" BloqueHorario : ocupa >
+Reserva "1" -- "0..*" SolicitudConfirmacion : recibe >
+Reserva "1" -- "0..1" Atencion : origina >
+Reserva "1" -- "0..1" Cargo : genera >
+Paciente "1" -- "0..*" Cargo : adeuda >
+Atencion "1" -- "1" Pago : se paga con >
+Pago "1" -- "0..*" ComprobanteTransferencia : se respalda con >
+Atencion "1" -- "0..1" Boleta : se documenta con >
+Psicologa "1" -- "0..*" Boleta : emite >
+Paciente "1" -- "1" FichaClinica : tiene >
+FichaClinica "1" *-- "0..*" RegistroEvolucion : contiene >
+Atencion "1" -- "0..1" RegistroEvolucion : se registra en >
+
+@enduml

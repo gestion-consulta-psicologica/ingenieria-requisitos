@@ -1,0 +1,18 @@
+@startuml est-03
+' EST-03 — Ciclo de vida de Boleta
+skinparam shadowing false
+skinparam nodesep 80
+skinparam ranksep 60
+hide empty description
+title EST-03 — Ciclo de vida de Boleta
+
+state "En preparación" as PRE
+state "Pendiente de emisión" as PND
+state "Emitida" as EMI
+
+[*] --> PRE : psicóloga solicita emisión de boleta\n/ preparar boleta con datos\ndel paciente y de la atención
+PRE --> EMI : SII acepta la boleta\n/ asociar número de folio a la atención
+PRE --> PND : SII no responde\n/ agregar a boletas pendientes
+PND --> PRE : psicóloga reintenta la emisión
+EMI --> [*]
+@enduml
