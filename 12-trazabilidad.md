@@ -1,25 +1,26 @@
 # Trazabilidad
 
 ## Matriz de trazabilidad
+
 | Requisito (Entrega 1) | Historia | Caso de uso | Secuencia | Estado | Clases del dominio |
-|-----------------------|----------|-------------|-----------|--------|---------------------|
-| RP-01 | HU-01 | CU-01 | DSS-03 | — | BloqueHorario, Psicologa |
+|---|---|---|---|---|---|
+| RP-01 | HU-01 | CU-01 | DSS-03 | — | BloqueHorario, Psicóloga |
 | RP-02 | HU-01 | CU-01 | DSS-03 | — | BloqueHorario |
 | RP-03 | HU-02 | CU-02 | DSS-03 | EST-01 | Reserva, BloqueHorario, Paciente |
 | RP-04 | HU-02 | CU-02 | DSS-03 | EST-01 | Reserva, BloqueHorario |
 | RP-05 | HU-03 | CU-03 | DSS-01 | EST-01 | SolicitudConfirmacion, Reserva |
-| RP-06 | HU-03 | CU-03, CU-04 | DSS-01 | EST-01 | Reserva, SolicitudConfirmacion, Cargo |
+| RP-06 | HU-03 | CU-03 | DSS-01 | EST-01 | Reserva, SolicitudConfirmacion, Cargo |
 | RP-07 | HU-04 | CU-04, CU-05 | — | EST-01 | Reserva, BloqueHorario |
 | RP-08 | HU-04 | CU-05 | — | — | BloqueHorario |
 | RP-09 | HU-04 | CU-05 | — | — | BloqueHorario |
-| RP-10 | HU-05 | CU-05 | — | EST-01 | Reserva, BloqueHorario |
-| RP-11 | HU-05 | CU-05 | — | EST-01 | Reserva, SolicitudConfirmacion |
-| RP-12 | HU-06 | CU-06 | — | EST-02 | Pago, ComprobanteTransferencia, Atencion |
-| RP-13 | HU-07 | CU-07 | — | EST-02 | Pago, ComprobanteTransferencia |
-| RP-14 | HU-08 | CU-08 | DSS-02 | EST-02, EST-03 | Boleta, Pago, Atencion, Psicologa, Paciente |
-| RP-15 | HU-09 | CU-09 | — | — | Atencion, Cargo, Paciente |
-| RP-16 | HU-10 | CU-10 | — | — | FichaClinica, RegistroEvolucion, Atencion |
-| RP-17 | HU-10 | CU-10 | — | — | FichaClinica, RegistroEvolucion, Paciente |
+| RP-10 | HU-04 | CU-05 | — | EST-01 | Reserva, BloqueHorario |
+| RP-11 | HU-05 | CU-06 | — | EST-01 | Reserva, SolicitudConfirmacion |
+| RP-12 | HU-06 | CU-07 | — | EST-02 | Pago, ComprobanteTransferencia, Atención |
+| RP-13 | HU-07 | CU-08 | — | EST-02 | Pago, ComprobanteTransferencia |
+| RP-14 | HU-08 | CU-09 | DSS-02 | EST-02, EST-03 | Boleta, Pago, Atención, Psicóloga, Paciente |
+| RP-15 | HU-08 | CU-09 | — | — | Atención, CampoClinico |
+| RP-16 | HU-09 | CU-10 | — | — | FichaClinica, RegistroEvolucion, Atención |
+| RP-17 | HU-09 | CU-10 | — | — | FichaClinica, RegistroEvolucion, Paciente |
 | RP-18 | HU-01 a HU-05 | CU-01 a CU-05 | — | — | — |
 | RP-19 | HU-01 | CU-01 | DSS-03 | — | BloqueHorario |
 | RP-20 | HU-01 a HU-05 | CU-01 a CU-05 | — | — | — |
