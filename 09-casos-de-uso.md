@@ -20,7 +20,7 @@ Archivo fuente: [`./diagramas/casos-de-uso.puml`](./diagramas/casos-de-uso.puml)
 | CU-02 | Reservar hora | Paciente | [HU-02](./04-historias-usuario.md#hu-02--reservar-una-hora) |
 | CU-03 | Confirmar asistencia | Paciente | [HU-03](./04-historias-usuario.md#hu-03--confirmar-o-cancelar-una-hora) |
 | CU-04 | Cancelar hora | Paciente | [HU-04](./04-historias-usuario.md#hu-04--reagendar-o-cancelar-una-hora) |
-| CU-05 | Reagendar hora | Paciente | [HU-04](./04-historias-usuario.md#hu-04--reagendar-o-cancelar-una-hora), [HU-05](./04-historias-usuario.md#hu-05--seleccionar-una-nueva-hora) |
+| CU-05 | Reagendar hora | Paciente | [HU-04](./04-historias-usuario.md#hu-04--reagendar-o-cancelar-una-hora) |
 | CU-06 | Comprobar pago | Psicóloga | [HU-05](./04-historias-usuario.md#hu-06--comprobar-el-pago) |
 | CU-07 | Registrar estado de pago | Psicóloga | [HU-06](./04-historias-usuario.md#hu-07--registrar-el-estado-de-pago) |
 | CU-08 | Emitir boleta | Psicóloga | [HU-07](./04-historias-usuario.md#hu-08--emitir-boleta) |
