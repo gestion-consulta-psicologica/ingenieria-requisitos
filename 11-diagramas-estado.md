@@ -23,6 +23,8 @@ Archivo fuente: [`./diagramas/est-01.puml`](./diagramas/est-01.puml)
 | Cancelada | — | — | — | (final) |
 | Sin confirmar | — | — | — | (final) |
 
+**Regla de vigencia:** una reserva se considera vigente mientras esté en estado Pendiente de confirmación o Confirmada. Las reservas Canceladas o Sin confirmar no bloquean el bloque horario.
+
 ## EST-02 — Ciclo de vida de Pago
 - Clase del dominio: [Pago](./08-modelo-dominio.md)
 - Diagramas de secuencia relacionados: [DSS-02](./10-diagramas-secuencia.md)

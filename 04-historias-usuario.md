@@ -16,6 +16,8 @@ Criterios de aceptación
 
 - CA4 — Ausencia de disponibilidad: Dado que no existen horarios disponibles para reservar, cuando el paciente consulta la disponibilidad, entonces la plataforma informa que no hay horarios disponibles para reserva.
 
+- CA5 — Próximo bloque disponible: Dado que no existen horarios disponibles para la semana consultada, cuando el paciente consulta la disponibilidad, entonces la plataforma informa que no hay horas disponibles e indica la fecha del próximo bloque horario disponible.
+
 ## HU-02 — Reservar una hora
 
 Como paciente, quiero seleccionar un horario disponible, para reservar una hora de atención directamente desde la plataforma.
