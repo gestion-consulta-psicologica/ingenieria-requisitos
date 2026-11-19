@@ -9,8 +9,8 @@
 | RP-02 | El sistema deberá mostrar automáticamente al paciente los horarios disponibles para reservar una atención. | Funcional | Mostrar horarios disponibles |
 | RP-03 | El sistema deberá permitir al paciente seleccionar un horario disponible. | Funcional | Seleccionar horario disponible |
 | RP-04 | El sistema deberá registrar automáticamente la reserva cuando el paciente seleccione un horario. | Funcional | Registrar reserva automáticamente |
-| RP-05 | El sistema deberá enviar automáticamente una solicitud de confirmación asociada a la hora reservada. | Funcional | Enviar solicitud de confirmación automática |
-| RP-06 | El sistema deberá permitir al paciente confirmar o cancelar una hora reservada desde la plataforma. | Funcional | Confirmar o cancelar hora en plataforma |
+| RP-05 | El sistema deberá enviar automáticamente por correo electrónico una solicitud de confirmación asociada a la hora reservada, con enlaces seguros para responder. | Funcional | Enviar solicitud de confirmación automática |
+| RP-06 | El sistema deberá permitir al paciente confirmar o cancelar una hora reservada desde la plataforma o desde el enlace seguro del correo, una vez enviada la solicitud de confirmación asociada y mientras exista una solicitud pendiente de respuesta. | Funcional | Confirmar o cancelar hora en plataforma |
 | RP-07 | El sistema deberá permitir al paciente solicitar el reagendamiento o cancelación de una hora desde la plataforma. | Funcional | Solicitar reagendamiento o cancelación en plataforma |
 | RP-08 | El sistema deberá consultar la disponibilidad de nuevas horas cuando el paciente solicite un reagendamiento. | Funcional | Consultar nueva disponibilidad en sistema |
 | RP-09 | El sistema deberá mostrar automáticamente las alternativas disponibles para reagendar una atención. | Funcional | Mostrar nuevas alternativas disponibles |
@@ -25,6 +25,8 @@
 | RP-18 | La plataforma deberá ser utilizable desde dispositivos móviles para facilitar el acceso a la gestión de horas e información. | No funcional | Consultar disponibilidad en plataforma |
 | RP-19 | El sistema deberá responder las consultas de disponibilidad de horarios en un tiempo máximo de 2 segundos, permitiendo una interacción rápida para los usuarios. | No funcional | Consultar disponibilidad en plataforma |
 | RP-20 |El sistema deberá permitir que al menos el 90% de los usuarios complete las tareas principales de gestión de horas sin asistencia externa. | No funcional | Seleccionar horario disponible |
+| RP-21 | El sistema deberá permitir al paciente registrar sus datos personales (nombre completo, RUT y medio de contacto) cuando aún no esté registrado. | Funcional | Registrar datos del paciente |
+| RP-22 | El sistema deberá registrar un cargo de $5.000 por reserva de hora, asociado al paciente y a la reserva, cuando el paciente no responda la solicitud de confirmación hasta la hora de la atención. | Funcional | Registrar cargo por reserva de hora |
 
 
 ## Requisitos de proyecto

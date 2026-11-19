@@ -7,9 +7,13 @@
     <bpmn:laneSet id="LaneSet_02x5wvm">
       <bpmn:lane id="Lane_0tjs4ip" name="Paciente">
         <bpmn:flowNodeRef>StartEvent_1</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>StartEvent_2</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>Activity_0v4ostl</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Activity_1datosp</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>Activity_1mi17n7</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>Activity_19rqvrc</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>BoundaryEvent_Recordatorio</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>BoundaryEvent_SinRespuesta</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>Gateway_1sl58c7</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>Activity_0s15ss2</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>Activity_0mkb7nv</bpmn:flowNodeRef>
@@ -19,9 +23,12 @@
         <bpmn:childLaneSet id="LaneSet_0ua9qgx">
           <bpmn:lane id="Lane_0l82b3e">
             <bpmn:flowNodeRef>StartEvent_1</bpmn:flowNodeRef>
+            <bpmn:flowNodeRef>StartEvent_2</bpmn:flowNodeRef>
             <bpmn:flowNodeRef>Activity_0v4ostl</bpmn:flowNodeRef>
             <bpmn:flowNodeRef>Activity_1mi17n7</bpmn:flowNodeRef>
             <bpmn:flowNodeRef>Activity_19rqvrc</bpmn:flowNodeRef>
+            <bpmn:flowNodeRef>BoundaryEvent_Recordatorio</bpmn:flowNodeRef>
+            <bpmn:flowNodeRef>BoundaryEvent_SinRespuesta</bpmn:flowNodeRef>
             <bpmn:flowNodeRef>Gateway_1sl58c7</bpmn:flowNodeRef>
             <bpmn:flowNodeRef>Activity_0s15ss2</bpmn:flowNodeRef>
             <bpmn:flowNodeRef>Activity_0mkb7nv</bpmn:flowNodeRef>
@@ -38,6 +45,12 @@
         <bpmn:flowNodeRef>Activity_0ko2gho</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>Activity_0hcq2md</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>Activity_0vn7tgh</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Activity_Recordatorio</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Activity_Cargo</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Activity_Cancelar</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Event_RecordatorioFin</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Event_SinRespuestaFin</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Event_CancelarFin</bpmn:flowNodeRef>
       </bpmn:lane>
       <bpmn:lane id="Lane_17qmhii" name="Psicologa">
         <bpmn:flowNodeRef>Activity_0dbxe36</bpmn:flowNodeRef>
@@ -59,6 +72,13 @@
       <bpmn:incoming>Flow_013ioke</bpmn:incoming>
       <bpmn:outgoing>Flow_1xgr0kp</bpmn:outgoing>
     </bpmn:userTask>
+    <bpmn:userTask id="Activity_1datosp" name="Registrar datos del paciente">
+      <bpmn:extensionElements>
+        <zeebe:userTask />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_1xgr0kp</bpmn:incoming>
+      <bpmn:outgoing>Flow_1datosres</bpmn:outgoing>
+    </bpmn:userTask>
     <bpmn:userTask id="Activity_1mi17n7" name="Consultar disponibilidad en plataforma">
       <bpmn:extensionElements>
         <zeebe:userTask />
@@ -73,6 +93,42 @@
       <bpmn:incoming>Flow_0905dhk</bpmn:incoming>
       <bpmn:outgoing>Flow_0dvfqdi</bpmn:outgoing>
     </bpmn:userTask>
+    <bpmn:boundaryEvent id="BoundaryEvent_Recordatorio" name="Mañana de la atención" attachedToRef="Activity_19rqvrc" cancelActivity="false">
+      <bpmn:outgoing>Flow_Recordatorio</bpmn:outgoing>
+      <bpmn:timerEventDefinition id="TimerEventDefinition_Recordatorio">
+        <bpmn:timeDuration>PT12H</bpmn:timeDuration>
+      </bpmn:timerEventDefinition>
+    </bpmn:boundaryEvent>
+    <bpmn:boundaryEvent id="BoundaryEvent_SinRespuesta" name="Hora de la atención sin respuesta" attachedToRef="Activity_19rqvrc" cancelActivity="true">
+      <bpmn:outgoing>Flow_SinRespuesta</bpmn:outgoing>
+      <bpmn:timerEventDefinition id="TimerEventDefinition_SinRespuesta">
+        <bpmn:timeDuration>PT24H</bpmn:timeDuration>
+      </bpmn:timerEventDefinition>
+    </bpmn:boundaryEvent>
+    <bpmn:startEvent id="StartEvent_2" name="Paciente gestiona su reserva">
+      <bpmn:outgoing>Flow_Gestion</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:serviceTask id="Activity_Recordatorio" name="Enviar recordatorio de confirmación por correo">
+      <bpmn:incoming>Flow_Recordatorio</bpmn:incoming>
+      <bpmn:outgoing>Flow_RecordatorioFin</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="Activity_Cargo" name="Registrar cargo y notificar por correo">
+      <bpmn:incoming>Flow_SinRespuesta</bpmn:incoming>
+      <bpmn:outgoing>Flow_SinRespuestaFin</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="Activity_Cancelar" name="Cancelar reserva y liberar bloque">
+      <bpmn:incoming>Flow_0e0b60c</bpmn:incoming>
+      <bpmn:outgoing>Flow_CancelarFin</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:endEvent id="Event_RecordatorioFin">
+      <bpmn:incoming>Flow_RecordatorioFin</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:endEvent id="Event_SinRespuestaFin">
+      <bpmn:incoming>Flow_SinRespuestaFin</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:endEvent id="Event_CancelarFin">
+      <bpmn:incoming>Flow_CancelarFin</bpmn:incoming>
+    </bpmn:endEvent>
     <bpmn:exclusiveGateway id="Gateway_1sl58c7" name="¿Mantiene la hora?">
       <bpmn:incoming>Flow_0dvfqdi</bpmn:incoming>
       <bpmn:outgoing>Flow_19sfgky</bpmn:outgoing>
@@ -89,7 +145,7 @@
       <bpmn:extensionElements>
         <zeebe:userTask />
       </bpmn:extensionElements>
-      <bpmn:incoming>Flow_0e0b60c</bpmn:incoming>
+      <bpmn:incoming>Flow_Gestion</bpmn:incoming>
       <bpmn:outgoing>Flow_11nbfgh</bpmn:outgoing>
     </bpmn:userTask>
     <bpmn:exclusiveGateway id="Gateway_0qnkmi4" name="¿Reagenda la hora?">
@@ -108,10 +164,10 @@
       <bpmn:outgoing>Flow_0terc63</bpmn:outgoing>
     </bpmn:userTask>
     <bpmn:serviceTask id="Activity_0iai1wj" name="Registrar reserva automáticamente">
-      <bpmn:incoming>Flow_1xgr0kp</bpmn:incoming>
+      <bpmn:incoming>Flow_1datosres</bpmn:incoming>
       <bpmn:outgoing>Flow_0z166ie</bpmn:outgoing>
     </bpmn:serviceTask>
-    <bpmn:serviceTask id="Activity_0lg906g" name="Enviar solicitud de confirmación automática">
+    <bpmn:serviceTask id="Activity_0lg906g" name="Enviar solicitud de confirmación automática por correo">
       <bpmn:incoming>Flow_0z166ie</bpmn:incoming>
       <bpmn:incoming>Flow_1bnpjer</bpmn:incoming>
       <bpmn:outgoing>Flow_0905dhk</bpmn:outgoing>
@@ -176,12 +232,19 @@
     </bpmn:endEvent>
     <bpmn:sequenceFlow id="Flow_0kml0jn" sourceRef="StartEvent_1" targetRef="Activity_1mi17n7" />
     <bpmn:sequenceFlow id="Flow_013ioke" sourceRef="Activity_1pil41f" targetRef="Activity_0v4ostl" />
-    <bpmn:sequenceFlow id="Flow_1xgr0kp" sourceRef="Activity_0v4ostl" targetRef="Activity_0iai1wj" />
+    <bpmn:sequenceFlow id="Flow_1xgr0kp" sourceRef="Activity_0v4ostl" targetRef="Activity_1datosp" />
+    <bpmn:sequenceFlow id="Flow_1datosres" sourceRef="Activity_1datosp" targetRef="Activity_0iai1wj" />
     <bpmn:sequenceFlow id="Flow_00svotp" sourceRef="Activity_1mi17n7" targetRef="Activity_1pil41f" />
     <bpmn:sequenceFlow id="Flow_0905dhk" sourceRef="Activity_0lg906g" targetRef="Activity_19rqvrc" />
     <bpmn:sequenceFlow id="Flow_0dvfqdi" sourceRef="Activity_19rqvrc" targetRef="Gateway_1sl58c7" />
     <bpmn:sequenceFlow id="Flow_19sfgky" name="si" sourceRef="Gateway_1sl58c7" targetRef="Activity_0s15ss2" />
-    <bpmn:sequenceFlow id="Flow_0e0b60c" name="no" sourceRef="Gateway_1sl58c7" targetRef="Activity_0mkb7nv" />
+    <bpmn:sequenceFlow id="Flow_0e0b60c" name="no" sourceRef="Gateway_1sl58c7" targetRef="Activity_Cancelar" />
+    <bpmn:sequenceFlow id="Flow_Gestion" sourceRef="StartEvent_2" targetRef="Activity_0mkb7nv" />
+    <bpmn:sequenceFlow id="Flow_CancelarFin" sourceRef="Activity_Cancelar" targetRef="Event_CancelarFin" />
+    <bpmn:sequenceFlow id="Flow_Recordatorio" sourceRef="BoundaryEvent_Recordatorio" targetRef="Activity_Recordatorio" />
+    <bpmn:sequenceFlow id="Flow_RecordatorioFin" sourceRef="Activity_Recordatorio" targetRef="Event_RecordatorioFin" />
+    <bpmn:sequenceFlow id="Flow_SinRespuesta" sourceRef="BoundaryEvent_SinRespuesta" targetRef="Activity_Cargo" />
+    <bpmn:sequenceFlow id="Flow_SinRespuestaFin" sourceRef="Activity_Cargo" targetRef="Event_SinRespuestaFin" />
     <bpmn:sequenceFlow id="Flow_0f0dccz" sourceRef="Activity_0s15ss2" targetRef="Activity_0dbxe36" />
     <bpmn:sequenceFlow id="Flow_11nbfgh" sourceRef="Activity_0mkb7nv" targetRef="Gateway_0qnkmi4" />
     <bpmn:sequenceFlow id="Flow_009f1q1" name="no" sourceRef="Gateway_0qnkmi4" targetRef="Event_09tti8m" />
@@ -224,6 +287,10 @@
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Activity_0v4ostl_di" bpmnElement="Activity_0v4ostl">
         <dc:Bounds x="639" y="280" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_1datosp_di" bpmnElement="Activity_1datosp">
+        <dc:Bounds x="939" y="160" width="100" height="80" />
         <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Activity_1mi17n7_di" bpmnElement="Activity_1mi17n7">
@@ -312,6 +379,45 @@
       <bpmndi:BPMNShape id="Event_1ycb91j_di" bpmnElement="Event_1ycb91j">
         <dc:Bounds x="2112" y="962" width="36" height="36" />
       </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BoundaryEvent_Recordatorio_di" bpmnElement="BoundaryEvent_Recordatorio">
+        <dc:Bounds x="841" y="342" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="784" y="382" width="90" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BoundaryEvent_SinRespuesta_di" bpmnElement="BoundaryEvent_SinRespuesta">
+        <dc:Bounds x="891" y="262" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="874" y="232" width="90" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="StartEvent_2_di" bpmnElement="StartEvent_2">
+        <dc:Bounds x="1159" y="130" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1124" y="173" width="90" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_Recordatorio_di" bpmnElement="Activity_Recordatorio">
+        <dc:Bounds x="639" y="680" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_RecordatorioFin_di" bpmnElement="Event_RecordatorioFin">
+        <dc:Bounds x="789" y="702" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_Cargo_di" bpmnElement="Activity_Cargo">
+        <dc:Bounds x="959" y="680" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_SinRespuestaFin_di" bpmnElement="Event_SinRespuestaFin">
+        <dc:Bounds x="1109" y="702" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_Cancelar_di" bpmnElement="Activity_Cancelar">
+        <dc:Bounds x="1159" y="490" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_CancelarFin_di" bpmnElement="Event_CancelarFin">
+        <dc:Bounds x="1159" y="600" width="36" height="36" />
+      </bpmndi:BPMNShape>
       <bpmndi:BPMNEdge id="Flow_0kml0jn_di" bpmnElement="Flow_0kml0jn">
         <di:waypoint x="337" y="320" />
         <di:waypoint x="409" y="320" />
@@ -324,6 +430,15 @@
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_1xgr0kp_di" bpmnElement="Flow_1xgr0kp">
         <di:waypoint x="689" y="360" />
+        <di:waypoint x="689" y="400" />
+        <di:waypoint x="939" y="400" />
+        <di:waypoint x="939" y="240" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1datosres_di" bpmnElement="Flow_1datosres">
+        <di:waypoint x="1039" y="200" />
+        <di:waypoint x="1069" y="200" />
+        <di:waypoint x="1069" y="540" />
+        <di:waypoint x="689" y="540" />
         <di:waypoint x="689" y="570" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_00svotp_di" bpmnElement="Flow_00svotp">
@@ -352,10 +467,11 @@
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_0e0b60c_di" bpmnElement="Flow_0e0b60c">
         <di:waypoint x="989" y="295" />
-        <di:waypoint x="989" y="260" />
-        <di:waypoint x="1159" y="260" />
+        <di:waypoint x="1059" y="295" />
+        <di:waypoint x="1059" y="530" />
+        <di:waypoint x="1159" y="530" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="998" y="275" width="13" height="14" />
+          <dc:Bounds x="1048" y="300" width="13" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_11nbfgh_di" bpmnElement="Flow_11nbfgh">
@@ -420,6 +536,35 @@
       <bpmndi:BPMNEdge id="Flow_1yfveq2_di" bpmnElement="Flow_1yfveq2">
         <di:waypoint x="2050" y="980" />
         <di:waypoint x="2112" y="980" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Gestion_di" bpmnElement="Flow_Gestion">
+        <di:waypoint x="1177" y="166" />
+        <di:waypoint x="1177" y="220" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_CancelarFin_di" bpmnElement="Flow_CancelarFin">
+        <di:waypoint x="1209" y="570" />
+        <di:waypoint x="1209" y="618" />
+        <di:waypoint x="1195" y="618" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Recordatorio_di" bpmnElement="Flow_Recordatorio">
+        <di:waypoint x="859" y="378" />
+        <di:waypoint x="769" y="378" />
+        <di:waypoint x="769" y="720" />
+        <di:waypoint x="739" y="720" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_RecordatorioFin_di" bpmnElement="Flow_RecordatorioFin">
+        <di:waypoint x="739" y="720" />
+        <di:waypoint x="789" y="720" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_SinRespuesta_di" bpmnElement="Flow_SinRespuesta">
+        <di:waypoint x="909" y="262" />
+        <di:waypoint x="940" y="262" />
+        <di:waypoint x="940" y="720" />
+        <di:waypoint x="959" y="720" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_SinRespuestaFin_di" bpmnElement="Flow_SinRespuestaFin">
+        <di:waypoint x="1059" y="720" />
+        <di:waypoint x="1109" y="720" />
       </bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>

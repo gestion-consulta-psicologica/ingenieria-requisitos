@@ -9,6 +9,22 @@ RUTA_DB_POR_DEFECTO = BASE_DIR / "data" / "app.db"
 DIRECTORIO_MIGRACIONES = Path(__file__).resolve().parent / "migrations"
 
 
+class MigracionDatosAmbiguos(RuntimeError):
+    """La migración no se aplicó porque hay registros históricos ambiguos."""
+
+    def __init__(self, archivo: str, filas: list[dict]):
+        self.archivo = archivo
+        self.filas = filas
+        detalle = "; ".join(
+            f"solicitud {fila['solicitud_id']} de la reserva {fila['reserva_id']}: "
+            f"{fila['motivo']}"
+            for fila in filas
+        )
+        super().__init__(
+            f"La migración {archivo} requiere revisión manual: {detalle}"
+        )
+
+
 def ruta_base_datos() -> Path:
     return Path(os.environ.get("CONSULTA_DB", RUTA_DB_POR_DEFECTO))
 
@@ -42,7 +58,31 @@ def aplicar_migraciones(conexion: sqlite3.Connection) -> None:
     for archivo in sorted(DIRECTORIO_MIGRACIONES.glob("*.sql")):
         if archivo.name in aplicadas:
             continue
-        conexion.executescript(archivo.read_text(encoding="utf-8"))
+        try:
+            conexion.executescript(archivo.read_text(encoding="utf-8"))
+        except sqlite3.IntegrityError as error:
+            filas = []
+            if archivo.name == "004_solicitud_estado_cierre.sql":
+                try:
+                    filas = [
+                        dict(fila)
+                        for fila in conexion.execute(
+                            """
+                            SELECT solicitud_id, reserva_id, motivo
+                            FROM _preflight_004
+                            ORDER BY reserva_id, solicitud_id
+                            """
+                        )
+                    ]
+                except sqlite3.Error:
+                    filas = []
+            conexion.rollback()
+            if filas:
+                raise MigracionDatosAmbiguos(archivo.name, filas) from error
+            raise
+        except Exception:
+            conexion.rollback()
+            raise
         conexion.execute(
             "INSERT INTO schema_migrations (version, applied_at) VALUES (?, datetime('now'))",
             (archivo.name,),

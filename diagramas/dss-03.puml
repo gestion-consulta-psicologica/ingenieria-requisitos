@@ -1,4 +1,4 @@
-@startuml dss-03
+﻿@startuml dss-03
 ' DSS-03 — Reservar hora (CU-02 / HU-02, incluye CU-01 / HU-01)
 skinparam shadowing false
 skinparam sequenceMessageAlign center
@@ -7,7 +7,8 @@ title DSS-03 — Reservar hora
 
 actor "Paciente" as PAC
 participant ":Sistema de gestión\nde consulta" as SIS
-participant ":Servicio de mensajería\n<<sistema externo>>" as MSJ
+participant ":Cola de correos" as COLA
+participant ":Servicio SMTP\n<<sistema externo>>" as SMTP
 
 PAC -> SIS : consultar disponibilidad de la semana
 alt existen bloques horarios disponibles
@@ -19,8 +20,9 @@ end
 PAC -> SIS : reservar bloque horario
 alt el bloque sigue disponible y el paciente tiene sus datos de identificación
   SIS --> PAC : reserva registrada en estado "pendiente de confirmación"
-  SIS -> MSJ : enviar aviso de reserva registrada
-  MSJ -> PAC : aviso de reserva registrada
+  SIS -> COLA : encolar aviso de reserva registrada
+  COLA -> SMTP : enviar aviso de reserva
+  SMTP -> PAC : aviso de reserva registrada
 else el bloque fue reservado por otro paciente
   SIS --> PAC : bloque no disponible y bloques disponibles más cercanos
 else faltan datos de identificación del paciente

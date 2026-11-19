@@ -1,6 +1,18 @@
 from __future__ import annotations
 
+import os
+import tempfile
+from pathlib import Path
+
 import pytest
+
+_RUTA_DB_TEMPORAL = Path(
+    tempfile.mkdtemp(prefix="consulta-pytest-")
+) / "default.db"
+os.environ["CONSULTA_DB"] = str(_RUTA_DB_TEMPORAL)
+os.environ["PLANIFICADOR_ACTIVO"] = "0"
+os.environ.pop("SMTP_HOST", None)
+os.environ.pop("SMTP_REMITENTE", None)
 
 from app.db.conexion import conectar, inicializar_base
 

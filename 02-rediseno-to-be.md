@@ -62,8 +62,9 @@ Archivo fuente: [`./diagramas/TO-BE.bpmn`](./diagramas/TO-BE.bpmn)
 | Revisar disponibilidad en Excel | Mostrar horarios disponibles | La revisión manual de disponibilidad en Excel es reemplazada por la visualización automática de horarios disponibles en el sistema. |
 | Informar horarios disponibles | Mostrar horarios disponibles | La comunicación manual de horarios disponibles es reemplazada por la presentación automática de disponibilidad en la plataforma. |
 | Seleccionar horario | Seleccionar horario disponible | El paciente mantiene la selección del horario, pero ahora la realiza directamente dentro de la plataforma. |
+| Entrega de datos del paciente por WhatsApp | Registrar datos del paciente | Los datos del paciente nuevo dejan de entregarse por WhatsApp para que la secretaria los registre y pasan a registrarse directamente en la plataforma, habilitando la reserva en línea. |
 | Registrar hora en Excel | Registrar reserva automáticamente | El registro manual de la reserva en Excel es reemplazado por el registro automático dentro del sistema. |
-| Confirmar asistencia por WhatsApp | Enviar solicitud de confirmación automática | La confirmación deja de gestionarse manualmente mediante WhatsApp y pasa a ser enviada automáticamente por el sistema. |
+| Confirmar asistencia por WhatsApp | Enviar solicitud de confirmación automática por correo | La confirmación deja de gestionarse manualmente mediante WhatsApp y pasa a ser enviada automáticamente por el sistema a través de correo electrónico, con enlaces seguros de un solo uso. |
 | Responder confirmación | Confirmar o cancelar hora en plataforma | El paciente puede confirmar o cancelar su hora directamente desde la plataforma. |
 | Solicitar cambio o cancelación | Solicitar reagendamiento o cancelación en plataforma | El paciente puede gestionar el cambio o cancelación de una hora desde la plataforma sin depender del contacto manual con la secretaria o psicóloga. |
 | Revisar nueva disponibilidad en Excel | Consultar nueva disponibilidad en sistema | La búsqueda manual de nuevas horas en Excel es reemplazada por la consulta de disponibilidad dentro del sistema. |

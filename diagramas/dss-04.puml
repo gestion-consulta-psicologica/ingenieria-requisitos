@@ -1,0 +1,40 @@
+@startuml dss-04
+' DSS-04 - Reagendar o cancelar hora (CU-04 / CU-05, HU-04)
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+hide footbox
+title DSS-04 - Reagendar o cancelar hora
+
+actor "Paciente" as PAC
+participant ":Sistema de gestión\nde consulta" as SIS
+participant ":Cola de correos" as COLA
+participant ":Servicio SMTP\n<<sistema externo>>" as SMTP
+
+PAC -> SIS : acceder al detalle de una reserva confirmada
+SIS --> PAC : opciones reagendar o cancelar
+
+alt el paciente cancela la reserva
+  PAC -> SIS : confirmar cancelación
+  SIS -> SIS : registrar reserva cancelada\ny liberar el bloque
+  SIS --> PAC : reserva cancelada
+
+else el paciente reagenda la reserva
+  PAC -> SIS : solicitar reagendar
+  SIS -> SIS : consultar bloques disponibles\nen los próximos 14 días
+  alt existen alternativas
+    SIS --> PAC : alternativas disponibles
+    PAC -> SIS : seleccionar un nuevo bloque
+    alt el bloque sigue disponible
+      SIS -> SIS : actualizar reserva, liberar bloque anterior,\nregistrar historial e iniciar nuevo ciclo
+      SIS -> COLA : encolar aviso de reserva reagendada
+      COLA -> SMTP : enviar aviso
+      SMTP -> PAC : aviso de reserva reagendada
+      SIS --> PAC : reserva pendiente de confirmación
+    else el bloque fue tomado por otro paciente
+      SIS --> PAC : bloque no disponible; elegir otra alternativa
+    end
+  else no existen alternativas
+    SIS --> PAC : sin alternativas; reserva original vigente
+  end
+end
+@enduml

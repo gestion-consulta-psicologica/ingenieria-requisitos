@@ -1,0 +1,632 @@
+{
+  "resultados": [
+    {
+      "fase": "F1",
+      "descripcion": "La app responde y usa la base manual (sem 24/11 muestra bloques 2 y 4)",
+      "metodo": "GET",
+      "url": "http://127.0.0.1:8765/disponibilidad?semana=2026-11-24",
+      "estado": 200,
+      "esperado": 200,
+      "ok": true,
+      "notas": ""
+    },
+    {
+      "fase": "HU-01",
+      "descripcion": "Raiz redirige a /disponibilidad",
+      "metodo": "GET",
+      "url": "http://127.0.0.1:8765/",
+      "estado": 303,
+      "esperado": 303,
+      "ok": true,
+      "notas": ""
+    },
+    {
+      "fase": "HU-01",
+      "descripcion": "Semana 23-29 nov: bloques 2 y 4 disponibles",
+      "metodo": "GET",
+      "url": "http://127.0.0.1:8765/disponibilidad?semana=2026-11-24",
+      "estado": 200,
+      "esperado": 200,
+      "ok": true,
+      "notas": ""
+    },
+    {
+      "fase": "HU-01",
+      "descripcion": "Semana 30 nov-6 dic: sin horarios y proximo 08/12/2026",
+      "metodo": "GET",
+      "url": "http://127.0.0.1:8765/disponibilidad?semana=2026-11-30",
+      "estado": 200,
+      "esperado": 200,
+      "ok": true,
+      "notas": ""
+    },
+    {
+      "fase": "HU-01",
+      "descripcion": "Semana 7-13 dic: bloque 5 disponible",
+      "metodo": "GET",
+      "url": "http://127.0.0.1:8765/disponibilidad?semana=2026-12-07",
+      "estado": 200,
+      "esperado": 200,
+      "ok": true,
+      "notas": ""
+    },
+    {
+      "fase": "HU-02",
+      "descripcion": "Reservar bloque 2 con paciente existente",
+      "metodo": "POST",
+      "url": "http://127.0.0.1:8765/reservar/2",
+      "estado": 303,
+      "esperado": 303,
+      "ok": true,
+      "notas": ""
+    },
+    {
+      "fase": "HU-02",
+      "descripcion": "Reserva 3 creada (paciente 1, bloque 2, pendiente)",
+      "metodo": "SQL",
+      "url": "reserva WHERE id=3",
+      "estado": "-",
+      "esperado": "-",
+      "ok": true,
+      "notas": "[{'id': 3, 'paciente_id': 1, 'bloque_horario_id': 2, 'fecha_registro': '2026-11-18T22:24:18', 'estado': 'Pendiente de confirmación'}]"
+    },
+    {
+      "fase": "HU-02",
+      "descripcion": "Bloque 2 deja de estar disponible; bloque 4 sigue",
+      "metodo": "GET",
+      "url": "http://127.0.0.1:8765/disponibilidad?semana=2026-11-24",
+      "estado": 200,
+      "esperado": 200,
+      "ok": true,
+      "notas": ""
+    },
+    {
+      "fase": "HU-02",
+      "descripcion": "Intentar reservar bloque 1 ocupado: HTTP 409",
+      "metodo": "POST",
+      "url": "http://127.0.0.1:8765/reservar/1",
+      "estado": 409,
+      "esperado": 409,
+      "ok": true,
+      "notas": ""
+    },
+    {
+      "fase": "HU-02A",
+      "descripcion": "Reservar bloque 4 con RUT nuevo redirige a registro",
+      "metodo": "POST",
+      "url": "http://127.0.0.1:8765/reservar/4",
+      "estado": 303,
+      "esperado": 303,
+      "ok": true,
+      "notas": ""
+    },
+    {
+      "fase": "HU-02A",
+      "descripcion": "Formulario de registro con bloque 4",
+      "metodo": "GET",
+      "url": "http://127.0.0.1:8765/pacientes/registro?bloque_id=4",
+      "estado": 200,
+      "esperado": 200,
+      "ok": true,
+      "notas": ""
+    },
+    {
+      "fase": "HU-02A",
+      "descripcion": "Registrar paciente 99.999.999-9 con correo vacio",
+      "metodo": "POST",
+      "url": "http://127.0.0.1:8765/pacientes/registro",
+      "estado": 303,
+      "esperado": 303,
+      "ok": true,
+      "notas": ""
+    },
+    {
+      "fase": "HU-02A",
+      "descripcion": "Paciente 99.999.999-9 almacenado con correo NULL",
+      "metodo": "SQL",
+      "url": "paciente WHERE rut=99.999.999-9",
+      "estado": "-",
+      "esperado": "-",
+      "ok": true,
+      "notas": "[{'id': 2, 'nombre_completo': 'Paciente Nuevo', 'rut': '99.999.999-9', 'fecha_nacimiento': None, 'direccion': None, 'escolaridad': None, 'ocupacion': None, 'telefono': '+56 9 9999 9999', 'correo': None}]"
+    },
+    {
+      "fase": "HU-02A",
+      "descripcion": "Completar reserva del bloque 4",
+      "metodo": "POST",
+      "url": "http://127.0.0.1:8765/reservar/4",
+      "estado": 303,
+      "esperado": 303,
+      "ok": true,
+      "notas": ""
+    },
+    {
+      "fase": "HU-02A",
+      "descripcion": "Reserva 4 creada (paciente 2, bloque 4, pendiente)",
+      "metodo": "SQL",
+      "url": "reserva WHERE id=4",
+      "estado": "-",
+      "esperado": "-",
+      "ok": true,
+      "notas": "[{'id': 4, 'paciente_id': 2, 'bloque_horario_id': 4, 'fecha_registro': '2026-11-18T22:24:18', 'estado': 'Pendiente de confirmación'}]"
+    },
+    {
+      "fase": "HU-02A",
+      "descripcion": "Validacion de campos obligatorios (400)",
+      "metodo": "POST",
+      "url": "http://127.0.0.1:8765/pacientes/registro",
+      "estado": 400,
+      "esperado": 400,
+      "ok": true,
+      "notas": ""
+    },
+    {
+      "fase": "HU-02A",
+      "descripcion": "RUT duplicado no crea segundo paciente",
+      "metodo": "POST",
+      "url": "http://127.0.0.1:8765/pacientes/registro",
+      "estado": 303,
+      "esperado": 303,
+      "ok": true,
+      "notas": ""
+    },
+    {
+      "fase": "HU-02A",
+      "descripcion": "No se crea segundo paciente por RUT duplicado",
+      "metodo": "SQL",
+      "url": "COUNT(paciente)",
+      "estado": "-",
+      "esperado": "2",
+      "ok": true,
+      "notas": "2"
+    },
+    {
+      "fase": "HU-02A",
+      "descripcion": "Semana 24 nov queda sin bloques; proximo 08/12/2026",
+      "metodo": "GET",
+      "url": "http://127.0.0.1:8765/disponibilidad?semana=2026-11-24",
+      "estado": 200,
+      "esperado": 200,
+      "ok": true,
+      "notas": ""
+    },
+    {
+      "fase": "HU-03",
+      "descripcion": "Reserva 1 pendiente: panel visible y sin acciones de respuesta",
+      "metodo": "GET",
+      "url": "http://127.0.0.1:8765/reservas/1",
+      "estado": 200,
+      "esperado": 200,
+      "ok": true,
+      "notas": ""
+    },
+    {
+      "fase": "HU-03",
+      "descripcion": "Confirmar sin solicitud pendiente: HTTP 409",
+      "metodo": "POST",
+      "url": "http://127.0.0.1:8765/reservas/1/confirmar",
+      "estado": 409,
+      "esperado": 409,
+      "ok": true,
+      "notas": ""
+    },
+    {
+      "fase": "HU-03",
+      "descripcion": "Simular víspera en reserva 1",
+      "metodo": "POST",
+      "url": "http://127.0.0.1:8765/reservas/1/simular",
+      "estado": 303,
+      "esperado": 303,
+      "ok": true,
+      "notas": ""
+    },
+    {
+      "fase": "HU-03",
+      "descripcion": "Solicitud de víspera creada (2026-11-23, pendiente)",
+      "metodo": "SQL",
+      "url": "solicitud_confirmacion reserva 1",
+      "estado": "-",
+      "esperado": "-",
+      "ok": true,
+      "notas": "[{'id': 1, 'reserva_id': 1, 'fecha_envio': '2026-11-23', 'tipo': 'aviso de víspera', 'estado': 'pendiente', 'respuesta': None, 'fecha_respuesta': None, 'fecha_cierre': None}]"
+    },
+    {
+      "fase": "HU-03",
+      "descripcion": "Con solicitud pendiente aparecen las acciones de respuesta",
+      "metodo": "GET",
+      "url": "http://127.0.0.1:8765/reservas/1",
+      "estado": 200,
+      "esperado": 200,
+      "ok": true,
+      "notas": ""
+    },
+    {
+      "fase": "HU-03",
+      "descripcion": "Repetir víspera: HTTP 409",
+      "metodo": "POST",
+      "url": "http://127.0.0.1:8765/reservas/1/simular",
+      "estado": 409,
+      "esperado": 409,
+      "ok": true,
+      "notas": ""
+    },
+    {
+      "fase": "HU-03",
+      "descripcion": "Simular recordatorio en reserva 1",
+      "metodo": "POST",
+      "url": "http://127.0.0.1:8765/reservas/1/simular",
+      "estado": 303,
+      "esperado": 303,
+      "ok": true,
+      "notas": ""
+    },
+    {
+      "fase": "HU-03",
+      "descripcion": "Víspera reemplazada y recordatorio pendiente",
+      "metodo": "SQL",
+      "url": "solicitud_confirmacion reserva 1",
+      "estado": "-",
+      "esperado": "-",
+      "ok": true,
+      "notas": "[{'id': 1, 'reserva_id': 1, 'fecha_envio': '2026-11-23', 'tipo': 'aviso de víspera', 'estado': 'reemplazada', 'respuesta': None, 'fecha_respuesta': None, 'fecha_cierre': '2026-11-24'}, {'id': 2, 'reserva_id': 1, 'fecha_envio': '2026-11-24', 'tipo': 'recordatorio', 'estado': 'pendiente', 'respuesta': None, 'fecha_respuesta': None, 'fecha_cierre': None}]"
+    },
+    {
+      "fase": "HU-03",
+      "descripcion": "Repetir recordatorio: HTTP 409",
+      "metodo": "POST",
+      "url": "http://127.0.0.1:8765/reservas/1/simular",
+      "estado": 409,
+      "esperado": 409,
+      "ok": true,
+      "notas": ""
+    },
+    {
+      "fase": "HU-03",
+      "descripcion": "Simular hora de atencion en reserva 1",
+      "metodo": "POST",
+      "url": "http://127.0.0.1:8765/reservas/1/simular",
+      "estado": 303,
+      "esperado": 303,
+      "ok": true,
+      "notas": ""
+    },
+    {
+      "fase": "HU-03",
+      "descripcion": "Reserva 1 Sin confirmar, solicitud vencida y cargo $5.000",
+      "metodo": "SQL",
+      "url": "reserva/solicitud/cargo reserva 1",
+      "estado": "-",
+      "esperado": "-",
+      "ok": true,
+      "notas": "{\"reserva\": [{\"id\": 1, \"paciente_id\": 1, \"bloque_horario_id\": 1, \"fecha_registro\": \"2026-11-01T09:00:00\", \"estado\": \"Sin confirmar\"}], \"solicitudes\": [{\"id\": 1, \"reserva_id\": 1, \"fecha_envio\": \"2026-11-23\", \"tipo\": \"aviso de víspera\", \"estado\": \"reemplazada\", \"respuesta\": null, \"fecha_respuesta\": null, \"fecha_cierre\": \"2026-11-24\"}, {\"id\": 2, \"reserva_id\": 1, \"fecha_envio\": \"2026-11-24\", \"tipo\": \"recordatorio\", \"estado\": \"vencida\", \"respuesta\": \"sin respuesta\", \"fecha_respuesta\": null, \"fecha_cierre\": \"2026-11-24T10:00\"}], \"cargo\": [{\"id\": 1, \"paciente_id\": 1, \"reserva_id\": 1, \"monto\": 5000, \"motivo\": \"sin confirmar\", \"fecha\": \"2026-11-24\"}]}"
+    },
+    {
+      "fase": "HU-03",
+      "descripcion": "Detalle reserva 1 muestra Sin confirmar, vencida y cargo",
+      "metodo": "GET",
+      "url": "http://127.0.0.1:8765/reservas/1",
+      "estado": 200,
+      "esperado": 200,
+      "ok": true,
+      "notas": ""
+    },
+    {
+      "fase": "HU-03",
+      "descripcion": "Repetir hora no duplica el cargo: HTTP 409",
+      "metodo": "POST",
+      "url": "http://127.0.0.1:8765/reservas/1/simular",
+      "estado": 409,
+      "esperado": 409,
+      "ok": true,
+      "notas": ""
+    },
+    {
+      "fase": "HU-03",
+      "descripcion": "El cargo no se duplica",
+      "metodo": "SQL",
+      "url": "COUNT(cargo)",
+      "estado": "-",
+      "esperado": "1",
+      "ok": true,
+      "notas": "1"
+    },
+    {
+      "fase": "HU-03",
+      "descripcion": "Simular víspera en reserva 3",
+      "metodo": "POST",
+      "url": "http://127.0.0.1:8765/reservas/3/simular",
+      "estado": 303,
+      "esperado": 303,
+      "ok": true,
+      "notas": ""
+    },
+    {
+      "fase": "HU-03",
+      "descripcion": "Confirmar asistencia de reserva 3",
+      "metodo": "POST",
+      "url": "http://127.0.0.1:8765/reservas/3/confirmar",
+      "estado": 303,
+      "esperado": 303,
+      "ok": true,
+      "notas": ""
+    },
+    {
+      "fase": "HU-03",
+      "descripcion": "Reserva 3 Confirmada con solicitud respondida confirma",
+      "metodo": "SQL",
+      "url": "reserva/solicitud reserva 3",
+      "estado": "-",
+      "esperado": "-",
+      "ok": true,
+      "notas": "{\"reserva\": [{\"id\": 3, \"paciente_id\": 1, \"bloque_horario_id\": 2, \"fecha_registro\": \"2026-11-18T22:24:18\", \"estado\": \"Confirmada\"}], \"solicitud\": [{\"id\": 3, \"reserva_id\": 3, \"fecha_envio\": \"2026-11-23\", \"tipo\": \"aviso de víspera\", \"estado\": \"respondida\", \"respuesta\": \"confirma\", \"fecha_respuesta\": \"2026-11-18T22:24:18\", \"fecha_cierre\": null}]}"
+    },
+    {
+      "fase": "HU-03",
+      "descripcion": "Detalle reserva 3 muestra Confirmada",
+      "metodo": "GET",
+      "url": "http://127.0.0.1:8765/reservas/3",
+      "estado": 200,
+      "esperado": 200,
+      "ok": true,
+      "notas": ""
+    },
+    {
+      "fase": "HU-03",
+      "descripcion": "Reintentar respuesta en reserva 3: HTTP 409",
+      "metodo": "POST",
+      "url": "http://127.0.0.1:8765/reservas/3/confirmar",
+      "estado": 409,
+      "esperado": 409,
+      "ok": true,
+      "notas": ""
+    },
+    {
+      "fase": "HU-03",
+      "descripcion": "Simular víspera en reserva 4",
+      "metodo": "POST",
+      "url": "http://127.0.0.1:8765/reservas/4/simular",
+      "estado": 303,
+      "esperado": 303,
+      "ok": true,
+      "notas": ""
+    },
+    {
+      "fase": "HU-03",
+      "descripcion": "Respuesta no asistira en reserva 4",
+      "metodo": "POST",
+      "url": "http://127.0.0.1:8765/reservas/4/no-asistir",
+      "estado": 303,
+      "esperado": 303,
+      "ok": true,
+      "notas": ""
+    },
+    {
+      "fase": "HU-03",
+      "descripcion": "Reserva 4 Cancelada con respuesta no asistira",
+      "metodo": "SQL",
+      "url": "reserva/solicitud reserva 4",
+      "estado": "-",
+      "esperado": "-",
+      "ok": true,
+      "notas": "{\"reserva\": [{\"id\": 4, \"paciente_id\": 2, \"bloque_horario_id\": 4, \"fecha_registro\": \"2026-11-18T22:24:18\", \"estado\": \"Cancelada\"}], \"solicitud\": [{\"id\": 4, \"reserva_id\": 4, \"fecha_envio\": \"2026-11-25\", \"tipo\": \"aviso de víspera\", \"estado\": \"respondida\", \"respuesta\": \"no asistirá\", \"fecha_respuesta\": \"2026-11-18T22:24:18\", \"fecha_cierre\": null}]}"
+    },
+    {
+      "fase": "HU-03",
+      "descripcion": "Detalle reserva 4 muestra Cancelada",
+      "metodo": "GET",
+      "url": "http://127.0.0.1:8765/reservas/4",
+      "estado": 200,
+      "esperado": 200,
+      "ok": true,
+      "notas": ""
+    },
+    {
+      "fase": "HU-03",
+      "descripcion": "Bloque 4 vuelve a estar disponible",
+      "metodo": "GET",
+      "url": "http://127.0.0.1:8765/disponibilidad?semana=2026-11-26",
+      "estado": 200,
+      "esperado": 200,
+      "ok": true,
+      "notas": ""
+    },
+    {
+      "fase": "HU-03",
+      "descripcion": "Confirmar reserva 2 (ya Confirmada): HTTP 409",
+      "metodo": "POST",
+      "url": "http://127.0.0.1:8765/reservas/2/confirmar",
+      "estado": 409,
+      "esperado": 409,
+      "ok": true,
+      "notas": ""
+    },
+    {
+      "fase": "HU-03",
+      "descripcion": "GET reserva inexistente: 404",
+      "metodo": "GET",
+      "url": "http://127.0.0.1:8765/reservas/999",
+      "estado": 404,
+      "esperado": 404,
+      "ok": true,
+      "notas": ""
+    },
+    {
+      "fase": "HU-03",
+      "descripcion": "POST confirmar inexistente: 404",
+      "metodo": "POST",
+      "url": "http://127.0.0.1:8765/reservas/999/confirmar",
+      "estado": 404,
+      "esperado": 404,
+      "ok": true,
+      "notas": ""
+    },
+    {
+      "fase": "HU-03",
+      "descripcion": "POST no-asistir inexistente: 404",
+      "metodo": "POST",
+      "url": "http://127.0.0.1:8765/reservas/999/no-asistir",
+      "estado": 404,
+      "esperado": 404,
+      "ok": true,
+      "notas": ""
+    },
+    {
+      "fase": "HU-03",
+      "descripcion": "POST simular inexistente: 404",
+      "metodo": "POST",
+      "url": "http://127.0.0.1:8765/reservas/999/simular",
+      "estado": 404,
+      "esperado": 404,
+      "ok": true,
+      "notas": ""
+    }
+  ],
+  "estado_final": {
+    "reservas": [
+      {
+        "id": 1,
+        "paciente_id": 1,
+        "bloque_horario_id": 1,
+        "fecha_registro": "2026-11-01T09:00:00",
+        "estado": "Sin confirmar"
+      },
+      {
+        "id": 2,
+        "paciente_id": 1,
+        "bloque_horario_id": 3,
+        "fecha_registro": "2026-11-02T09:00:00",
+        "estado": "Confirmada"
+      },
+      {
+        "id": 3,
+        "paciente_id": 1,
+        "bloque_horario_id": 2,
+        "fecha_registro": "2026-11-18T22:24:18",
+        "estado": "Confirmada"
+      },
+      {
+        "id": 4,
+        "paciente_id": 2,
+        "bloque_horario_id": 4,
+        "fecha_registro": "2026-11-18T22:24:18",
+        "estado": "Cancelada"
+      }
+    ],
+    "solicitudes": [
+      {
+        "id": 1,
+        "reserva_id": 1,
+        "fecha_envio": "2026-11-23",
+        "tipo": "aviso de víspera",
+        "estado": "reemplazada",
+        "respuesta": null,
+        "fecha_respuesta": null,
+        "fecha_cierre": "2026-11-24"
+      },
+      {
+        "id": 2,
+        "reserva_id": 1,
+        "fecha_envio": "2026-11-24",
+        "tipo": "recordatorio",
+        "estado": "vencida",
+        "respuesta": "sin respuesta",
+        "fecha_respuesta": null,
+        "fecha_cierre": "2026-11-24T10:00"
+      },
+      {
+        "id": 3,
+        "reserva_id": 3,
+        "fecha_envio": "2026-11-23",
+        "tipo": "aviso de víspera",
+        "estado": "respondida",
+        "respuesta": "confirma",
+        "fecha_respuesta": "2026-11-18T22:24:18",
+        "fecha_cierre": null
+      },
+      {
+        "id": 4,
+        "reserva_id": 4,
+        "fecha_envio": "2026-11-25",
+        "tipo": "aviso de víspera",
+        "estado": "respondida",
+        "respuesta": "no asistirá",
+        "fecha_respuesta": "2026-11-18T22:24:18",
+        "fecha_cierre": null
+      }
+    ],
+    "cargos": [
+      {
+        "id": 1,
+        "paciente_id": 1,
+        "reserva_id": 1,
+        "monto": 5000,
+        "motivo": "sin confirmar",
+        "fecha": "2026-11-24"
+      }
+    ],
+    "pacientes": [
+      {
+        "id": 1,
+        "nombre_completo": "Paciente de Ejemplo",
+        "rut": "22.222.222-2",
+        "telefono": "+56 9 1111 1111",
+        "correo": "paciente@example.cl"
+      },
+      {
+        "id": 2,
+        "nombre_completo": "Paciente Nuevo",
+        "rut": "99.999.999-9",
+        "telefono": "+56 9 9999 9999",
+        "correo": null
+      }
+    ],
+    "bloques": [
+      {
+        "id": 1,
+        "psicologa_id": 1,
+        "fecha": "2026-11-24",
+        "hora_inicio": "10:00",
+        "hora_termino": "10:50",
+        "modalidad": "presencial"
+      },
+      {
+        "id": 2,
+        "psicologa_id": 1,
+        "fecha": "2026-11-24",
+        "hora_inicio": "11:00",
+        "hora_termino": "11:50",
+        "modalidad": "presencial"
+      },
+      {
+        "id": 3,
+        "psicologa_id": 1,
+        "fecha": "2026-11-26",
+        "hora_inicio": "10:00",
+        "hora_termino": "10:50",
+        "modalidad": "presencial"
+      },
+      {
+        "id": 4,
+        "psicologa_id": 1,
+        "fecha": "2026-11-26",
+        "hora_inicio": "11:00",
+        "hora_termino": "11:50",
+        "modalidad": "online"
+      },
+      {
+        "id": 5,
+        "psicologa_id": 1,
+        "fecha": "2026-12-08",
+        "hora_inicio": "10:00",
+        "hora_termino": "10:50",
+        "modalidad": "online"
+      }
+    ],
+    "integrity_check": [
+      "ok"
+    ],
+    "foreign_key_check": [],
+    "persistencia_reconexion": true,
+    "asociaciones_cargo_validas": true
+  }
+}

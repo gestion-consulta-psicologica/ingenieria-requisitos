@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Reagendar hora — Gestión de consulta psicológica</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 0; color: #1f2937; background: #f8fafc; }
+    header { background: #0f766e; color: white; padding: 1rem 1.5rem; }
+    header h1 { margin: 0; font-size: 1.25rem; }
+    main { max-width: 900px; margin: 2rem auto; padding: 0 1.5rem 3rem; }
+    section { background: white; border: 1px solid #e2e8f0; border-radius: .5rem; padding: .75rem 1rem; margin-bottom: 1rem; }
+    h3 { margin-top: 0; }
+    .error { background: #fef2f2; border: 1px solid #fca5a5; border-radius: .5rem; padding: .75rem 1rem; margin-bottom: 1rem; color: #991b1b; }
+    .aviso { background: #ecfdf5; border: 1px solid #6ee7b7; border-radius: .5rem; padding: .75rem 1rem; margin-bottom: 1rem; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { text-align: left; padding: .45rem .5rem; border-bottom: 1px solid #e2e8f0; vertical-align: top; }
+    button { font: inherit; padding: .45rem .8rem; border-radius: .375rem; border: 1px solid #0f766e; background: #0f766e; color: white; cursor: pointer; }
+    a { color: #0f766e; }
+    .detalle { color: #4b5563; font-size: .9rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Gestión de consulta psicológica</h1>
+  </header>
+
+  <main>
+    <h2>Reagendar hora</h2>
+
+    {% if error %}
+    <div class="error"><p>{{ error }}</p></div>
+    {% endif %}
+
+    <div class="aviso">
+      <p>
+        Reserva <strong>#{{ reserva.reserva_id }}</strong>:
+        {{ reserva.fecha|fecha_dia }}, de {{ reserva.hora_inicio }} a
+        {{ reserva.hora_termino }} ({{ reserva.modalidad }}).
+      </p>
+      <p>La reserva original se mantiene vigente hasta que confirmes un nuevo horario.</p>
+    </div>
+
+    <section>
+      <h3>Horarios disponibles en los próximos 14 días</h3>
+      {% if alternativas %}
+      <table>
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Hora</th>
+            <th>Modalidad</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for bloque in alternativas %}
+          <tr>
+            <td>{{ bloque.fecha|fecha_dia }}</td>
+            <td>{{ bloque.hora_inicio }} a {{ bloque.hora_termino }}</td>
+            <td>{{ bloque.modalidad }}</td>
+            <td>
+              <form method="post" action="/reservas/{{ reserva.reserva_id }}/reagendar">
+                <input type="hidden" name="bloque_id" value="{{ bloque.id }}">
+                <button type="submit">Elegir este horario</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p>No hay alternativas disponibles en los próximos 14 días. La reserva original se conserva sin cambios.</p>
+      {% endif %}
+    </section>
+
+    <p><a href="/reservas/{{ reserva.reserva_id }}">Volver al detalle de la reserva</a></p>
+  </main>
+</body>
+</html>

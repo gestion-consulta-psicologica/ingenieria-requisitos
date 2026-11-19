@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Consultar disponibilidad — Gestión de consulta psicológica</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 0; color: #1f2937; background: #f8fafc; }
+    header { background: #0f766e; color: white; padding: 1rem 1.5rem; }
+    header h1 { margin: 0 0 .5rem; font-size: 1.25rem; }
+    header label { margin-right: .5rem; }
+    main { max-width: 820px; margin: 2rem auto; padding: 0 1.5rem 3rem; }
+    form { display: flex; gap: .75rem; align-items: end; flex-wrap: wrap; margin-bottom: 1rem; }
+    label { display: block; font-weight: 600; margin-bottom: .25rem; }
+    input, select, button { font: inherit; padding: .45rem .6rem; }
+    button { background: #0f766e; color: white; border: 0; border-radius: .3rem; cursor: pointer; }
+    section { background: white; border: 1px solid #e2e8f0; border-radius: .5rem; padding: .75rem 1rem; margin-bottom: 1rem; }
+    section h3 { margin: 0 0 .5rem; text-transform: capitalize; }
+    ul { margin: 0; padding-left: 1.25rem; }
+    li { margin: .35rem 0; }
+    .aviso { background: #fff7ed; border: 1px solid #fdba74; border-radius: .5rem; padding: .75rem 1rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Gestión de consulta psicológica</h1>
+    <label for="rol">Rol de demostración:</label>
+    <select id="rol" name="rol">
+      <option value="Paciente" selected>Paciente</option>
+    </select>
+  </header>
+
+  <main>
+    <h2>Consultar disponibilidad</h2>
+    <p>Selector de demostración: no hay autenticación real.</p>
+
+    <form method="get" action="/disponibilidad">
+      <div>
+        <label for="semana">Semana que contiene la fecha:</label>
+        <input type="date" id="semana" name="semana" value="2026-11-23">
+      </div>
+      <button type="submit">Consultar</button>
+    </form>
+
+    <p>Semana del 23 de noviembre de 2026 al 29 de noviembre de 2026.</p>
+
+    
+      
+        <section>
+          <h3>martes 24 de noviembre</h3>
+          <ul>
+            
+              <li data-bloque-id="1">
+                De 10:00 a 10:50
+                (presencial) — <strong>Disponible</strong>
+                · <a href="/reservar/1">Reservar</a>
+              </li>
+            
+          </ul>
+        </section>
+      
+        <section>
+          <h3>jueves 26 de noviembre</h3>
+          <ul>
+            
+              <li data-bloque-id="4">
+                De 11:00 a 11:50
+                (online) — <strong>Disponible</strong>
+                · <a href="/reservar/4">Reservar</a>
+              </li>
+            
+          </ul>
+        </section>
+      
+    
+  </main>
+</body>
+</html>

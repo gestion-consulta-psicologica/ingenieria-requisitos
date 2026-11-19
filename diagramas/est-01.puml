@@ -11,15 +11,17 @@ state "Confirmada" as CON
 state "Sin confirmar" as SIN
 state "Cancelada" as CAN
 
-PEN : llega la víspera de la atención / enviar solicitud de confirmación
-PEN : llega la mañana de la atención [sin respuesta] / enviar recordatorio
+PEN : llega la víspera de la atención / crear solicitud pendiente, tokens y encolar correo
+PEN : llega la mañana de la atención [sin respuesta] / reemplazar solicitud anterior, cancelar su correo y encolar recordatorio
 
-[*] --> PEN : paciente reserva bloque horario\n/ ocupar bloque y enviar aviso de reserva
-PEN --> CON : paciente confirma asistencia
-PEN --> CAN : paciente informa que no asistirá\n/ liberar bloque
-PEN --> SIN : llega la hora de la atención\n[sin respuesta]\n/ registrar cargo de $5.000
+note right of PEN : Solo una SolicitudConfirmacion pendiente por reserva\nfechaRespuesta = respuesta efectiva del paciente\nfechaCierre = reemplazo o vencimiento\nEl correo se envía por SMTP con enlaces de un solo uso.
+
+[*] --> PEN : paciente reserva bloque horario\n/ ocupar bloque y encolar aviso de reserva
+PEN --> CON : paciente confirma asistencia\n[solicitud pendiente más reciente; token válido si viene del correo]\n/ consumir token, registrar respuesta y fechaRespuesta\n/ marcar solicitud como respondida
+PEN --> CAN : paciente informa que no asistirá\n[solicitud pendiente más reciente; token válido si viene del correo]\n/ consumir token, registrar respuesta y fechaRespuesta\n/ marcar solicitud como respondida\n/ liberar bloque
+PEN --> SIN : llega la hora de la atención\n[sin respuesta y solicitud pendiente]\n/ marcar solicitud como vencida con respuesta "sin respuesta"\n/ fechaRespuesta = nula; fechaCierre = fecha y hora de atención\n/ registrar cargo de $5.000 y encolar su aviso
 CON --> CAN : paciente cancela la hora\n/ liberar bloque
-CON -up-> PEN : paciente reagenda\n[nuevo bloque disponible]\n/ liberar bloque anterior\ny ocupar nuevo bloque
+CON -up-> PEN : paciente reagenda\n[nuevo bloque disponible]\n/ liberar bloque anterior, ocupar nuevo bloque\n/ registrar historial e iniciar nuevo ciclo de confirmación
 CON --> [*] : llega la hora de la atención\n/ originar atención
 CAN --> [*]
 SIN --> [*]

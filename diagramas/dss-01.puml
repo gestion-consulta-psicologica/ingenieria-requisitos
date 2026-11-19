@@ -1,5 +1,6 @@
 @startuml dss-01
 ' DSS-01 — Confirmar asistencia (CU-03 / HU-03)
+' Envío real por SMTP con cola persistente y tokens de un solo uso.
 skinparam shadowing false
 skinparam sequenceMessageAlign center
 hide footbox
@@ -7,26 +8,46 @@ title DSS-01 — Confirmar asistencia
 
 actor "Paciente" as PAC
 participant ":Sistema de gestión\nde consulta" as SIS
-participant ":Servicio de mensajería\n<<sistema externo>>" as MSJ
+participant ":Cola de correos\n(correo_pendiente)" as COLA
+participant ":Servicio SMTP\n<<sistema externo>>" as SMTP
 
-note over SIS : Reserva en estado\n"pendiente de confirmación"
+note over SIS : Reserva en estado\n"pendiente de confirmación"\nSolo la solicitud pendiente más reciente\nadmite respuesta; si no existe, HTTP 409
 
-SIS -> MSJ : enviar solicitud de confirmación (aviso de víspera)
-MSJ -> PAC : solicitud de confirmación de la hora
+SIS -> SIS : registrar SolicitudConfirmacion\n(tipo = aviso de víspera,\nestado = pendiente)
+SIS -> SIS : crear tokens de un solo uso\n(confirmar / cancelar;\nsolo se guarda el hash)
+SIS -> COLA : encolar correo de solicitud\n(clave idempotente = solicitud:{id})
+COLA -> SMTP : enviar correo de solicitud
+SMTP --> PAC : solicitud de confirmación\ncon enlaces seguros
+note over COLA,SMTP : si SMTP falla, se reprograma el intento\ncon espera exponencial; nunca se marca\n"enviado" sin aceptación del servidor
 
 alt el paciente confirma su asistencia
-  PAC -> SIS : confirmar asistencia
+  PAC -> SIS : confirmar asistencia\n(plataforma o enlace del correo)
+  SIS -> SIS : validar y consumir el token\n(usadoEn)
+  SIS -> SIS : registrar respuesta\n(estado = respondida,\nrespuesta = confirma,\nfechaRespuesta)
   SIS --> PAC : reserva confirmada
 else el paciente responde que no asistirá
-  PAC -> SIS : informar que no asistirá
+  PAC -> SIS : informar que no asistirá\n(plataforma o enlace del correo)
+  SIS -> SIS : validar y consumir el token\n(usadoEn)
+  SIS -> SIS : registrar respuesta\n(estado = respondida,\nrespuesta = no asistirá,\nfechaRespuesta)
+  SIS -> SIS : cancelar reserva y liberar bloque
   SIS --> PAC : reserva cancelada y bloque horario liberado
 else el paciente no responde
-  SIS -> MSJ : enviar recordatorio (mañana de la atención)
-  MSJ -> PAC : recordatorio de confirmación
+  SIS -> SIS : reemplazar solicitud pendiente\n(estado = reemplazada,\nfechaCierre = fecha de envío)
+  SIS -> COLA : cancelar correo pendiente\nde la solicitud anterior
+  SIS -> SIS : registrar SolicitudConfirmacion\n(tipo = recordatorio,\nestado = pendiente)
+  SIS -> SIS : crear nuevos tokens\nde un solo uso
+  SIS -> COLA : encolar recordatorio
+  COLA -> SMTP : enviar recordatorio
+  SMTP --> PAC : recordatorio de confirmación\ncon enlaces seguros
   opt el paciente no responde hasta la hora de la atención
-    note over SIS : la reserva queda "sin confirmar"\ny se registra un cargo de $5.000
-    SIS -> MSJ : enviar aviso de cargo por reserva de hora
-    MSJ -> PAC : aviso de cargo por reserva de hora
+    SIS -> SIS : cerrar solicitud\n(estado = vencida,\nrespuesta = sin respuesta,\nfechaRespuesta = nula,\nfechaCierre = fecha y hora de atención)
+    SIS -> SIS : registrar Cargo\n(monto = $5.000,\nmotivo = sin confirmar,\npaciente y reserva)
+    note over SIS : la reserva queda "sin confirmar"
+    SIS -> COLA : encolar aviso de cargo
+    COLA -> SMTP : enviar aviso de cargo
+    SMTP --> PAC : aviso de cargo por reserva de hora
   end
 end
+
+note over PAC,SIS : Token inexistente: HTTP 404.\nToken usado, vencido o de otra acción: HTTP 409.\nEn error no se modifica la reserva ni la solicitud.
 @enduml

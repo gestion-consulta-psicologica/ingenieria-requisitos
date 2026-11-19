@@ -48,7 +48,10 @@ class Reserva {
 class SolicitudConfirmacion {
   fechaEnvio : FechaHora
   tipo : TipoSolicitud
+  estado : EstadoSolicitudConfirmacion
   respuesta : RespuestaConfirmacion
+  fechaRespuesta : FechaHora
+  fechaCierre : FechaHora
 }
 
 class Atencion {

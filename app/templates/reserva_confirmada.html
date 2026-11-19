@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Detalle de la reserva — Gestión de consulta psicológica</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 0; color: #1f2937; background: #f8fafc; }
+    header { background: #0f766e; color: white; padding: 1rem 1.5rem; }
+    header h1 { margin: 0 0 .5rem; font-size: 1.25rem; }
+    main { max-width: 900px; margin: 2rem auto; padding: 0 1.5rem 3rem; }
+    section { background: white; border: 1px solid #e2e8f0; border-radius: .5rem; padding: .75rem 1rem; margin-bottom: 1rem; }
+    h3 { margin-top: 0; }
+    .aviso { background: #ecfdf5; border: 1px solid #6ee7b7; border-radius: .5rem; padding: .75rem 1rem; margin-bottom: 1rem; }
+    .error { background: #fef2f2; border: 1px solid #fca5a5; border-radius: .5rem; padding: .75rem 1rem; margin-bottom: 1rem; color: #991b1b; }
+    .advertencia { background: #fffbeb; border: 1px solid #f59e0b; border-radius: .5rem; padding: .75rem 1rem; margin-bottom: 1rem; color: #92400e; }
+    .acciones form { display: inline-block; margin: 0 .5rem .5rem 0; }
+    button { font: inherit; padding: .45rem .8rem; border-radius: .375rem; border: 1px solid #0f766e; background: #0f766e; color: white; cursor: pointer; }
+    button.secundario { background: white; color: #0f766e; }
+    table { border-collapse: collapse; width: 100%; margin-bottom: .5rem; }
+    th, td { text-align: left; padding: .35rem .5rem; border-bottom: 1px solid #e2e8f0; vertical-align: top; }
+    .estado-enviado { color: #047857; font-weight: 600; }
+    .estado-fallido { color: #b91c1c; font-weight: 600; }
+    .estado-pendiente { color: #b45309; font-weight: 600; }
+    .estado-omitido, .estado-cancelado { color: #6b7280; font-weight: 600; }
+    .detalle { color: #4b5563; font-size: .9rem; }
+    a { color: #0f766e; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Gestión de consulta psicológica</h1>
+  </header>
+
+  <main>
+    <h2>Detalle de la reserva</h2>
+
+    {% if not reserva %}
+    <div class="error">
+      <p>{{ error }}</p>
+    </div>
+    <p><a href="/disponibilidad">Volver a la disponibilidad</a></p>
+    {% else %}
+
+    {% if error %}
+    <div class="error">
+      <p>{{ error }}</p>
+    </div>
+    {% endif %}
+
+    {% if not correo_configurado %}
+    <div class="advertencia">
+      <p><strong>Servicio de correo no configurado.</strong> {{ correo_motivo }}</p>
+      <p>Los correos quedan registrados en la cola como pendientes con error; no se marca ningún envío como exitoso.</p>
+    </div>
+    {% endif %}
+
+    <div class="aviso">
+      <p>
+        La reserva quedó en estado
+        <strong>{{ reserva.estado }}</strong>.
+      </p>
+      {% if reserva.estado == "Pendiente de confirmación" %}
+      <p>Se registró el aviso de reserva registrada para enviarlo al paciente por correo electrónico.</p>
+      {% elif reserva.estado == "Confirmada" %}
+      <p>La asistencia quedó confirmada.</p>
+      {% elif reserva.estado == "Cancelada" %}
+      <p>La reserva fue cancelada y el bloque horario quedó disponible.</p>
+      {% elif reserva.estado == "Sin confirmar" %}
+      <p>La reserva quedó sin confirmar y se registró el cargo por reserva de hora.</p>
+      {% endif %}
+    </div>
+
+    <section>
+      <p><strong>Paciente:</strong> {{ reserva.paciente_nombre }} ({{ reserva.paciente_rut }})</p>
+      <p><strong>Correo del paciente:</strong> {{ reserva.paciente_correo or "No registrado" }}</p>
+      <p>
+        <strong>Bloque:</strong>
+        {{ reserva.fecha|fecha_dia }},
+        de {{ reserva.hora_inicio }} a {{ reserva.hora_termino }}
+        ({{ reserva.modalidad }}).
+      </p>
+      <p><strong>Número de reserva:</strong> {{ reserva.reserva_id }}</p>
+      <p><strong>Ciclo de confirmación:</strong> {{ reserva.version }}</p>
+      <p><strong>Fecha de registro:</strong> {{ reserva.fecha_registro }}</p>
+      <p><strong>Solicitud de confirmación programada:</strong> {{ vispera_programada }}</p>
+      <p><strong>Recordatorio programado:</strong> {{ recordatorio_programado }}</p>
+      <p><strong>Vencimiento sin respuesta:</strong> {{ atencion_programada }}</p>
+    </section>
+
+    {% if puede_responder %}
+    <section class="acciones">
+      <h3>Responder la confirmación</h3>
+      <p class="detalle">
+        También puedes responder desde los enlaces seguros enviados por correo.
+      </p>
+      <form method="post" action="/reservas/{{ reserva.reserva_id }}/confirmar">
+        <button type="submit">Confirmar asistencia</button>
+      </form>
+      <form method="post" action="/reservas/{{ reserva.reserva_id }}/no-asistir">
+        <button type="submit" class="secundario">No asistiré</button>
+      </form>
+    </section>
+    {% endif %}
+
+    {% if puede_gestionar %}
+    <section class="acciones">
+      <h3>Gestión de la reserva</h3>
+      <p class="detalle">
+        Puedes cambiar la hora por otra disponible o cancelar la reserva.
+        La cancelación es inmediata y libera el bloque.
+      </p>
+      <a href="/reservas/{{ reserva.reserva_id }}/reagendar">
+        <button type="button" class="secundario">Reagendar hora</button>
+      </a>
+      <form method="post" action="/reservas/{{ reserva.reserva_id }}/cancelar">
+        <button type="submit" class="secundario">Cancelar reserva</button>
+      </form>
+    </section>
+    {% endif %}
+
+    {% if historial %}
+    <section>
+      <h3>Historial de cambios</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Cambio</th>
+            <th>Estado</th>
+            <th>Horario anterior</th>
+            <th>Horario nuevo</th>
+            <th>Ciclo</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for cambio in historial %}
+          <tr>
+            <td>{{ cambio.fecha }}</td>
+            <td>
+              {% if cambio.tipo == "cancelacion" %}Cancelación
+              {% elif cambio.tipo == "reagendamiento" %}Reagendamiento
+              {% else %}{{ cambio.tipo }}{% endif %}
+            </td>
+            <td>{{ cambio.estado_anterior }} → {{ cambio.estado_nuevo }}</td>
+            <td>
+              {% if cambio.anterior_fecha %}
+                {{ cambio.anterior_fecha|fecha_dia }},
+                {{ cambio.anterior_hora_inicio }} a {{ cambio.anterior_hora_termino }}
+              {% else %}—{% endif %}
+            </td>
+            <td>
+              {% if cambio.nuevo_fecha %}
+                {{ cambio.nuevo_fecha|fecha_dia }},
+                {{ cambio.nuevo_hora_inicio }} a {{ cambio.nuevo_hora_termino }}
+              {% else %}—{% endif %}
+            </td>
+            <td>{{ cambio.version_anterior }} → {{ cambio.version_nueva }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </section>
+    {% endif %}
+
+    <section>
+      <h3>Estado de las notificaciones por correo</h3>
+      {% if correos_reserva %}
+      <table>
+        <thead>
+          <tr>
+            <th>Tipo</th>
+            <th>Destinatario</th>
+            <th>Estado del envío</th>
+            <th>Fecha de envío</th>
+            <th>Intentos</th>
+            <th>Error</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for correo in correos_reserva %}
+          <tr>
+            <td>
+              {% if correo.tipo == "aviso_reserva" %}
+                {% if correo.clave_idempotencia.startswith("aviso_reagendamiento:") %}
+                  Aviso de reserva reagendada
+                {% else %}
+                  Aviso de reserva
+                {% endif %}
+              {% elif correo.tipo == "aviso_cargo" %}Aviso de cargo
+              {% else %}{{ correo.tipo }}{% endif %}
+            </td>
+            <td>{{ correo.destinatario or "Sin correo registrado" }}</td>
+            <td class="estado-{{ correo.estado }}">
+              {% if correo.estado == "enviado" %}Enviado
+              {% elif correo.estado == "pendiente" %}Pendiente de envío
+              {% elif correo.estado == "enviando" %}Enviando
+              {% elif correo.estado == "fallido" %}Fallido
+              {% elif correo.estado == "omitido" %}Omitido
+              {% elif correo.estado == "cancelado" %}Cancelado
+              {% else %}{{ correo.estado }}{% endif %}
+            </td>
+            <td>{{ correo.enviado_en|fecha_hora_local }}</td>
+            <td>{{ correo.intentos }} / {{ correo.max_intentos }}</td>
+            <td class="detalle">{{ correo.ultimo_error or "—" }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p>No hay correos registrados para esta reserva.</p>
+      {% endif %}
+    </section>
+
+    {% if solicitudes %}
+    <section>
+      <h3>Solicitudes de confirmación</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Ciclo</th>
+            <th>Tipo</th>
+            <th>Fecha de envío</th>
+            <th>Estado</th>
+            <th>Respuesta</th>
+            <th>Fecha de respuesta</th>
+            <th>Fecha de cierre</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for solicitud in solicitudes %}
+          <tr>
+            <td>{{ solicitud.version }}</td>
+            <td>{{ solicitud.tipo }}</td>
+            <td>{{ solicitud.fecha_envio }}</td>
+            <td>{{ solicitud.estado }}</td>
+            <td>
+              {% if solicitud.respuesta %}
+              {{ solicitud.respuesta }}
+              {% elif solicitud.estado == "pendiente" %}
+              Sin respuesta aún
+              {% else %}
+              —
+              {% endif %}
+            </td>
+            <td>{{ solicitud.fecha_respuesta or "—" }}</td>
+            <td>{{ solicitud.fecha_cierre or "—" }}</td>
+          </tr>
+          <tr>
+            <td colspan="7" class="detalle">
+              <strong>Correo:</strong>
+              {% if solicitud.correos %}
+                {% for correo in solicitud.correos %}
+                  {{ correo.destinatario or "Sin correo registrado" }} ·
+                  {{ correo.estado }} ·
+                  enviado {{ correo.enviado_en|fecha_hora_local }}
+                  {% if correo.ultimo_error %} · {{ correo.ultimo_error }}{% endif %}
+                  {% if not loop.last %}<br>{% endif %}
+                {% endfor %}
+              {% else %}
+                Sin correo asociado.
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </section>
+    {% endif %}
+
+    {% if cargo %}
+    <section>
+      <h3>Cargo registrado</h3>
+      <p><strong>Monto:</strong> ${{ cargo_monto }}</p>
+      <p><strong>Motivo:</strong> {{ cargo.motivo }}</p>
+      <p><strong>Fecha:</strong> {{ cargo.fecha }}</p>
+    </section>
+    {% endif %}
+
+    <section>
+      <h3>Estado del servicio de correo</h3>
+      <p>
+        <strong>SMTP:</strong>
+        {% if correo_configurado %}configurado{% else %}no configurado{% endif %}
+      </p>
+      {% if correo_motivo %}<p class="detalle">{{ correo_motivo }}</p>{% endif %}
+      <p class="detalle">
+        Planificador automático:
+        {{ estado_planificador(request.app.state.planificador) }}.
+        Zona horaria: {{ zona_horaria }}.
+      </p>
+    </section>
+
+    <p><a href="/disponibilidad">Volver a la disponibilidad</a></p>
+    {% endif %}
+  </main>
+</body>
+</html>

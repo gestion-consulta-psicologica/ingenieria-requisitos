@@ -1,4 +1,4 @@
-@startuml casos-de-uso
+﻿@startuml casos-de-uso
 ' Diagrama de casos de uso — UML 2.0
 left to right direction
 skinparam shadowing false
@@ -14,7 +14,7 @@ title Casos de uso — Gestión de consulta psicológica
 
 actor "Paciente" as PAC
 actor "Psicóloga" as PSI
-actor "Servicio de mensajería\n<<sistema externo>>" as MSJ
+actor "Servicio de correo (SMTP)\n<<sistema externo>>" as MSJ
 actor "SII\n<<sistema externo>>" as SII
 
 rectangle "Sistema de gestión de consulta psicológica" {
@@ -28,6 +28,7 @@ rectangle "Sistema de gestión de consulta psicológica" {
   usecase "CU-08\nEmitir boleta" as CU08
   usecase "CU-09\nRegistrar asistencia" as CU09
   usecase "CU-10\nActualizar ficha clínica" as CU10
+  usecase "CU-11\nRegistrar datos del paciente" as CU11
 }
 
 PAC --> CU01
@@ -35,6 +36,7 @@ PAC --> CU02
 PAC --> CU03
 PAC --> CU04
 PAC --> CU05
+PAC --> CU11
 
 PSI --> CU06
 PSI --> CU07
@@ -45,6 +47,7 @@ PSI --> CU10
 CU02 ..> CU01 : <<include>>
 CU05 ..> CU01 : <<include>>
 CU04 ..> CU03 : <<extend>>\n(paciente no asistirá)
+CU11 ..> CU02 : <<extend>>\n(RUT no registrado)
 
 CU02 --> MSJ
 CU03 --> MSJ

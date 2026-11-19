@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Reservar una hora — Gestión de consulta psicológica</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 0; color: #1f2937; background: #f8fafc; }
+    header { background: #0f766e; color: white; padding: 1rem 1.5rem; }
+    header h1 { margin: 0 0 .5rem; font-size: 1.25rem; }
+    header label { margin-right: .5rem; }
+    main { max-width: 820px; margin: 2rem auto; padding: 0 1.5rem 3rem; }
+    form { background: white; border: 1px solid #e2e8f0; border-radius: .5rem; padding: 1rem; margin-bottom: 1rem; }
+    label { display: block; font-weight: 600; margin-bottom: .25rem; }
+    input, button { font: inherit; padding: .45rem .6rem; }
+    button { background: #0f766e; color: white; border: 0; border-radius: .3rem; cursor: pointer; }
+    .aviso { background: #fff7ed; border: 1px solid #fdba74; border-radius: .5rem; padding: .75rem 1rem; margin-bottom: 1rem; }
+    .bloque { background: white; border: 1px solid #e2e8f0; border-radius: .5rem; padding: .75rem 1rem; margin-bottom: 1rem; }
+    ul { margin: .5rem 0 0; padding-left: 1.25rem; }
+    li { margin: .35rem 0; }
+    a { color: #0f766e; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Gestión de consulta psicológica</h1>
+    <label for="rol">Rol de demostración:</label>
+    <select id="rol" name="rol">
+      <option value="Paciente" selected>Paciente</option>
+    </select>
+  </header>
+
+  <main>
+    <h2>Reservar una hora</h2>
+    <p>Selector de demostración: no hay autenticación real.</p>
+
+    <div class="bloque">
+      <p>
+        Bloque seleccionado:
+        <strong>{{ bloque.fecha|fecha_dia }}</strong>,
+        de {{ bloque.hora_inicio }} a {{ bloque.hora_termino }}
+        ({{ bloque.modalidad }}).
+      </p>
+    </div>
+
+    {% if error %}
+      <div class="aviso">
+        <p><strong>{{ error }}</strong></p>
+        {% if cercanos %}
+          <p>Bloques horarios disponibles más cercanos:</p>
+          <ul>
+            {% for cercano in cercanos %}
+              <li>
+                {{ cercano.fecha|fecha_dia }},
+                de {{ cercano.hora_inicio }} a {{ cercano.hora_termino }}
+                ({{ cercano.modalidad }})
+                · <a href="/reservar/{{ cercano.id }}">Reservar este bloque</a>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p>No hay otros bloques horarios disponibles cercanos.</p>
+        {% endif %}
+      </div>
+    {% endif %}
+
+    <form method="post" action="/reservar/{{ bloque.id }}">
+      <div>
+        <label for="rut">RUT del paciente:</label>
+        <input
+          type="text"
+          id="rut"
+          name="rut"
+          value="{{ rut }}"
+          placeholder="22.222.222-2"
+          required
+        >
+      </div>
+      <p>
+        <button type="submit">Confirmar reserva</button>
+        <a href="/disponibilidad">Volver a la disponibilidad</a>
+      </p>
+    </form>
+  </main>
+</body>
+</html>

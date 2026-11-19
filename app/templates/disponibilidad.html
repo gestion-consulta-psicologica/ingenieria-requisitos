@@ -53,6 +53,7 @@
               <li data-bloque-id="{{ bloque.id }}">
                 De {{ bloque.hora_inicio }} a {{ bloque.hora_termino }}
                 ({{ bloque.modalidad }}) — <strong>Disponible</strong>
+                · <a href="/reservar/{{ bloque.id }}">Reservar</a>
               </li>
             {% endfor %}
           </ul>

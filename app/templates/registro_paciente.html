@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Registrar datos del paciente — Gestión de consulta psicológica</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 0; color: #1f2937; background: #f8fafc; }
+    header { background: #0f766e; color: white; padding: 1rem 1.5rem; }
+    header h1 { margin: 0 0 .5rem; font-size: 1.25rem; }
+    header label { margin-right: .5rem; }
+    main { max-width: 720px; margin: 2rem auto; padding: 0 1.5rem 3rem; }
+    form { background: white; border: 1px solid #e2e8f0; border-radius: .5rem; padding: 1rem; }
+    label { display: block; font-weight: 600; margin-bottom: .25rem; }
+    input, button { font: inherit; padding: .45rem .6rem; }
+    input { width: 100%; box-sizing: border-box; }
+    button { background: #0f766e; color: white; border: 0; border-radius: .3rem; cursor: pointer; }
+    .campo { margin-bottom: .9rem; }
+    .ayuda { color: #475569; font-size: .9rem; margin-top: .2rem; }
+    .aviso { background: #fff7ed; border: 1px solid #fdba74; border-radius: .5rem; padding: .75rem 1rem; margin-bottom: 1rem; }
+    .pendiente { background: #ecfdf5; border: 1px solid #6ee7b7; border-radius: .5rem; padding: .75rem 1rem; margin-bottom: 1rem; }
+    a { color: #0f766e; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Gestión de consulta psicológica</h1>
+    <label for="rol">Rol de demostración:</label>
+    <select id="rol" name="rol">
+      <option value="Paciente" selected>Paciente</option>
+    </select>
+  </header>
+
+  <main>
+    <h2>Registrar datos del paciente</h2>
+
+    {% if bloque_id %}
+      <div class="pendiente">
+        <p>
+          Al guardar tus datos, volverás a la reserva del bloque horario
+          seleccionado para confirmarla.
+        </p>
+      </div>
+    {% endif %}
+
+    {% if error %}
+      <div class="aviso">
+        <p><strong>{{ error }}</strong></p>
+      </div>
+    {% endif %}
+
+    <form method="post" action="/pacientes/registro">
+      <input type="hidden" name="bloque_id" value="{{ bloque_id or '' }}">
+
+      <div class="campo">
+        <label for="nombre_completo">Nombre completo:</label>
+        <input
+          type="text"
+          id="nombre_completo"
+          name="nombre_completo"
+          value="{{ nombre_completo }}"
+          required
+        >
+      </div>
+
+      <div class="campo">
+        <label for="rut">RUT:</label>
+        <input
+          type="text"
+          id="rut"
+          name="rut"
+          value="{{ rut }}"
+          placeholder="22.222.222-2"
+          required
+        >
+      </div>
+
+      <div class="campo">
+        <label for="telefono">Teléfono:</label>
+        <input
+          type="tel"
+          id="telefono"
+          name="telefono"
+          value="{{ telefono }}"
+          placeholder="+56 9 1234 5678"
+        >
+      </div>
+
+      <div class="campo">
+        <label for="correo">Correo:</label>
+        <input
+          type="email"
+          id="correo"
+          name="correo"
+          value="{{ correo }}"
+          placeholder="paciente@example.cl"
+        >
+        <p class="ayuda">Ingresa al menos un medio de contacto: teléfono o correo.</p>
+      </div>
+
+      <p>
+        <button type="submit">Guardar datos</button>
+        <a href="/disponibilidad">Volver a la disponibilidad</a>
+      </p>
+    </form>
+  </main>
+</body>
+</html>

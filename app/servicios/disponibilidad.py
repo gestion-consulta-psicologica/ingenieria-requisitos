@@ -42,6 +42,17 @@ def obtener_disponibilidad_semana(
     return [dict(fila) for fila in filas]
 
 
+def obtener_bloques_cercanos(
+    conexion: sqlite3.Connection, fecha_referencia: date, limite: int = 3
+) -> list[dict]:
+    filas = conexion.execute(
+        _consulta_bloques_libres("b.fecha >= ?")
+        + " ORDER BY b.fecha, b.hora_inicio LIMIT ?",
+        (fecha_referencia.isoformat(), *ESTADOS_VIGENTES, limite),
+    ).fetchall()
+    return [dict(fila) for fila in filas]
+
+
 def obtener_proximo_bloque(
     conexion: sqlite3.Connection, fecha_semana: date
 ) -> date | None:
