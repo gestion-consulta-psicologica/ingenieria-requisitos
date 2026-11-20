@@ -21,12 +21,13 @@ Archivo fuente: [`./diagramas/casos-de-uso.puml`](./diagramas/casos-de-uso.puml)
 | CU-03 | Confirmar asistencia (plataforma o enlace seguro del correo) | Paciente | [HU-03](./04-historias-usuario.md#hu-03--confirmar-o-cancelar-una-hora) |
 | CU-04 | Cancelar hora | Paciente | [HU-04](./04-historias-usuario.md#hu-04--reagendar-o-cancelar-una-hora) |
 | CU-05 | Reagendar hora | Paciente | [HU-04](./04-historias-usuario.md#hu-04--reagendar-o-cancelar-una-hora) |
-| CU-06 | Comprobar pago | Psicóloga | [HU-05](./04-historias-usuario.md#hu-06--comprobar-el-pago) |
-| CU-07 | Registrar estado de pago | Psicóloga | [HU-06](./04-historias-usuario.md#hu-07--registrar-el-estado-de-pago) |
-| CU-08 | Emitir boleta | Psicóloga | [HU-07](./04-historias-usuario.md#hu-08--emitir-boleta) |
-| CU-09 | Registrar asistencia | Psicóloga | [HU-08](./04-historias-usuario.md#hu-09--registrar-asistencia-e-inasistencia) |
-| CU-10 | Actualizar ficha clínica | Psicóloga | [HU-09](./04-historias-usuario.md#hu-10--actualizar-ficha-clínica) |
+| CU-06 | Comprobar pago | Psicóloga | [HU-05](./04-historias-usuario.md#hu-05--comprobar-el-pago) |
+| CU-07 | Registrar estado de pago | Psicóloga | [HU-06](./04-historias-usuario.md#hu-06--registrar-el-estado-de-pago) |
+| CU-08 | Emitir boleta | Psicóloga | [HU-07](./04-historias-usuario.md#hu-07--emitir-boleta) |
+| CU-09 | Registrar asistencia | Psicóloga | [HU-08](./04-historias-usuario.md#hu-08--registrar-asistencia-e-inasistencia) |
+| CU-10 | Actualizar ficha clínica | Psicóloga | [HU-09](./04-historias-usuario.md#hu-09--actualizar-ficha-clínica) |
 | CU-11 | Registrar datos del paciente | Paciente | [HU-02A](./04-historias-usuario.md#hu-02a--registrar-datos-del-paciente) |
+| CU-12 | Registrar comprobante de pago | Paciente | [HU-05A](./04-historias-usuario.md#hu-05a--registrar-la-atención-y-el-comprobante-de-pago) |
 
 ## Relaciones entre casos de uso
 | Relación | Casos de uso | Justificación |

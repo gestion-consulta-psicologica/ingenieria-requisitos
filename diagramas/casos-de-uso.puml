@@ -29,6 +29,7 @@ rectangle "Sistema de gestión de consulta psicológica" {
   usecase "CU-09\nRegistrar asistencia" as CU09
   usecase "CU-10\nActualizar ficha clínica" as CU10
   usecase "CU-11\nRegistrar datos del paciente" as CU11
+  usecase "CU-12\nRegistrar comprobante de pago" as CU12
 }
 
 PAC --> CU01
@@ -37,6 +38,7 @@ PAC --> CU03
 PAC --> CU04
 PAC --> CU05
 PAC --> CU11
+PAC --> CU12
 
 PSI --> CU06
 PSI --> CU07

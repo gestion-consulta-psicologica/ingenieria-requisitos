@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Comprobar pago — Gestión de consulta psicológica</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 0; color: #1f2937; background: #f8fafc; }
+    header { background: #0f766e; color: white; padding: 1rem 1.5rem; }
+    header h1 { margin: 0 0 .5rem; font-size: 1.25rem; }
+    main { max-width: 980px; margin: 2rem auto; padding: 0 1.5rem 3rem; }
+    .rol { color: #d1fae5; font-size: .9rem; }
+    section { background: white; border: 1px solid #e2e8f0; border-radius: .5rem; padding: .75rem 1rem; margin-bottom: 1rem; }
+    h3 { margin-top: 0; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { text-align: left; padding: .4rem .5rem; border-bottom: 1px solid #e2e8f0; vertical-align: top; }
+    th { color: #374151; font-size: .9rem; }
+    .aviso { background: #eff6ff; border: 1px solid #93c5fd; border-radius: .5rem; padding: .75rem 1rem; }
+    .vacio { background: #f9fafb; border: 1px solid #d1d5db; border-radius: .5rem; padding: .75rem 1rem; }
+    a { color: #0f766e; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Gestión de consulta psicológica</h1>
+    <p class="rol">Rol de demostración: Psicóloga · Sin autenticación real.</p>
+  </header>
+
+  <main>
+    <h2>Comprobar pago</h2>
+    <p class="aviso">
+      Atenciones con pago pendiente. La comprobación no modifica el estado del pago;
+      el registro corresponde a la siguiente actividad.
+    </p>
+
+    {% if atenciones %}
+    <section>
+      <table>
+        <thead>
+          <tr>
+            <th>Paciente</th>
+            <th>RUT</th>
+            <th>Atención</th>
+            <th>Tipo</th>
+            <th>Monto de la atención</th>
+            <th>Monto pagado</th>
+            <th>Estado del pago</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in atenciones %}
+          <tr>
+            <td>{{ item.paciente.nombre_completo }}</td>
+            <td>{{ item.paciente.rut }}</td>
+            <td>
+              {{ item.bloque.fecha|fecha_dia }},
+              {{ item.bloque.hora_inicio }} a {{ item.bloque.hora_termino }}
+            </td>
+            <td>{{ item.atencion.tipo_atencion }}</td>
+            <td>{{ item.pago.monto_atencion|clp }}</td>
+            <td>{{ item.pago.monto_pagado|clp }}</td>
+            <td>{{ item.pago.estado }}</td>
+            <td><a href="/pagos/{{ item.atencion.id }}">Comprobar pago</a></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </section>
+    {% else %}
+    <div class="vacio">
+      <p>No hay atenciones con pago pendiente.</p>
+    </div>
+    {% endif %}
+  </main>
+</body>
+</html>

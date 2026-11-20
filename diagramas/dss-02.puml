@@ -1,5 +1,5 @@
 @startuml dss-02
-' DSS-02 — Emitir boleta (CU-08 / HU-08)
+' DSS-02 — Emitir boleta (CU-08 / HU-07)
 skinparam shadowing false
 skinparam sequenceMessageAlign center
 hide footbox

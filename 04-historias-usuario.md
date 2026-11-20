@@ -116,6 +116,28 @@ Como psicóloga, quiero consultar la información del pago asociada a una atenci
 
 - **CA3 — Resultado de la comprobación:** Dado que la psicóloga ha revisado la información y los antecedentes disponibles, cuando realiza la comprobación del pago, entonces la plataforma le permite continuar con la actividad de registro del estado del pago, sin determinar automáticamente el resultado de la comprobación.
 
+- **CA4 — Listado de atenciones con pago pendiente:** Dado que una atención no tiene comprobante de pago registrado, cuando la psicóloga revisa el listado de atenciones, entonces la atención aparece en el listado de atenciones con pago pendiente.
+
+## HU-05A — Registrar la atención y el comprobante de pago
+
+Como paciente, quiero contar con la atención registrada y registrar el comprobante de mi transferencia en la plataforma, para que la psicóloga pueda comprobar el pago de mi atención.
+
+**Actividad TO-BE asociada:** Realizar pago (tarea de usuario; el comprobante se registra en la plataforma en lugar de enviarse por WhatsApp) y comprobar pago con apoyo del sistema (el antecedente queda disponible para la psicóloga). La atención y su pago se originan según la regla de EST-01.
+
+**Historia derivada:** se agregó durante la validación de HU-05 (2026-11-19) para cubrir la creación automática de la atención y el registro del comprobante de transferencia, que HU-05 deja fuera de su alcance.
+
+**Criterios de aceptación:**
+
+- **CA1 — Origen automático de la atención:** Dado que una reserva confirmada llega a la hora de la atención, cuando el sistema procesa el bloque horario, entonces origina una atención en estado «programada» y un pago en estado «pendiente» con el monto registrado para la atención.
+
+- **CA2 — Registro del comprobante:** Dado que el paciente tiene una atención registrada, cuando ingresa el monto, la fecha de la transferencia y la cuenta de destino y guarda, entonces el sistema registra el comprobante asociado al pago de esa atención.
+
+- **CA3 — Datos obligatorios del comprobante:** Dado que el paciente está registrando un comprobante, cuando intenta guardar sin monto, fecha de transferencia o cuenta de destino, entonces el sistema no registra el comprobante y le informa qué dato falta.
+
+- **CA4 — Varios comprobantes:** Dado que la atención ya tiene un comprobante registrado, cuando el paciente registra otro comprobante para la misma atención, entonces el sistema conserva el comprobante anterior y asocia el nuevo al mismo pago.
+
+- **CA5 — Comprobante disponible para la comprobación:** Dado que el comprobante se registró correctamente, cuando la psicóloga consulta el pago de la atención en HU-05, entonces el comprobante aparece como antecedente disponible.
+
 ## HU-06 — Registrar el estado de pago
 
 Como psicóloga, quiero registrar el estado de pago de una atención en la plataforma, para mantener actualizada la información administrativa del paciente.

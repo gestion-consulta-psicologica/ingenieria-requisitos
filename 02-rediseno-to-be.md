@@ -71,6 +71,7 @@ Archivo fuente: [`./diagramas/TO-BE.bpmn`](./diagramas/TO-BE.bpmn)
 | Informar nuevos horarios disponibles | Mostrar nuevas alternativas disponibles | El sistema presenta automáticamente nuevas alternativas disponibles para reagendar una atención. |
 | Seleccionar horario | Seleccionar nuevo horario disponible | El paciente selecciona directamente una nueva alternativa de horario dentro de la plataforma. |
 | Registrar nueva hora en Excel | Actualizar reserva automáticamente | El cambio de horario deja de registrarse manualmente en Excel y la reserva se actualiza automáticamente. |
+| Realizar pago | Realizar pago | El comprobante de la transferencia deja de enviarse por WhatsApp y se registra en la plataforma, asociado al pago de la atención. |
 | Comprobar pago | Comprobar pago con apoyo del sistema | La psicóloga mantiene la responsabilidad de verificar el pago, pero ahora consulta la información desde la plataforma. |
 | Registrar estado de pago en Excel | Registrar estado de pago en sistema | El estado del pago deja de almacenarse en Excel y pasa a quedar registrado dentro del sistema. |
 | Emitir boleta | Emitir boleta con apoyo del sistema | La plataforma entrega apoyo para la emisión de boletas, reduciendo tareas administrativas. |

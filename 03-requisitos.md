@@ -27,6 +27,7 @@
 | RP-20 |El sistema deberá permitir que al menos el 90% de los usuarios complete las tareas principales de gestión de horas sin asistencia externa. | No funcional | Seleccionar horario disponible |
 | RP-21 | El sistema deberá permitir al paciente registrar sus datos personales (nombre completo, RUT y medio de contacto) cuando aún no esté registrado. | Funcional | Registrar datos del paciente |
 | RP-22 | El sistema deberá registrar un cargo de $5.000 por reserva de hora, asociado al paciente y a la reserva, cuando el paciente no responda la solicitud de confirmación hasta la hora de la atención. | Funcional | Registrar cargo por reserva de hora |
+| RP-23 | El sistema deberá permitir al paciente registrar el comprobante de transferencia asociado al pago de su atención. | Funcional | Realizar pago |
 
 
 ## Requisitos de proyecto

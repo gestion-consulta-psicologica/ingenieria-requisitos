@@ -9,6 +9,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 
 from app.db.conexion import conectar
 from app.servicios import cola_correo, tokens
+from app.servicios.atenciones import obtener_atencion_de_reserva
 from app.servicios.confirmacion import (
     ESTADO_SOLICITUD_PENDIENTE,
     RESPUESTA_CONFIRMA,
@@ -139,6 +140,7 @@ def _obtener_detalle(
         "solicitud_pendiente": solicitud_pendiente,
         "puede_responder": pendiente and solicitud_pendiente is not None,
         "puede_gestionar": reserva["estado"] == "Confirmada",
+        "atencion_pago": obtener_atencion_de_reserva(conexion, reserva_id),
         "historial": listar_historial(conexion, reserva_id),
         "correos": correos,
         "correos_reserva": correos,

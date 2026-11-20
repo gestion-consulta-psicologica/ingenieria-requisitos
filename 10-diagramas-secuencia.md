@@ -19,7 +19,7 @@ Variantes representadas:
 
 ## DSS-02 — Emitir boleta de honorarios
 - Caso de uso: [CU-08](./09-casos-de-uso.md)
-- Historia: [HU-08](./04-historias-usuario.md#hu-08--emitir-boleta)
+- Historia: [HU-07](./04-historias-usuario.md#hu-07--emitir-boleta)
 - Sistemas externos que participan: SII
 
 ![DSS-02](./diagramas/dss-02.png)
@@ -62,3 +62,18 @@ Variantes representadas:
 - **Nuevo horario disponible:** la reserva se actualiza al nuevo bloque, el bloque anterior se libera, se registra el cambio en el historial y se reinicia el ciclo de solicitudes de confirmación; se encola el aviso de reserva reagendada.
 - **Nuevo horario tomado:** el sistema rechaza el cambio y la reserva original queda sin modificaciones.
 - **Sin alternativas:** el sistema informa que no hay horarios disponibles y conserva la reserva original.
+
+## DSS-05 — Comprobar pago
+- Caso de uso: [CU-06](./09-casos-de-uso.md)
+- Historia: [HU-05](./04-historias-usuario.md#hu-05--comprobar-el-pago)
+- Sistemas externos que participan: ninguno
+
+![DSS-05](./diagramas/dss-05.png)
+
+Archivo fuente: [`./diagramas/dss-05.puml`](./diagramas/dss-05.puml)
+
+Variantes representadas:
+- **alt — la atención no existe:** el sistema informa que no se encontró la atención y no modifica datos.
+- **alt — la atención tiene comprobantes:** el sistema muestra el nombre y el RUT del paciente, el monto de la atención, el monto pagado y el estado del pago, junto con cada comprobante (monto, fecha de transferencia y cuenta de destino).
+- **alt — la atención no tiene comprobante:** el sistema informa la ausencia de comprobante y muestra la atención en el listado de atenciones con pago pendiente.
+- **Continuación:** el sistema ofrece «Registrar estado de pago» (inactiva hasta que se implemente HU-06). El estado del pago no se modifica: las transiciones de EST-02 pertenecen a HU-06.

@@ -7,6 +7,7 @@ from datetime import date, datetime, timedelta
 
 from app.configuracion import ConfiguracionCorreo
 from app.db.conexion import conectar
+from app.servicios import atenciones as servicio_atenciones
 from app.servicios import cola_correo
 from app.servicios.confirmacion import (
     CargoDuplicado,
@@ -88,12 +89,14 @@ class PlanificadorCorreos:
                 self.configuracion.timeout_envio_segundos,
             )
             reservas = self._procesar_reservas(conexion, ahora)
+            atenciones = self._procesar_atenciones(conexion, ahora)
             correos = self._procesar_correos(conexion, ahora)
         finally:
             conexion.close()
         return {
             "recuperados": recuperados,
             "reservas_procesadas": reservas,
+            "atenciones_creadas": atenciones,
             "correos_procesados": correos,
         }
 
@@ -198,6 +201,23 @@ class PlanificadorCorreos:
                 configuracion=self.configuracion,
                 ahora=ahora,
             )
+
+    def _procesar_atenciones(
+        self, conexion: sqlite3.Connection, ahora: datetime
+    ) -> int:
+        try:
+            creadas = servicio_atenciones.crear_atenciones_vencidas(
+                conexion,
+                ahora,
+                self.configuracion.zona_horaria,
+            )
+        except Exception:
+            conexion.rollback()
+            logger.exception(
+                "No fue posible originar las atenciones vencidas."
+            )
+            return 0
+        return len(creadas)
 
     # --- Envío de correos -------------------------------------------------
     def _procesar_correos(

@@ -119,6 +119,19 @@
     </section>
     {% endif %}
 
+    {% if atencion_pago and atencion_pago.pago_estado in ["Pendiente", "Pago incompleto"] %}
+    <section class="acciones">
+      <h3>Pago de la atención</h3>
+      <p class="detalle">
+        Puedes registrar el comprobante de tu transferencia para que la
+        psicóloga lo revise.
+      </p>
+      <a href="/pagos/{{ atencion_pago.atencion_id }}/comprobante">
+        <button type="button">Registrar comprobante de pago</button>
+      </a>
+    </section>
+    {% endif %}
+
     {% if historial %}
     <section>
       <h3>Historial de cambios</h3>

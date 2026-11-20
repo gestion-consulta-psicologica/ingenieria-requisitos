@@ -13,6 +13,7 @@ from app.configuracion import ConfiguracionCorreo, cargar_configuracion
 from app.db.conexion import inicializar_base
 from app.rutas.disponibilidad import router as disponibilidad_router
 from app.rutas.paciente import router as paciente_router
+from app.rutas.pagos import router as pagos_router
 from app.rutas.reserva import router as reserva_router
 from app.servicios.correo import ServicioCorreo, ServicioCorreoSMTP
 from app.servicios.planificador import PlanificadorCorreos, estado_planificador
@@ -56,6 +57,10 @@ def fecha_dia(valor: date | str) -> str:
     if isinstance(valor, str):
         valor = date.fromisoformat(valor)
     return f"{DIAS[valor.weekday()]} {valor.day} de {MESES[valor.month - 1]}"
+
+
+def monto_clp(valor: int) -> str:
+    return f"${valor:,}".replace(",", ".")
 
 
 def crear_app(
@@ -106,6 +111,7 @@ def crear_app(
     templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
     templates.env.filters["fecha_larga"] = fecha_larga
     templates.env.filters["fecha_dia"] = fecha_dia
+    templates.env.filters["clp"] = monto_clp
     templates.env.filters["fecha_hora_local"] = lambda valor: a_local_texto(
         valor, config.zona_horaria
     )
@@ -115,6 +121,7 @@ def crear_app(
     app.include_router(disponibilidad_router)
     app.include_router(reserva_router)
     app.include_router(paciente_router)
+    app.include_router(pagos_router)
 
     @app.get("/", include_in_schema=False)
     def inicio():

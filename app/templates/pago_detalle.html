@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Detalle del pago — Gestión de consulta psicológica</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 0; color: #1f2937; background: #f8fafc; }
+    header { background: #0f766e; color: white; padding: 1rem 1.5rem; }
+    header h1 { margin: 0 0 .5rem; font-size: 1.25rem; }
+    main { max-width: 900px; margin: 2rem auto; padding: 0 1.5rem 3rem; }
+    .rol { color: #d1fae5; font-size: .9rem; }
+    section { background: white; border: 1px solid #e2e8f0; border-radius: .5rem; padding: .75rem 1rem; margin-bottom: 1rem; }
+    h3 { margin-top: 0; }
+    table { border-collapse: collapse; width: 100%; margin-bottom: .5rem; }
+    th, td { text-align: left; padding: .35rem .5rem; border-bottom: 1px solid #e2e8f0; vertical-align: top; }
+    .aviso { background: #eff6ff; border: 1px solid #93c5fd; border-radius: .5rem; padding: .75rem 1rem; margin-bottom: 1rem; }
+    .advertencia { background: #fffbeb; border: 1px solid #f59e0b; border-radius: .5rem; padding: .75rem 1rem; margin-bottom: 1rem; color: #92400e; }
+    .error { background: #fef2f2; border: 1px solid #fca5a5; border-radius: .5rem; padding: .75rem 1rem; margin-bottom: 1rem; color: #991b1b; }
+    .detalle { color: #4b5563; font-size: .9rem; }
+    .acciones button { font: inherit; padding: .45rem .8rem; border-radius: .375rem; border: 1px solid #9ca3af; background: #e5e7eb; color: #6b7280; cursor: not-allowed; }
+    a { color: #0f766e; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Gestión de consulta psicológica</h1>
+    <p class="rol">Rol de demostración: Psicóloga · Sin autenticación real.</p>
+  </header>
+
+  <main>
+    <h2>Detalle del pago</h2>
+
+    {% if not detalle %}
+    <div class="error">
+      <p>{{ error }}</p>
+    </div>
+    <p><a href="/pagos">Volver al listado de pagos pendientes</a></p>
+    {% else %}
+
+    <p class="aviso">
+      Consulta de solo lectura. La comprobación no determina ni modifica el estado del pago.
+    </p>
+
+    <section>
+      <h3>Atención</h3>
+      <p><strong>Paciente:</strong> {{ detalle.paciente.nombre_completo }}</p>
+      <p><strong>RUT:</strong> {{ detalle.paciente.rut }}</p>
+      <p>
+        <strong>Fecha:</strong>
+        {{ detalle.bloque.fecha|fecha_dia }},
+        de {{ detalle.bloque.hora_inicio }} a {{ detalle.bloque.hora_termino }}
+      </p>
+      <p><strong>Tipo de atención:</strong> {{ detalle.atencion.tipo_atencion }}</p>
+      <p><strong>Estado de la atención:</strong> {{ detalle.atencion.estado }}</p>
+      <p><strong>Número de atención:</strong> {{ detalle.atencion.id }}</p>
+    </section>
+
+    <section>
+      <h3>Pago</h3>
+      <p><strong>Monto de la atención:</strong> {{ detalle.pago.monto_atencion|clp }}</p>
+      <p><strong>Monto pagado:</strong> {{ detalle.pago.monto_pagado|clp }}</p>
+      <p><strong>Estado del pago:</strong> {{ detalle.pago.estado }}</p>
+    </section>
+
+    <section>
+      <h3>Comprobantes de transferencia</h3>
+      {% if detalle.comprobantes %}
+      <table>
+        <thead>
+          <tr>
+            <th>Monto</th>
+            <th>Fecha de transferencia</th>
+            <th>Cuenta de destino</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for comprobante in detalle.comprobantes %}
+          <tr>
+            <td>{{ comprobante.monto|clp }}</td>
+            <td>{{ comprobante.fecha_transferencia }}</td>
+            <td>{{ comprobante.cuenta_destino }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div class="advertencia">
+        <p>La atención no tiene comprobante de pago.</p>
+      </div>
+      {% endif %}
+    </section>
+
+    <section class="acciones">
+      <h3>Registrar estado de pago</h3>
+      <button type="button" disabled aria-disabled="true">Registrar estado de pago</button>
+      <p class="detalle">
+        La opción quedará habilitada cuando se implemente el registro del estado
+        de pago (HU-06). Esta pantalla no calcula ni cambia el estado.
+      </p>
+    </section>
+
+    <p><a href="/pagos">Volver al listado de pagos pendientes</a></p>
+    {% endif %}
+  </main>
+</body>
+</html>

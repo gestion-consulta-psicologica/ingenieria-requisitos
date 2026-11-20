@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Registrar comprobante de pago — Gestión de consulta psicológica</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 0; color: #1f2937; background: #f8fafc; }
+    header { background: #0f766e; color: white; padding: 1rem 1.5rem; }
+    header h1 { margin: 0 0 .5rem; font-size: 1.25rem; }
+    main { max-width: 900px; margin: 2rem auto; padding: 0 1.5rem 3rem; }
+    .rol { color: #d1fae5; font-size: .9rem; }
+    section { background: white; border: 1px solid #e2e8f0; border-radius: .5rem; padding: .75rem 1rem; margin-bottom: 1rem; }
+    h3 { margin-top: 0; }
+    .aviso { background: #ecfdf5; border: 1px solid #6ee7b7; border-radius: .5rem; padding: .75rem 1rem; margin-bottom: 1rem; color: #065f46; }
+    .error { background: #fef2f2; border: 1px solid #fca5a5; border-radius: .5rem; padding: .75rem 1rem; margin-bottom: 1rem; color: #991b1b; }
+    .detalle { color: #4b5563; font-size: .9rem; }
+    label { display: block; font-weight: 600; margin-top: .75rem; }
+    input { font: inherit; padding: .45rem .6rem; border: 1px solid #cbd5e1; border-radius: .375rem; width: 100%; max-width: 24rem; box-sizing: border-box; }
+    .error-campo { color: #b91c1c; font-size: .9rem; margin: .25rem 0 0; }
+    button { font: inherit; padding: .5rem .9rem; border-radius: .375rem; border: 1px solid #0f766e; background: #0f766e; color: white; cursor: pointer; margin-top: 1rem; }
+    table { border-collapse: collapse; width: 100%; margin-bottom: .5rem; }
+    th, td { text-align: left; padding: .35rem .5rem; border-bottom: 1px solid #e2e8f0; vertical-align: top; }
+    a { color: #0f766e; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Gestión de consulta psicológica</h1>
+    <p class="rol">Rol de demostración: Paciente · Sin autenticación real.</p>
+  </header>
+
+  <main>
+    <h2>Registrar comprobante de pago</h2>
+
+    {% if not detalle %}
+    <div class="error">
+      <p>{{ error }}</p>
+    </div>
+    <p><a href="/disponibilidad">Volver a la disponibilidad</a></p>
+    {% else %}
+
+    {% if registrado %}
+    <div class="aviso">
+      <p>El comprobante quedó registrado. La psicóloga podrá revisarlo en la comprobación del pago.</p>
+    </div>
+    {% endif %}
+
+    {% if error %}
+    <div class="error">
+      <p>{{ error }}</p>
+    </div>
+    {% endif %}
+
+    <section>
+      <h3>Atención</h3>
+      <p><strong>Paciente:</strong> {{ detalle.paciente.nombre_completo }}</p>
+      <p>
+        <strong>Fecha:</strong>
+        {{ detalle.bloque.fecha|fecha_dia }},
+        de {{ detalle.bloque.hora_inicio }} a {{ detalle.bloque.hora_termino }}
+      </p>
+      <p><strong>Tipo de atención:</strong> {{ detalle.atencion.tipo_atencion }}</p>
+      <p><strong>Monto de la atención:</strong> {{ detalle.pago.monto_atencion|clp }}</p>
+      <p><strong>Estado del pago:</strong> {{ detalle.pago.estado }}</p>
+    </section>
+
+    {% if formulario_habilitado %}
+    <section>
+      <h3>Datos de la transferencia</h3>
+      <p class="detalle">
+        Registra el comprobante de tu transferencia. Puedes agregar más de uno
+        si necesitas complementar el pago.
+      </p>
+      <form method="post" action="/pagos/{{ detalle.atencion.id }}/comprobante">
+        <label for="monto">Monto transferido (CLP)</label>
+        <input
+          id="monto"
+          name="monto"
+          type="text"
+          inputmode="numeric"
+          value="{{ valores.monto }}"
+          required
+        >
+        {% if errores.monto %}<p class="error-campo">{{ errores.monto }}</p>{% endif %}
+
+        <label for="fecha_transferencia">Fecha de la transferencia</label>
+        <input
+          id="fecha_transferencia"
+          name="fecha_transferencia"
+          type="date"
+          value="{{ valores.fecha_transferencia }}"
+          required
+        >
+        {% if errores.fecha_transferencia %}<p class="error-campo">{{ errores.fecha_transferencia }}</p>{% endif %}
+
+        <label for="cuenta_destino">Cuenta de destino</label>
+        <input
+          id="cuenta_destino"
+          name="cuenta_destino"
+          type="text"
+          value="{{ valores.cuenta_destino }}"
+          required
+        >
+        {% if errores.cuenta_destino %}<p class="error-campo">{{ errores.cuenta_destino }}</p>{% endif %}
+
+        <button type="submit">Registrar comprobante</button>
+      </form>
+    </section>
+    {% endif %}
+
+    <section>
+      <h3>Comprobantes registrados</h3>
+      {% if detalle.comprobantes %}
+      <table>
+        <thead>
+          <tr>
+            <th>Monto</th>
+            <th>Fecha de transferencia</th>
+            <th>Cuenta de destino</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for comprobante in detalle.comprobantes %}
+          <tr>
+            <td>{{ comprobante.monto|clp }}</td>
+            <td>{{ comprobante.fecha_transferencia }}</td>
+            <td>{{ comprobante.cuenta_destino }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p class="detalle">Todavía no hay comprobantes registrados para esta atención.</p>
+      {% endif %}
+    </section>
+
+    <p>
+      <a href="/reservas/{{ detalle.reserva_id }}">Volver al detalle de la reserva</a>
+    </p>
+    {% endif %}
+  </main>
+</body>
+</html>

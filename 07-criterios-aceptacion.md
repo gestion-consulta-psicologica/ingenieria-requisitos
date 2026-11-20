@@ -228,6 +228,60 @@ Característica: Comprobación del pago de una atención
     Y la atención aparece en el listado de atenciones con pago pendiente
 ```
 
+## HU-05A — Registrar la atención y el comprobante de pago
+Historia: Como paciente, quiero contar con la atención registrada y registrar el comprobante de mi transferencia en la plataforma, para que la psicóloga pueda comprobar el pago de mi atención.
+
+```gherkin
+Característica: Registro de la atención y del comprobante de pago
+
+  Escenario: La reserva confirmada llega a la hora de la atención
+    Dado que el paciente tiene una reserva confirmada para el jueves 12 de noviembre a las 16:00
+    Cuando llega la hora de la atención
+    Entonces el sistema origina una atención en estado "programada"
+    Y registra un pago en estado "Pendiente" con el monto registrado para la atención
+
+  Escenario: El paciente registra el comprobante de su transferencia
+    Dado que el paciente tiene una atención registrada con pago pendiente
+    Cuando registra un comprobante por $30.000 con fecha de transferencia y cuenta de destino
+    Entonces el sistema asocia el comprobante al pago de esa atención
+    Y el comprobante queda disponible para que la psicóloga lo consulte
+
+  Escenario: El paciente no completa los datos obligatorios del comprobante
+    Dado que el paciente está registrando un comprobante
+    Cuando intenta guardar sin monto, fecha de transferencia o cuenta de destino
+    Entonces el sistema no registra el comprobante
+    Y le informa qué dato falta
+
+  Escenario: El paciente registra un segundo comprobante
+    Dado que la atención ya tiene un comprobante registrado
+    Cuando el paciente registra otro comprobante para la misma atención
+    Entonces el sistema conserva el comprobante anterior
+    Y asocia el nuevo comprobante al mismo pago
+
+  Escenario: El comprobante tiene datos inválidos
+    Dado que el paciente está registrando un comprobante
+    Cuando ingresa un monto no positivo o una fecha de transferencia inválida
+    Entonces el sistema no registra el comprobante
+    Y le informa el error
+
+  Escenario: La atención no tiene pago asociado
+    Dado que la atención no tiene un pago asociado
+    Cuando el paciente intenta registrar un comprobante
+    Entonces el sistema no registra el comprobante
+    Y le informa que no encontró el pago de la atención
+
+  Escenario: El pago ya está pagado
+    Dado que el pago de la atención está en estado "Pagado"
+    Cuando el paciente intenta registrar un comprobante
+    Entonces el sistema no habilita el registro
+    Y le informa que el pago ya está pagado
+
+  Escenario: El sistema no duplica una atención ya originada
+    Dado que la reserva confirmada ya tiene una atención originada
+    Cuando el sistema vuelve a procesar la reserva
+    Entonces no crea una nueva atención ni un nuevo pago
+```
+
 ## HU-06 — Registrar el estado de pago
 Historia: Como psicóloga, quiero registrar el estado de pago de una atención en la plataforma, para mantener actualizada la información administrativa del paciente.
 

@@ -93,6 +93,13 @@ class ConfiguracionCorreo:
         return f"{fecha} a las {self.hora_vispera} ({self.zona_horaria})"
 
 
+def monto_atencion_clp() -> int:
+    monto = _entero("MONTO_ATENCION_CLP", 30000)
+    if monto <= 0:
+        raise ValueError("La variable MONTO_ATENCION_CLP debe ser mayor que cero.")
+    return monto
+
+
 def cargar_configuracion() -> ConfiguracionCorreo:
     seguridad = (_texto("SMTP_SEGURIDAD") or "starttls").lower()
     if seguridad not in {"starttls", "ssl", "ninguna"}:

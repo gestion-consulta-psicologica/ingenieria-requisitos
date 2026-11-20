@@ -15,7 +15,7 @@
 | RP-09 | HU-04 | CU-05 | DSS-04 | EST-01 | BloqueHorario |
 | RP-10 | HU-04 | CU-05 | DSS-04 | EST-01 | Reserva, BloqueHorario |
 | RP-11 | HU-04 | CU-05 | DSS-04 | EST-01 | Reserva, SolicitudConfirmacion |
-| RP-12 | HU-05 | CU-06 | — | EST-02 | Pago, ComprobanteTransferencia, Atención |
+| RP-12 | HU-05 | CU-06 | DSS-05 | EST-02 | Pago, ComprobanteTransferencia, Atención |
 | RP-13 | HU-06 | CU-07 | — | EST-02 | Pago, ComprobanteTransferencia |
 | RP-14 | HU-07 | CU-08 | DSS-02 | EST-03 | Boleta, Pago, Atención, Psicóloga, Paciente |
 | RP-15 | HU-08 | CU-09 | — | — | Atención, CampoClinico |
@@ -26,12 +26,17 @@
 | RP-20 | HU-01 a HU-05 | CU-01 a CU-05 | — | — | — |
 | RP-21 | HU-02A | CU-11 | — | — | Paciente |
 | RP-22 | HU-03 | CU-03 | DSS-01 | EST-01 | Cargo, Reserva, Paciente |
+| RP-23 | HU-05A | CU-12 | — | EST-02 | Atencion, Pago, ComprobanteTransferencia, Paciente |
 
 ## Observaciones
 
 - **RP-07 a RP-11 (cancelación y reagendamiento):** se representan en DSS-04 y en las transiciones de EST-01. El reagendamiento conserva el bloque anterior en el historial de cambios y reinicia el ciclo de solicitudes de confirmación sobre la misma reserva; la cancelación libera el bloque sin crear un nuevo ciclo.
 
-- **RP-12 y RP-13 (gestión de pagos):** no cuentan con diagramas de secuencia propios. Su comportamiento se encuentra representado en el ciclo de vida del pago (EST-02).
+- **RP-12 (comprobar pago):** cuenta con DSS-05 y con el ciclo de vida del pago (EST-02), que HU-05 consulta en modo de solo lectura. Las transiciones de EST-02 pertenecen a HU-06.
+
+- **RP-13 (registrar estado de pago):** no cuenta con diagrama de secuencia propio; su comportamiento se representa en EST-02 y se implementará en HU-06.
+
+- **RP-23 (registrar comprobante de pago):** corresponde a HU-05A y CU-12. No tiene diagrama de secuencia propio. La creación automática de la atención y su pago sigue la transición de EST-01 «llega la hora de la atención / originar atención».
 
 - **RP-14 (emisión de boleta):** se encuentra relacionado con DSS-02 y EST-03, que representan la interacción para emitir la boleta y su ciclo de vida.
 

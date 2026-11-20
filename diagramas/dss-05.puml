@@ -1,0 +1,27 @@
+@startuml dss-05
+' DSS-05 — Comprobar pago (CU-06 / HU-05)
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+hide footbox
+title DSS-05 — Comprobar pago
+
+actor "Psicóloga" as PSI
+participant ":Sistema de gestión\nde consulta" as SIS
+
+PSI -> SIS : consultar el pago de una atención
+alt la atención no existe
+  SIS --> PSI : informar que no se encontró la atención
+  note over SIS : No se modifica ningún dato
+else la atención existe
+  SIS -> SIS : obtener la atención, su pago y sus comprobantes
+  alt la atención tiene comprobantes
+    SIS --> PSI : mostrar nombre y RUT del paciente, monto de la atención,\nmonto pagado y estado del pago
+    SIS --> PSI : mostrar comprobantes\n(monto, fecha de transferencia y cuenta de destino)
+  else la atención no tiene comprobante
+    SIS --> PSI : informar que la atención no tiene comprobante
+    SIS --> PSI : mostrar la atención en el listado de atenciones con pago pendiente
+  end
+  SIS --> PSI : ofrecer «Registrar estado de pago» (inactiva hasta HU-06)
+end
+note over SIS : Solo lectura: el estado del pago no se modifica.\nLa comprobación y el registro son responsabilidad de la psicóloga.
+@enduml
