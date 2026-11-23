@@ -121,9 +121,11 @@ def test_reserva_confirmada_vencida_origina_atencion_y_pago(base_temporal):
             """
             SELECT a.id AS atencion_id, a.tipo_atencion, a.monto,
                    a.estado AS atencion_estado,
-                   p.monto_atencion, p.monto_pagado, p.estado AS pago_estado
+                   p.monto_atencion, p.monto_pagado, p.estado AS pago_estado,
+                   r.estado AS reserva_estado
             FROM atencion a
             JOIN pago p ON p.atencion_id = a.id
+            JOIN reserva r ON r.id = a.reserva_id
             WHERE a.reserva_id = 2
             """
         ).fetchone()
@@ -139,6 +141,7 @@ def test_reserva_confirmada_vencida_origina_atencion_y_pago(base_temporal):
         "monto_atencion": 30000,
         "monto_pagado": 0,
         "pago_estado": "Pendiente",
+        "reserva_estado": "Finalizada",
     }
 
 
@@ -158,6 +161,9 @@ def test_el_sistema_no_duplica_una_atencion_ya_originada(base_temporal):
             "SELECT COUNT(*) FROM atencion WHERE reserva_id = 2"
         ).fetchone()[0]
         pagos = _contar(conexion, "pago")
+        estado_reserva = conexion.execute(
+            "SELECT estado FROM reserva WHERE id = 2"
+        ).fetchone()[0]
     finally:
         conexion.close()
 
@@ -165,6 +171,7 @@ def test_el_sistema_no_duplica_una_atencion_ya_originada(base_temporal):
     assert segundas == []
     assert atenciones == 1
     assert pagos == 3
+    assert estado_reserva == "Finalizada"
 
 
 def test_planificador_crea_la_atencion_una_sola_vez_en_dos_ciclos(base_temporal):
@@ -308,7 +315,7 @@ def test_comprobante_con_datos_invalidos_no_se_registra(base_temporal):
     assert comprobantes == 1
 
 
-def test_atencion_sin_pago_no_permite_registrar_comprobante(base_temporal):
+def test_atencion_con_pago_inexistente_por_datos_inconsistentes_no_permite_registrar_comprobante(base_temporal):
     _sembrar(base_temporal)
 
     conexion = conectar(base_temporal)

@@ -3,6 +3,7 @@
 skinparam shadowing false
 skinparam sequenceMessageAlign center
 hide footbox
+
 title DSS-03 — Reservar hora
 
 actor "Paciente" as PAC
@@ -11,21 +12,39 @@ participant ":Cola de correos" as COLA
 participant ":Servicio SMTP\n<<sistema externo>>" as SMTP
 
 PAC -> SIS : consultar disponibilidad de la semana
+
 alt existen bloques horarios disponibles
-  SIS --> PAC : bloques horarios disponibles
+  SIS --> PAC : mostrar bloques horarios disponibles
+
+  PAC -> SIS : seleccionar y reservar bloque horario
+
+  alt el bloque sigue disponible y el paciente tiene sus datos de identificación
+    SIS -> SIS : registrar reserva en estado\n"Pendiente de confirmación"
+    SIS -> SIS : ocupar bloque horario
+    SIS -> SIS : programar ciclo de confirmación\nsegún los plazos establecidos
+
+    SIS --> PAC : confirmar reserva registrada
+
+    SIS -> COLA : encolar aviso de reserva registrada
+    COLA -> SMTP : enviar aviso de reserva\nal correo del paciente
+
+    alt el servidor SMTP acepta el mensaje
+      SMTP --> COLA : mensaje aceptado y Message-ID
+      COLA -> COLA : registrar envío aceptado
+    else el servidor SMTP no acepta el mensaje
+      SMTP --> COLA : informar error de envío
+      COLA -> COLA : programar reintento
+    end
+
+  else el bloque fue reservado por otro paciente
+    SIS --> PAC : informar que el bloque no está disponible\ny mostrar alternativas cercanas
+
+  else faltan datos de identificación del paciente
+    SIS --> PAC : solicitar completar datos de identificación
+  end
+
 else no existen bloques horarios disponibles
-  SIS --> PAC : sin horas disponibles y fecha del próximo bloque disponible
+  SIS --> PAC : informar que no hay horas disponibles\ny mostrar fecha del próximo bloque disponible
 end
 
-PAC -> SIS : reservar bloque horario
-alt el bloque sigue disponible y el paciente tiene sus datos de identificación
-  SIS --> PAC : reserva registrada en estado "pendiente de confirmación"
-  SIS -> COLA : encolar aviso de reserva registrada
-  COLA -> SMTP : enviar aviso de reserva
-  SMTP -> PAC : aviso de reserva registrada
-else el bloque fue reservado por otro paciente
-  SIS --> PAC : bloque no disponible y bloques disponibles más cercanos
-else faltan datos de identificación del paciente
-  SIS --> PAC : solicitud de completar datos de identificación
-end
 @enduml

@@ -18,8 +18,8 @@ Archivo fuente: [`./diagramas/casos-de-uso.puml`](./diagramas/casos-de-uso.puml)
 |----|-----------------------------------|-----------------|---------------------|
 | CU-01 | Consultar disponibilidad | Paciente | [HU-01](./04-historias-usuario.md#hu-01--consultar-disponibilidad) |
 | CU-02 | Reservar hora | Paciente | [HU-02](./04-historias-usuario.md#hu-02--reservar-una-hora) |
-| CU-03 | Confirmar asistencia (plataforma o enlace seguro del correo) | Paciente | [HU-03](./04-historias-usuario.md#hu-03--confirmar-o-cancelar-una-hora) |
-| CU-04 | Cancelar hora | Paciente | [HU-04](./04-historias-usuario.md#hu-04--reagendar-o-cancelar-una-hora) |
+| CU-03 | Confirmar o informar que no asistirá (plataforma o enlace seguro del correo) | Paciente | [HU-03](./04-historias-usuario.md#hu-03--confirmar-o-cancelar-una-hora) |
+| CU-04 | Cancelar hora desde la gestión de la reserva | Paciente | [HU-04](./04-historias-usuario.md#hu-04--reagendar-o-cancelar-una-hora) |
 | CU-05 | Reagendar hora | Paciente | [HU-04](./04-historias-usuario.md#hu-04--reagendar-o-cancelar-una-hora) |
 | CU-06 | Comprobar pago | Psicóloga | [HU-05](./04-historias-usuario.md#hu-05--comprobar-el-pago) |
 | CU-07 | Registrar estado de pago | Psicóloga | [HU-06](./04-historias-usuario.md#hu-06--registrar-el-estado-de-pago) |
@@ -34,5 +34,6 @@ Archivo fuente: [`./diagramas/casos-de-uso.puml`](./diagramas/casos-de-uso.puml)
 |----------|--------------|---------------|
 | include | CU-02 Reservar hora → CU-01 Consultar disponibilidad | Para reservar, el paciente siempre necesita conocer los bloques horarios disponibles. |
 | include | CU-05 Reagendar hora → CU-01 Consultar disponibilidad | Para reagendar, el paciente siempre necesita conocer las alternativas disponibles. |
-| extend | CU-04 Cancelar hora → CU-03 Confirmar asistencia | Al responder la solicitud de confirmación, el paciente puede, opcionalmente, informar que no asistirá, lo que cancela la hora. La cancelación también puede iniciarse por sí sola. La respuesta puede llegar desde la plataforma o desde el enlace de un solo uso enviado por correo. |
 | extend | CU-11 Registrar datos del paciente → CU-02 Reservar hora | Cuando el paciente reserva y su RUT no está registrado, se ejecuta opcionalmente el registro de sus datos; al finalizar, se retoma la reserva del bloque seleccionado. |
+
+**CU-03 y CU-04 se mantienen separados.** CU-03 cubre ambas respuestas del paciente a la solicitud de confirmación: mantener la hora o informar que no asistirá, lo que cancela la reserva y libera el bloque. CU-04 cubre la cancelación que el paciente inicia por sí sola desde la gestión de su reserva, sin depender de una solicitud de confirmación. Por eso no existe una relación `extend` entre ambos.

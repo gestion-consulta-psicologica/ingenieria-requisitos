@@ -20,8 +20,8 @@ actor "SII\n<<sistema externo>>" as SII
 rectangle "Sistema de gestión de consulta psicológica" {
   usecase "CU-01\nConsultar disponibilidad" as CU01
   usecase "CU-02\nReservar hora" as CU02
-  usecase "CU-03\nConfirmar asistencia" as CU03
-  usecase "CU-04\nCancelar hora" as CU04
+  usecase "CU-03\nConfirmar o informar\nque no asistirá" as CU03
+  usecase "CU-04\nCancelar hora\n(gestión de reserva)" as CU04
   usecase "CU-05\nReagendar hora" as CU05
   usecase "CU-06\nComprobar pago" as CU06
   usecase "CU-07\nRegistrar estado de pago" as CU07
@@ -48,8 +48,8 @@ PSI --> CU10
 
 CU02 ..> CU01 : <<include>>
 CU05 ..> CU01 : <<include>>
-CU04 ..> CU03 : <<extend>>\n(paciente no asistirá)
 CU11 ..> CU02 : <<extend>>\n(RUT no registrado)
+' CU-03 cubre ambas respuestas; CU-04 es cancelación independiente desde la gestión de la reserva.
 
 CU02 --> MSJ
 CU03 --> MSJ

@@ -8,7 +8,7 @@ Permite al Paciente consultar la disponibilidad semanal de bloques horarios de l
 
 ### Requirement: Mostrar bloques horarios disponibles
 
-El sistema DEBE mostrar al Paciente únicamente los bloques horarios de la semana consultada que no tienen una reserva vigente. Una reserva es vigente mientras esté en estado "Pendiente de confirmación" o "Confirmada"; las reservas "Cancelada" y "Sin confirmar" no bloquean el bloque horario.
+El sistema DEBE mostrar al Paciente únicamente los bloques horarios de la semana consultada que no tienen una reserva vigente. Una reserva es vigente mientras esté en estado "Pendiente de confirmación" o "Confirmada"; las reservas "Cancelada", "Sin confirmar" y "Finalizada" no bloquean el bloque horario.
 
 #### Scenario: El paciente consulta una semana con bloques horarios libres
 

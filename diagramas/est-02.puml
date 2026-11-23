@@ -16,5 +16,6 @@ INC : psicóloga verifica nuevo comprobante [total comprobado < monto de la aten
 PEN --> PAG : psicóloga verifica comprobante\n[monto comprobado = monto de la atención]\n/ registrar monto pagado
 PEN --> INC : psicóloga verifica comprobante\n[monto comprobado < monto de la atención]\n/ informar diferencia pendiente
 INC --> PAG : psicóloga verifica nuevo comprobante\n[total comprobado = monto de la atención]\n/ registrar monto pagado
-PAG --> [*] : boleta emitida
+PAG --> [*] : pago completado
+note right of PAG : La emisión de la boleta se modela en EST-03\ny no cambia el estado del pago.
 @enduml

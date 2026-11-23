@@ -1,40 +1,83 @@
 @startuml dss-04
-' DSS-04 - Reagendar o cancelar hora (CU-04 / CU-05, HU-04)
+' DSS-04 — Reagendar o cancelar hora (CU-04 / CU-05, HU-04)
 skinparam shadowing false
 skinparam sequenceMessageAlign center
 hide footbox
-title DSS-04 - Reagendar o cancelar hora
+
+title DSS-04 — Reagendar o cancelar hora
 
 actor "Paciente" as PAC
+actor "Psicóloga" as PSI
 participant ":Sistema de gestión\nde consulta" as SIS
 participant ":Cola de correos" as COLA
 participant ":Servicio SMTP\n<<sistema externo>>" as SMTP
 
-PAC -> SIS : acceder al detalle de una reserva confirmada
-SIS --> PAC : opciones reagendar o cancelar
-
 alt el paciente cancela la reserva
+  PAC -> SIS : acceder al detalle de una reserva confirmada
+  SIS --> PAC : mostrar opciones de reagendar o cancelar
   PAC -> SIS : confirmar cancelación
-  SIS -> SIS : registrar reserva cancelada\ny liberar el bloque
-  SIS --> PAC : reserva cancelada
+
+  SIS -> SIS : registrar reserva cancelada,\nliberar bloque y conservar historial
+  SIS -> SIS : registrar cargo de $5.000\nasociado al paciente y a la reserva
+
+  SIS --> PAC : informar cancelación y cargo registrado
+
+  SIS -> COLA : encolar aviso del cargo
+  COLA -> SMTP : enviar aviso al correo del paciente
+
+  alt el servidor SMTP acepta el mensaje
+    SMTP --> COLA : mensaje aceptado y Message-ID
+    COLA -> COLA : registrar envío aceptado
+  else el servidor SMTP no acepta el mensaje
+    SMTP --> COLA : informar error de envío
+    COLA -> COLA : programar reintento
+  end
+
+else la psicóloga cancela la reserva
+  PSI -> SIS : seleccionar reserva y cancelar hora
+  SIS -> SIS : registrar reserva cancelada,\nliberar bloque y conservar historial
+  SIS --> PSI : confirmar cancelación sin generar cargo
 
 else el paciente reagenda la reserva
-  PAC -> SIS : solicitar reagendar
+  PAC -> SIS : acceder al detalle de una reserva confirmada
+  SIS --> PAC : mostrar opciones de reagendar o cancelar
+
+  PAC -> SIS : solicitar reagendamiento
   SIS -> SIS : consultar bloques disponibles\nen los próximos 14 días
+
   alt existen alternativas
-    SIS --> PAC : alternativas disponibles
+    SIS --> PAC : mostrar alternativas disponibles
     PAC -> SIS : seleccionar un nuevo bloque
-    alt el bloque sigue disponible
-      SIS -> SIS : actualizar reserva, liberar bloque anterior,\nregistrar historial e iniciar nuevo ciclo
+
+    alt el nuevo bloque sigue disponible
+      SIS -> SIS : actualizar reserva al nuevo bloque
+      SIS -> SIS : liberar bloque anterior y ocupar nuevo bloque
+      SIS -> SIS : registrar historial e iniciar\nnuevo ciclo de confirmación
+
+      SIS --> PAC : confirmar reserva reagendada\nen estado "Pendiente de confirmación"
+
       SIS -> COLA : encolar aviso de reserva reagendada
-      COLA -> SMTP : enviar aviso
-      SMTP -> PAC : aviso de reserva reagendada
-      SIS --> PAC : reserva pendiente de confirmación
-    else el bloque fue tomado por otro paciente
-      SIS --> PAC : bloque no disponible; elegir otra alternativa
+      COLA -> SMTP : enviar aviso al correo del paciente
+
+      alt el servidor SMTP acepta el mensaje
+        SMTP --> COLA : mensaje aceptado y Message-ID
+        COLA -> COLA : registrar envío aceptado
+      else el servidor SMTP no acepta el mensaje
+        SMTP --> COLA : informar error de envío
+        COLA -> COLA : programar reintento
+      end
+
+    else el nuevo bloque fue tomado por otro paciente
+      SIS --> PAC : informar conflicto (HTTP 409)\ny solicitar elegir otra alternativa
+      note right of SIS
+        La reserva original permanece
+        vigente y sin modificaciones.
+      end note
     end
+
   else no existen alternativas
-    SIS --> PAC : sin alternativas; reserva original vigente
+    SIS --> PAC : informar que no hay alternativas\ny conservar la reserva original vigente
   end
 end
+
 @enduml

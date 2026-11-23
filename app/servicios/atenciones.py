@@ -6,6 +6,8 @@ from datetime import date, datetime
 from app.configuracion import monto_atencion_clp
 from app.tiempo import ZONA_POR_DEFECTO, ahora_utc, programado
 
+ESTADO_RESERVA_CONFIRMADA = "Confirmada"
+ESTADO_RESERVA_FINALIZADA = "Finalizada"
 ESTADO_PAGO_PENDIENTE = "Pendiente"
 ESTADO_PAGO_INCOMPLETO = "Pago incompleto"
 ESTADO_PAGO_PAGADO = "Pagado"
@@ -20,7 +22,7 @@ class AtencionNoEncontrada(Exception):
 
 
 class PagoNoEncontrado(Exception):
-    """La atención no tiene un pago asociado."""
+    """La atención no tiene un pago registrado (datos inconsistentes)."""
 
 
 class PagoYaPagado(Exception):
@@ -65,12 +67,13 @@ def crear_atenciones_vencidas(
             SELECT r.id AS reserva_id, b.fecha, b.hora_inicio, b.modalidad
             FROM reserva r
             JOIN bloque_horario b ON b.id = r.bloque_horario_id
-            WHERE r.estado = 'Confirmada'
+            WHERE r.estado = ?
               AND NOT EXISTS (
                   SELECT 1 FROM atencion a WHERE a.reserva_id = r.id
               )
             ORDER BY b.fecha, b.hora_inicio, r.id
-            """
+            """,
+            (ESTADO_RESERVA_CONFIRMADA,),
         )
     )
 
@@ -98,6 +101,14 @@ def crear_atenciones_vencidas(
                 VALUES (?, ?, 0, ?)
                 """,
                 (atencion_id, monto, ESTADO_PAGO_PENDIENTE),
+            )
+            conexion.execute(
+                """
+                UPDATE reserva
+                SET estado = ?
+                WHERE id = ? AND estado = ?
+                """,
+                (ESTADO_RESERVA_FINALIZADA, fila["reserva_id"], ESTADO_RESERVA_CONFIRMADA),
             )
             conexion.commit()
         except sqlite3.IntegrityError:

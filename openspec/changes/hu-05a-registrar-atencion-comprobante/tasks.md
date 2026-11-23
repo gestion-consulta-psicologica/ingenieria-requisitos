@@ -10,12 +10,13 @@
 - [x] 2.1 Implementar `crear_atenciones_vencidas()` en `app/servicios/atenciones.py`: consultar reservas confirmadas vencidas sin atención y crear `Atencion` (`programada`) y `Pago` (`Pendiente`, `montoPagado = 0`) en una transacción; verificar los escenarios «La reserva confirmada llega a la hora de la atención» y «El sistema no duplica una atención ya originada» con pruebas sobre la reserva `2`.
 - [x] 2.2 Integrar la llamada a `crear_atenciones_vencidas()` en `PlanificadorCorreos.ejecutar_ciclo`, después de `_procesar_reservas`, e incluir el conteo en el resultado; verificar con un `ahora` controlado que dos ciclos crean una sola atención y que las pruebas actuales del planificador siguen pasando.
 - [x] 2.3 Agregar `obtener_atencion_de_reserva()` para obtener `atencion_id`, `pago_id` y `pago_estado` desde una reserva; verificar que la reserva `3` devuelve la atención `1` con pago `Pendiente` y que la reserva `2` devuelve `None` antes del procesamiento.
+- [x] 2.4 Dejar la reserva en estado `Finalizada` en la misma transacción y verificar que no admite reagendamiento ni cancelación; actualizar EST-01, las pruebas de HU-04 y las de HU-05A.
 
 ## 3. Registro del comprobante
 
 - [x] 3.1 Implementar `registrar_comprobante()` para insertar un `ComprobanteTransferencia` asociado al pago sin modificar el estado ni `montoPagado`; verificar los escenarios «El paciente registra el comprobante de su transferencia» y «El paciente registra un segundo comprobante» comprobando que se conservan ambos registros.
 - [x] 3.2 Agregar validaciones de monto entero positivo, fecha de transferencia ISO válida y cuenta de destino obligatoria; verificar los escenarios «El paciente no completa los datos obligatorios del comprobante» y «El comprobante tiene datos inválidos» comprobando que no se insertan filas y que el mensaje identifica el dato faltante o inválido.
-- [x] 3.3 Rechazar el registro cuando no exista la atención, falte el pago o el pago esté `Pagado`; verificar los escenarios «La atención no tiene pago asociado» y «El pago ya está pagado» comprobando que no se modifica ningún comprobante.
+- [x] 3.3 Rechazar el registro cuando no exista la atención, falte el pago por datos inconsistentes o el pago esté `Pagado`; verificar los escenarios «La atención no existe» y «El pago ya está pagado» comprobando que no se modifica ningún comprobante.
 - [x] 3.4 Extender el detalle de pago existente con `reserva_id` y la lista de comprobantes necesarios para el formulario; verificar que las pruebas de HU-05 siguen pasando y que el detalle de la atención `2` muestra sus comprobantes.
 
 ## 4. Rutas y plantillas

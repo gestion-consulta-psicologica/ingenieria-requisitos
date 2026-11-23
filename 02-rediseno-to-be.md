@@ -72,9 +72,11 @@ Archivo fuente: [`./diagramas/TO-BE.bpmn`](./diagramas/TO-BE.bpmn)
 | Seleccionar horario | Seleccionar nuevo horario disponible | El paciente selecciona directamente una nueva alternativa de horario dentro de la plataforma. |
 | Registrar nueva hora en Excel | Actualizar reserva automáticamente | El cambio de horario deja de registrarse manualmente en Excel y la reserva se actualiza automáticamente. |
 | Realizar pago | Realizar pago | El comprobante de la transferencia deja de enviarse por WhatsApp y se registra en la plataforma, asociado al pago de la atención. |
+| — (nuevo en el TO-BE) | Originar atención y pago automáticamente | Cuando llega la hora de una reserva confirmada, el sistema crea la atención y su pago pendiente, y deja la reserva en estado finalizada. |
+| — (nuevo en el TO-BE) | Registrar comprobante de pago en plataforma | El paciente registra uno o más comprobantes de transferencia asociados al pago de su atención, sin modificar el estado del pago. |
 | Comprobar pago | Comprobar pago con apoyo del sistema | La psicóloga mantiene la responsabilidad de verificar el pago, pero ahora consulta la información desde la plataforma. |
 | Registrar estado de pago en Excel | Registrar estado de pago en sistema | El estado del pago deja de almacenarse en Excel y pasa a quedar registrado dentro del sistema. |
 | Emitir boleta | Emitir boleta con apoyo del sistema | La plataforma entrega apoyo para la emisión de boletas, reduciendo tareas administrativas. |
 | Realizar atención psicológica | Realizar atención psicológica | La actividad se mantiene porque corresponde al servicio principal entregado por la psicóloga. |
-| Registrar asistencia en Excel | Registrar asistencia en sistema | La asistencia deja de registrarse manualmente en Excel y pasa a almacenarse dentro de la plataforma. |
+| Registrar asistencia en Excel | Registrar asistencia en sistema | La asistencia deja de registrarse manualmente en Excel y pasa a almacenarse dentro de la plataforma. La inasistencia sin justificación registra un cargo real de $5.000; la inasistencia justificada no genera cargo. |
 | Actualizar ficha clínica | Actualizar ficha clínica en sistema centralizado | La información clínica deja de gestionarse mediante herramientas separadas y pasa a almacenarse dentro de una plataforma centralizada para facilitar su consulta y actualización. |

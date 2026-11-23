@@ -13,7 +13,7 @@ Variantes representadas:
 - **Programación automática:** en la víspera, el planificador registra la solicitud, crea dos tokens de un solo uso (solo guarda el hash) y encola el correo. En la mañana, reemplaza la solicitud anterior, cancela su correo pendiente y encola el recordatorio.
 - **Entrega por cola:** el planificador reclama el correo, lo envía por SMTP y registra `Message-ID` y fecha. Si el servidor falla, reprograma el intento con espera exponencial; si las credenciales se rechazan, lo marca fallido; si no hay correo del paciente, queda omitido.
 - **alt — el paciente confirma su asistencia:** desde la plataforma o el enlace seguro, el token se consume, la solicitud pendiente más reciente queda respondida y la reserva queda confirmada.
-- **alt — el paciente responde que no asistirá:** la solicitud pendiente más reciente queda respondida, la reserva queda cancelada y el bloque horario se libera (extensión CU-04).
+- **alt — el paciente responde que no asistirá:** la solicitud pendiente más reciente queda respondida, la reserva queda cancelada, se registra un cargo de $5.000 asociado al paciente y a la reserva, el bloque horario se libera y se encola el aviso del cargo por correo electrónico. Esta respuesta pertenece a CU-03; CU-04 es la cancelación independiente desde la gestión de la reserva y no es una extensión de CU-03.
 - **opt — el paciente no responde hasta la hora de la atención:** la solicitud queda vencida con respuesta «sin respuesta» y fecha de cierre, sin fecha de respuesta del paciente; la reserva queda sin confirmar, se registra el cargo de $5.000 asociado al paciente y a la reserva, y se encola el aviso de cargo por correo.
 - **Error:** si no existe una solicitud pendiente, o la solicitud más reciente ya está respondida, reemplazada o vencida, el sistema rechaza la respuesta con HTTP 409 sin modificar datos. Un token inexistente responde 404 y uno usado, vencido o de otra acción responde 409.
 
@@ -57,10 +57,11 @@ Variantes representadas:
 Archivo fuente: [`./diagramas/dss-04.puml`](./diagramas/dss-04.puml)
 
 Variantes representadas:
-- **Cancelación:** el paciente confirma la cancelación; la reserva queda cancelada, el bloque se libera y no se crea un nuevo ciclo de confirmación.
+- **Cancelación por parte del paciente:** el paciente confirma la cancelación; la reserva queda cancelada, se registra un cargo de $5.000 asociado al paciente y a la reserva, el bloque se libera, se conserva el historial y se encola el aviso del cargo. No se crea un nuevo ciclo de confirmación.
+- **Cancelación por parte de la psicóloga:** la psicóloga cancela la reserva; esta queda cancelada, el bloque se libera y se conserva el historial. El sistema no genera ningún cargo al paciente.
 - **Reagendamiento con alternativas:** el sistema consulta los bloques libres de los próximos 14 días y los presenta al paciente; la reserva original se mantiene vigente hasta que se elige una alternativa.
-- **Nuevo horario disponible:** la reserva se actualiza al nuevo bloque, el bloque anterior se libera, se registra el cambio en el historial y se reinicia el ciclo de solicitudes de confirmación; se encola el aviso de reserva reagendada.
-- **Nuevo horario tomado:** el sistema rechaza el cambio y la reserva original queda sin modificaciones.
+- **Nuevo horario disponible:** la reserva se actualiza al nuevo bloque y queda en estado «Pendiente de confirmación», el bloque anterior se libera, se registra el cambio en el historial y se reinicia el ciclo de solicitudes de confirmación; se encola el aviso de reserva reagendada. No se genera cargo por el reagendamiento.
+- **Nuevo horario tomado:** el sistema responde con conflicto (409), rechaza el cambio y la reserva original queda sin modificaciones.
 - **Sin alternativas:** el sistema informa que no hay horarios disponibles y conserva la reserva original.
 
 ## DSS-05 — Comprobar pago

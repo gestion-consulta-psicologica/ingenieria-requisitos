@@ -7,19 +7,19 @@
 Como paciente, quiero contar con la atención registrada y registrar el comprobante de mi transferencia en la plataforma, para que la psicóloga pueda comprobar el pago de mi atención.
 
 ## Trazabilidad
-- Actividad del TO-BE: **Realizar pago** (tipo: tarea de usuario). Cambio respecto del AS-IS: el comprobante de la transferencia deja de enviarse por WhatsApp y se registra en la plataforma, asociado al pago de la atención. Se agregó la fila correspondiente a la tabla «Actividades que cambian» de `02-rediseno-to-be.md` el 2026-11-19.
+- Actividad del TO-BE: **Realizar pago** (tipo: tarea de usuario). Cambio respecto del AS-IS: el comprobante de la transferencia deja de enviarse por WhatsApp y se registra en la plataforma, asociado al pago de la atención. Se agregó la fila correspondiente a la tabla «Actividades que cambian» de `02-rediseno-to-be.md` el 2026-11-19. También se agregó la actividad **«Originar atención y pago automáticamente»** para explicitar la creación automática al llegar la hora.
 - Actividad de apoyo: **Comprobar pago con apoyo del sistema**, porque el comprobante registrado queda disponible para que la psicóloga lo consulte en HU-05. La comprobación y el cambio de estado del pago no se implementan en esta historia.
 - Caso de uso: **CU-12 — Registrar comprobante de pago**. Actor principal: **Paciente**. Actores externos: **ninguno**.
 - Relaciones: sin `include`/`extend`. La creación automática de la atención y su pago es un paso del sistema, no un objetivo del paciente. Continúa en **CU-06 — Comprobar pago** (HU-05), que solo lee, y en **CU-07 — Registrar estado de pago** (HU-06), que produce las transiciones de EST-02.
-- Requisitos que cubre: **RP-23**. Contexto no funcional: **RP-17** (confidencialidad), **RP-18** y **RP-20** (transversales).
-- Creación automática de la atención y del pago: se respalda en la transición de **EST-01** «Confirmada + llega la hora de la atención → (final), originar atención» y en la transición inicial de **EST-02** «(inicial) + se origina la atención → Pendiente». No se creó un requisito funcional nuevo: RP-23 cubre el registro del comprobante y la creación automática se documenta como regla de estado.
+- Requisitos que cubre: **RP-23** (registro del comprobante) y **RP-25** (origen automático de la atención y el pago). Contexto no funcional: **RP-17** (confidencialidad), **RP-18** y **RP-20** (transversales).
+- Creación automática de la atención y del pago: se respalda en la transición de **EST-01** «Confirmada + llega la hora de la atención → Finalizada, originar atención y pago» y en la transición inicial de **EST-02** «(inicial) + se origina la atención → Pendiente». RP-23 cubre el registro del comprobante y RP-25 cubre la creación automática de la atención y el pago; la reserva pasa a `Finalizada`.
 - Diagrama de secuencia: **no existe DSS-12**; el flujo se reconstruyó desde el Gherkin y CU-12 y se confirmó el 2026-11-19.
-- Diagrama de estado: **EST-01 — Reserva** (transición a «(final)» conceptual) y **EST-02 — Pago** (creación en estado `Pendiente`). La clase `Atencion` tiene estados en el modelo de dominio, pero no tiene un `EST-xx`; en esta historia solo se crea en estado `programada` y no se producen sus transiciones.
+- Diagrama de estado: **EST-01 — Reserva** (transición de `Confirmada` a `Finalizada`) y **EST-02 — Pago** (creación en estado `Pendiente`). La clase `Atencion` tiene estados en el modelo de dominio, pero no tiene un `EST-xx`; en esta historia solo se crea en estado `programada` y no se producen sus transiciones.
 
 ## Entidades del modelo de dominio
 | Entidad | Operación en esta historia | Atributos usados | Asociaciones y multiplicidades |
 |---------|----------------------------|------------------|--------------------------------|
-| **Reserva** | Lee; no cambia su estado en la base | `estado` (`Confirmada`), `fechaRegistro` | Paciente `1 – 0..*` Reserva; Reserva `0..* – 1` BloqueHorario; Reserva `1 – 0..1` Atencion |
+| **Reserva** | Lee y actualiza su estado a `Finalizada` | `estado` (`Confirmada` → `Finalizada`), `fechaRegistro` | Paciente `1 – 0..*` Reserva; Reserva `0..* – 1` BloqueHorario; Reserva `1 – 0..1` Atencion |
 | **BloqueHorario** | Lee la fecha, la hora y la modalidad de la atención | `fecha`, `horaInicio`, `horaTermino`, `modalidad` | Psicologa `1 – 0..*` BloqueHorario; Reserva `0..* – 1` BloqueHorario |
 | **Paciente** | Lee para identificar al paciente de la atención | `nombreCompleto`, `rut` | Paciente `1 – 0..*` Reserva |
 | **Atencion** | Crea | `tipoAtencion` (desde la modalidad del bloque), `monto`, `estado = programada`; la fecha se deriva del BloqueHorario | Reserva `1 – 0..1` Atencion; Atencion `1 – 1` Pago |
@@ -31,7 +31,7 @@ El monto de la atención se toma de un valor configurable. **$30.000 es un valor
 ## Cambios de estado
 | Entidad | Estado origen | Evento | Guarda | Acción | Estado destino |
 |---------|---------------|--------|--------|--------|----------------|
-| **Reserva** | Confirmada | llega la hora de la atención | no existe una Atencion para la reserva | originar la atención y su pago | (final) conceptual; en la base la Reserva permanece `Confirmada` |
+| **Reserva** | Confirmada | llega la hora de la atención | no existe una Atencion para la reserva | originar la atención y su pago; registrar el cierre de la reserva | Finalizada |
 | **Atencion** | (inicial) | se origina la atención | existe una Reserva confirmada sin atención | registrar `tipoAtencion`, `monto` y `estado = programada` | programada |
 | **Pago** | (inicial) | se origina la atención | la Atencion se creó correctamente | registrar `montoAtencion = monto de la atención`, `montoPagado = 0` y `estado = Pendiente` | Pendiente |
 
@@ -39,21 +39,21 @@ El monto de la atención se toma de un valor configurable. **$30.000 es un valor
 
 ## Flujo de interacción
 1. El sistema procesa automáticamente las reservas en estado **Confirmada** cuya fecha y hora de atención ya llegaron y que todavía no tienen una `Atencion`.
-2. Por cada reserva que cumple la condición, el sistema crea en una misma operación una `Atencion` en estado `programada` y un `Pago` en estado `Pendiente`. El tipo de atención se toma de la modalidad del bloque, y el monto de la atención se toma del valor configurable.
-3. El procesamiento es idempotente: si la reserva ya tiene una `Atencion`, no se crea otra. Las reservas `Pendiente de confirmación`, `Sin confirmar` o `Cancelada` no originan atención.
+2. Por cada reserva que cumple la condición, el sistema crea en una misma operación una `Atencion` en estado `programada`, un `Pago` en estado `Pendiente` y deja la reserva en estado `Finalizada`. El tipo de atención se toma de la modalidad del bloque, y el monto de la atención se toma del valor configurable.
+3. El procesamiento es idempotente: si la reserva ya tiene una `Atencion`, no se crea otra. Las reservas `Pendiente de confirmación`, `Sin confirmar` o `Cancelada` no originan atención. Una reserva `Finalizada` ya tiene su atención y no se vuelve a procesar.
 4. El paciente accede al detalle de su reserva (`/reservas/{id}`). Si la reserva ya tiene una atención con pago en estado `Pendiente` o `Pago incompleto`, el sistema muestra el enlace **«Registrar comprobante de pago»**.
 5. El sistema muestra el formulario con los datos de la atención (fecha, hora, tipo y monto) y los campos **monto**, **fecha de transferencia** y **cuenta de destino**.
 6. El paciente completa y guarda el formulario. Si los datos son válidos, el sistema registra el `ComprobanteTransferencia` asociado al `Pago`, conserva los comprobantes anteriores y muestra una confirmación.
 7. Si falta el monto, la fecha de transferencia o la cuenta de destino, el sistema no registra el comprobante y le informa al paciente qué dato falta.
 8. Si el monto no es un valor positivo o la fecha de transferencia no es válida, el sistema tampoco registra el comprobante y lo informa.
-9. Si la atención no existe, no tiene pago asociado o el pago ya está en estado `Pagado`, el sistema no muestra el formulario o rechaza el registro y lo informa, sin modificar datos.
+9. Si la atención no existe o el pago ya está en estado `Pagado`, el sistema no muestra el formulario o rechaza el registro y lo informa, sin modificar datos. Un pago inexistente se trata como una inconsistencia de datos, no como un caso de negocio: toda atención tiene un pago.
 10. En todos los casos, el estado del `Pago` se mantiene sin cambios; el comprobante queda disponible para que la psicóloga lo consulte en HU-05.
 
 **Variantes:**
 - **Sin datos obligatorios:** no se registra el comprobante y se informa qué falta.
 - **Monto no positivo o fecha inválida:** no se registra el comprobante y se informa el error.
 - **Segundo comprobante:** se conserva el anterior y el nuevo se asocia al mismo `Pago`.
-- **Atención inexistente o sin pago:** se informa el error sin modificar datos.
+- **Atención inexistente o pago inexistente por datos inconsistentes:** se informa el error sin modificar datos.
 - **Pago ya `Pagado`:** no se habilita el registro de un nuevo comprobante.
 - **Reserva ya procesada:** no se duplica la atención ni el pago.
 - **Reserva no confirmada o cancelada:** no se origina atención.
@@ -72,6 +72,7 @@ Característica: Registro de la atención y del comprobante de pago
     Cuando llega la hora de la atención
     Entonces el sistema origina una atención en estado "programada"
     Y registra un pago en estado "Pendiente" con el monto registrado para la atención
+    Y la reserva queda en estado "Finalizada"
 
   Escenario: El paciente registra el comprobante de su transferencia
     Dado que el paciente tiene una atención registrada con pago pendiente
@@ -104,11 +105,11 @@ Estos escenarios completan las variantes del flujo confirmado y ya están incorp
     Entonces el sistema no registra el comprobante
     Y le informa el error
 
-  Escenario: La atención no tiene pago asociado
-    Dado que la atención no tiene un pago asociado
-    Cuando el paciente intenta registrar un comprobante
-    Entonces el sistema no registra el comprobante
-    Y le informa que no encontró el pago de la atención
+  Escenario: La atención tiene un pago pendiente sin comprobante
+    Dado que la atención tiene un pago en estado "Pendiente" y no tiene comprobantes registrados
+    Cuando el paciente registra un comprobante
+    Entonces el sistema asocia el comprobante al pago
+    Y el pago sigue en estado "Pendiente"
 
   Escenario: El pago ya está pagado
     Dado que el pago de la atención está en estado "Pagado"
@@ -120,6 +121,7 @@ Estos escenarios completan las variantes del flujo confirmado y ya están incorp
     Dado que la reserva confirmada ya tiene una atención originada
     Cuando el sistema vuelve a procesar la reserva
     Entonces no crea una nueva atención ni un nuevo pago
+    Y la reserva permanece en estado "Finalizada"
 ```
 
 ## Decisiones tomadas en la validación
@@ -127,12 +129,13 @@ Estos escenarios completan las variantes del flujo confirmado y ya están incorp
 - **I2 — Actividad del TO-BE:** se agregó la fila **«Realizar pago»** a la tabla «Actividades que cambian» de `02-rediseno-to-be.md`, con el cambio de WhatsApp a la plataforma. El nombre de la actividad se mantiene igual al del BPMN. Confirmado el 2026-11-19.
 - **I3 — Caso de uso:** se mantiene **CU-12 — Registrar comprobante de pago**, actor Paciente, sin actores externos ni `include`/`extend`. La creación automática de la atención es un paso del sistema y no cambia el nombre del caso de uso. Confirmado el 2026-11-19.
 - **I4 — Monto:** **$30.000 es un ejemplo configurable** que se cambiará en el futuro; no se modela una tarifa por tipo de atención en esta historia. La atención y el pago registran el monto usado al momento de la creación. Confirmado el 2026-11-19.
-- **I5 — Estados:** se usa **`Pendiente`** como nombre canónico del estado inicial del pago; `programada` es el estado inicial de `Atencion` según el modelo de dominio. No se crea un `EST-04` para `Atencion` en esta historia. La Reserva no cambia de estado en la base: el estado `(final)` de EST-01 es conceptual y la atención existente marca el fin del ciclo. Confirmado el 2026-11-19.
+- **I5 — Estados:** se usa **`Pendiente`** como nombre canónico del estado inicial del pago; `programada` es el estado inicial de `Atencion` según el modelo de dominio. No se crea un `EST-04` para `Atencion` en esta historia. La Reserva pasa a **`Finalizada`** en la base al originarse la atención; ese estado es final y no admite reagendamiento ni cancelación. Confirmado el 2026-11-23.
 - **I6 — Disparo automático:** el sistema procesa las reservas vencidas de forma automática al iniciar y periódicamente, de manera idempotente, sin una acción manual del paciente o de la psicóloga. Confirmado el 2026-11-19.
 - **I7 — Acceso y disponibilidad del formulario:** el paciente accede desde el detalle de su reserva (`/reservas/{id}`); el enlace «Registrar comprobante de pago» se muestra solo si el pago está en `Pendiente` o `Pago incompleto`. Si el pago está `Pagado`, no se habilita. Confirmado el 2026-11-19.
 - **I8 — Flujo sin DSS:** al no existir DSS-12, el flujo se reconstruyó desde el Gherkin y CU-12, incluyendo las variantes de error, y el estudiante lo confirmó. Confirmado el 2026-11-19.
 - **I9 — Nombres del Gherkin:** se normalizó `"pendiente"` a **`"Pendiente"`** en esta ficha y en `07-criterios-aceptacion.md` para alinearlo con EST-02 y el modelo de dominio. Confirmado el 2026-11-19.
-- **I10 — Escenarios adicionales:** se incorporaron a `07-criterios-aceptacion.md` los escenarios para datos inválidos, atención sin pago, pago ya pagado y no duplicación de la atención. Confirmado el 2026-11-19.
+- **I10 — Escenarios adicionales:** se incorporaron a `07-criterios-aceptacion.md` los escenarios para datos inválidos, pago pendiente sin comprobante, pago ya pagado y no duplicación de la atención. Confirmado el 2026-11-19.
+- **I11 — Pago único por atención:** toda `Atencion` tiene exactamente un `Pago`; el caso «atención sin pago» se interpreta como «pago pendiente sin comprobante». El escenario de pago inexistente se conserva solo como defensa ante datos inconsistentes. Confirmado el 2026-11-23.
 
 ## Supuestos
 - El monto de la atención es un valor configurable; **$30.000** se usa como ejemplo inicial y se cambiará en el futuro. No se calcula a partir de una tabla de tarifas en esta historia.

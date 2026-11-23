@@ -1,6 +1,16 @@
 # Gestión de consulta psicológica
 
-Aplicación web sencilla del curso **CIN 324 — Ingeniería de Requisitos**, generada desde la documentación del repositorio. Incluye **HU-01 — Consultar disponibilidad** (el paciente consulta los bloques horarios libres de una semana y, si no hay horas, el sistema informa la próxima fecha disponible), **HU-02 — Reservar una hora** (el paciente reserva un bloque disponible, recibe un aviso por correo electrónico y el bloque deja de mostrarse como disponible), **HU-02A — Registrar datos del paciente** (un paciente nuevo se registra desde el flujo de reserva y retoma el bloque seleccionado), **HU-03 — Confirmar o cancelar una hora** (el paciente recibe la solicitud y el recordatorio por correo electrónico, responde desde la plataforma o desde enlaces seguros de un solo uso y, si no responde, el planificador registra un cargo de $5.000), **HU-04 — Reagendar o cancelar una hora** (el paciente cancela una reserva confirmada o la cambia por un bloque libre de los próximos 14 días, con historial de cambios y un nuevo ciclo de confirmación) y **HU-05 — Comprobar el pago** (la psicóloga consulta la información del pago de una atención, sus comprobantes y las atenciones con pago pendiente, sin modificar el estado).
+Aplicación web del curso **CIN 324 — Ingeniería de Requisitos**, desarrollada para apoyar la gestión de una consulta psicológica.
+
+El prototipo implementa las siguientes historias de usuario:
+
+- **HU-01 — Consultar disponibilidad:** el paciente consulta los bloques horarios libres de una semana y, si no hay horas, el sistema informa la próxima fecha disponible.
+- **HU-02 — Reservar una hora:** el paciente reserva un bloque disponible, recibe un aviso por correo electrónico y el bloque deja de mostrarse como disponible.
+- **HU-02A — Registrar datos del paciente:** un paciente nuevo se registra desde el flujo de reserva y retoma el bloque seleccionado.
+- **HU-03 — Confirmar o cancelar una hora:** el paciente recibe la solicitud y el recordatorio por correo electrónico, responde desde la plataforma o desde enlaces seguros de un solo uso y, si no responde, el planificador registra un cargo de $5.000.
+- **HU-04 — Reagendar o cancelar una hora:** el paciente cancela una reserva confirmada o la cambia por un bloque libre de los próximos 14 días, con historial de cambios y un nuevo ciclo de confirmación.
+- **HU-05 — Comprobar el pago:** la psicóloga consulta la información del pago de una atención, sus comprobantes y las atenciones con pago pendiente, sin modificar el estado.
+- **HU-05A — Registrar la atención y el comprobante de pago:** la reserva confirmada origina automáticamente la atención y su pago, y el paciente registra uno o más comprobantes de transferencia.
 
 ## Requisitos
 
@@ -15,7 +25,9 @@ Desde la raíz del proyecto:
 
 ```powershell
 python -m venv .venv
+
 .\.venv\Scripts\Activate.ps1
+
 pip install -r requirements.txt
 ```
 
@@ -23,6 +35,7 @@ Si `python` no se reconoce en la terminal, usa el ejecutable instalado o el Pyth
 
 ```powershell
 & "$env:LOCALAPPDATA\Programs\Python\Python312\python.exe" -m venv .venv
+
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
 ```
 
@@ -34,16 +47,16 @@ Si PowerShell bloquea la activación del entorno, puedes usar directamente `.\.v
 python -m app.db.seed
 ```
 
-El comando crea `data/app.db` (si no existe), aplica las migraciones `001` a `007` y carga datos de ejemplo de forma idempotente:
+El comando crea `data/app.db` (si no existe), aplica las migraciones `001` a `008` y carga datos de ejemplo de forma idempotente:
 
 - Psicóloga **Ana Pérez**.
 - Paciente de ejemplo **Paciente de Ejemplo**, RUT **22.222.222-2** (sirve para reservar).
 - Semana del **9 de noviembre de 2026**:
-  - martes 10 a las 10:00: reserva vigente en estado **Pendiente de confirmación** (no debe mostrarse).
-  - martes 10 a las 11:00: bloque libre (debe mostrarse).
+  - Martes 10 a las 10:00: reserva vigente en estado **Pendiente de confirmación** (no debe mostrarse).
+  - Martes 10 a las 11:00: bloque libre (debe mostrarse).
 - Semana del **16 de noviembre de 2026**:
-  - martes 17 a las 10:00: reserva vigente en estado **Confirmada** (no debe mostrarse).
-  - martes 24 a las 10:00: próximo bloque libre, en modalidad online.
+  - Martes 17 a las 10:00: reserva vigente en estado **Confirmada** (no debe mostrarse).
+  - Martes 24 a las 10:00: próximo bloque libre, en modalidad online.
 - Atenciones para **HU-05** (jueves 12 de noviembre de 2026):
   - 16:00: atención de **Paciente de Ejemplo** con pago pendiente y un comprobante de $30.000.
   - 17:00: atención de **Paciente Sin Comprobante** con pago pendiente y sin comprobante.
@@ -51,11 +64,15 @@ El comando crea `data/app.db` (si no existe), aplica las migraciones `001` a `00
 
 Ejecutar el seed varias veces no duplica los datos.
 
-Las migraciones se aplican automáticamente al arrancar la aplicación o el seed. La migración `002` deja `correo` opcional para que un paciente pueda registrarse solo con teléfono. La migración `003` agrega `solicitud_confirmacion` y `cargo`; la `004` agrega `estado`, `fecha_cierre` y el índice único de solicitud pendiente; la `005` agrega `correo_pendiente` y `token_confirmacion`; la `006` agrega `reserva.version`, reconstruye las solicitudes con unicidad por `(reserva_id, version, tipo)` y crea `reserva_historial` para HU-04; la `007` agrega `atencion`, `pago` y `comprobante_transferencia` para HU-05. La `007` no modifica las tablas de reservas, pacientes o bloques. Si quieres empezar de cero, elimina `data/app.db` y vuelve a ejecutar el seed.
+Las migraciones se aplican automáticamente al arrancar la aplicación o el seed. La migración `002` deja `correo` opcional para que un paciente pueda registrarse solo con teléfono. La migración `003` agrega `solicitud_confirmacion` y `cargo`; la `004` agrega `estado`, `fecha_cierre` y el índice único de solicitud pendiente; la `005` agrega `correo_pendiente` y `token_confirmacion`; la `006` agrega `reserva.version`, reconstruye las solicitudes con unicidad por `(reserva_id, version, tipo)` y crea `reserva_historial` para HU-04; la `007` agrega `atencion`, `pago` y `comprobante_transferencia` para HU-05; la `008` reconstruye `reserva` para permitir el estado `Finalizada` cuando la reserva confirmada origina su atención y su pago.
+
+La `007` no modifica las tablas de reservas, pacientes o bloques; la `008` solo amplía los estados permitidos de `reserva`.
+
+La base incluida en el repositorio puede estar en una migración anterior; al arrancar la aplicación o el seed se aplican las migraciones pendientes. Si quieres empezar de cero, elimina `data/app.db` y vuelve a ejecutar el seed.
 
 ## Configuración del correo electrónico
 
-El envío real usa SMTP. Configura las variables en la terminal antes de iniciar la aplicación; **no** guardes credenciales en el repositorio:
+El envío real usa SMTP. Configura las variables en la terminal antes de iniciar la aplicación; **no guardes credenciales en el repositorio**:
 
 ```powershell
 $env:SMTP_HOST = "smtp.example.com"
@@ -67,13 +84,15 @@ $env:SMTP_SEGURIDAD = "starttls"
 $env:CORREO_URL_PUBLICA = "http://localhost:8000"
 ```
 
+Variables y consideraciones:
+
 - `SMTP_SEGURIDAD` acepta `starttls`, `ssl` o `ninguna`.
 - `CORREO_URL_PUBLICA` debe ser una URL accesible desde el dispositivo del paciente, porque se usa para armar los enlaces de confirmación.
 - `PLANIFICADOR_ACTIVO=0` desactiva el planificador para pruebas manuales controladas.
 - `MONTO_ATENCION_CLP` define el monto de las atenciones nuevas y usa **30000** por defecto. La creación automática de la atención y su pago depende de que el planificador esté activo.
 - `CONFIRMACION_HORA_VISPERA` (por defecto `09:00`) y `CONFIRMACION_HORA_RECORDATORIO` (por defecto `08:00`) son configurables; **aún no están confirmadas por el cliente**.
 - La zona horaria por defecto es `America/Santiago`.
-- Si el correo no está configurado, la aplicación funciona, pero los correos quedan en la cola como pendientes con el motivo y **nunca** se marca un envío como exitoso.
+- Si el correo no está configurado, la aplicación funciona, pero los correos quedan en la cola como pendientes con el motivo y **nunca se marca un envío como exitoso**.
 
 ## Ejecutar la aplicación
 
@@ -89,17 +108,23 @@ También puedes ejecutarlo sin activar el entorno:
 .\.venv\Scripts\python.exe -m uvicorn app.asgi:app --reload
 ```
 
-Abre <http://localhost:8000/disponibilidad>.
+Abre:
 
-Para HU-05 abre <http://localhost:8000/pagos>.
+- Disponibilidad: <http://localhost:8000/disponibilidad>
+- Pagos (HU-05): <http://localhost:8000/pagos>
+- Raíz de la aplicación: <http://localhost:8000/>
 
-Para HU-05A, entra al detalle de una reserva confirmada con atención y pago pendiente, por ejemplo <http://localhost:8000/reservas/2>, y usa el enlace **Registrar comprobante de pago**. También puedes abrir directamente <http://localhost:8000/pagos/{atencion_id}/comprobante>.
+Para HU-05A, entra al detalle de una reserva confirmada con atención y pago pendiente, por ejemplo <http://localhost:8000/reservas/2>, y usa el enlace **Registrar comprobante de pago**.
 
-La raíz <http://localhost:8000/> redirige a la consulta de disponibilidad.
+También puedes abrir directamente:
+
+`http://localhost:8000/pagos/{atencion_id}/comprobante`
+
+La raíz redirige a la consulta de disponibilidad.
 
 ## Base de datos y respaldo
 
-- `data/app.db` no se versiona; las migraciones `005`, `006` y `007` se aplican al arrancar o en una base temporal, nunca sobre `data/app.db` durante el desarrollo.
+- `data/app.db` no se versiona; las migraciones `005`, `006`, `007` y `008` se aplican al arrancar o en una base temporal, nunca sobre `data/app.db` durante el desarrollo.
 - **No existe una copia de seguridad previa a la migración `004`.** No se debe asumir que existe ni crearla de forma ficticia.
 - `pytest` usa una base SQLite temporal aislada y no modifica `data/app.db`.
 - Para pruebas manuales de HU-03 se debe usar exclusivamente `data/manual-hu03.db` mediante la variable `CONSULTA_DB`.
@@ -157,7 +182,7 @@ El aviso de reserva se envía por **correo electrónico real** mediante SMTP. Si
 
 ## Recorrido manual de HU-03
 
-Usa una base aislada y un correo de prueba; **no** uses direcciones de pacientes reales. Con una base recién sembrada, la reserva **1** queda en estado **Pendiente de confirmación** (martes 10 de noviembre a las 10:00).
+Usa una base aislada y un correo de prueba; **no uses direcciones de pacientes reales**. Con una base recién sembrada, la reserva **1** queda en estado **Pendiente de confirmación** (martes 10 de noviembre a las 10:00).
 
 1. Configura SMTP y `CORREO_URL_PUBLICA` como se indica arriba. Para una prueba controlada puedes usar `PLANIFICADOR_ACTIVO=0` y ejecutar el planificador desde una consola o desde las pruebas.
 2. Abre <http://localhost:8000/reservas/1>.
@@ -171,8 +196,8 @@ Usa una base aislada y un correo de prueba; **no** uses direcciones de pacientes
    - La solicitud de víspera pasa a **reemplazada** con su fecha de cierre y su correo pendiente queda **cancelado**.
    - El recordatorio queda como la única solicitud **pendiente**; sus enlaces son los válidos.
 5. Responde desde la plataforma o desde el enlace del correo:
-   - **Confirmar asistencia**: la reserva pasa a **Confirmada** y la solicitud pendiente más reciente queda **respondida**, con respuesta **confirma** y su fecha de respuesta.
-   - **No asistiré**: la reserva pasa a **Cancelada**, la solicitud pendiente más reciente queda **respondida**, con respuesta **no asistirá** y su fecha de respuesta, y el bloque vuelve a aparecer en `/disponibilidad?semana=2026-11-09`.
+   - **Confirmar asistencia:** la reserva pasa a **Confirmada** y la solicitud pendiente más reciente queda **respondida**, con respuesta **confirma** y su fecha de respuesta.
+   - **No asistiré:** la reserva pasa a **Cancelada**, la solicitud pendiente más reciente queda **respondida**, con respuesta **no asistirá** y su fecha de respuesta, y el bloque vuelve a aparecer en `/disponibilidad?semana=2026-11-09`.
    - El enlace usado queda marcado como utilizado; un segundo intento devuelve **HTTP 409** y no cambia la respuesta.
 6. Si el paciente no responde y llega la hora de la atención con una solicitud pendiente:
    - La reserva pasa a **Sin confirmar**, la solicitud queda **vencida** con respuesta **sin respuesta** y fecha de cierre (sin fecha de respuesta del paciente).
@@ -186,10 +211,11 @@ Los correos se envían **realmente** por SMTP. Si el servidor falla, el trabajo 
 
 ## Recorrido manual de HU-04
 
-Usa una copia aislada y un correo de prueba; **no** modifiques `data/app.db`. Por ejemplo:
+Usa una copia aislada y un correo de prueba; **no modifiques `data/app.db`**. Por ejemplo:
 
 ```powershell
 Copy-Item data\app.db data\manual-hu04.db
+
 $env:CONSULTA_DB = "$PWD\data\manual-hu04.db"
 ```
 
@@ -215,10 +241,11 @@ No hay autenticación real; `/reservas/{id}` sigue siendo el acceso de demostrac
 
 ## Recorrido manual de HU-05
 
-Usa una base aislada o una recién sembrada; **no** modifiques `data/app.db`. Por ejemplo:
+Usa una base aislada o una recién sembrada; **no modifiques `data/app.db`**. Por ejemplo:
 
 ```powershell
 $env:CONSULTA_DB = "$PWD\data\manual-hu05.db"
+
 python -m app.db.seed
 ```
 
@@ -242,7 +269,9 @@ Usa una base aislada y deja el planificador activo (es el valor por defecto):
 
 ```powershell
 $env:CONSULTA_DB = "$PWD\data\manual-hu05a.db"
+
 python -m app.db.seed
+
 uvicorn app.asgi:app --reload
 ```
 
@@ -262,11 +291,13 @@ uvicorn app.asgi:app --reload
 
 ## Pruebas
 
+Ejecuta:
+
 ```powershell
 pytest
 ```
 
-o, sin activar el entorno:
+O, sin activar el entorno:
 
 ```powershell
 .\.venv\Scripts\python.exe -m pytest
@@ -276,7 +307,7 @@ Las pruebas cubren:
 
 - `HU-01 · El paciente consulta una semana con bloques horarios libres`.
 - `HU-01 · El paciente consulta una semana sin bloques horarios libres`.
-- La regla de vigencia de EST-01 (Pendiente de confirmación y Confirmada bloquean; Cancelada y Sin confirmar no).
+- La regla de vigencia de EST-01 (Pendiente de confirmación y Confirmada bloquean; Cancelada, Sin confirmar y Finalizada no).
 - El cálculo del próximo bloque disponible cuando no hay alternativas.
 - La redirección de `/` a `/disponibilidad` y la consulta sin parámetro de semana.
 - `HU-02 · El paciente reserva un bloque horario disponible`.
@@ -314,62 +345,68 @@ Las pruebas cubren:
 - `HU-05A · El paciente registra un segundo comprobante`.
 - `HU-05A · El paciente no completa los datos obligatorios del comprobante`.
 - `HU-05A · El comprobante tiene datos inválidos`.
-- `HU-05A · La atención no tiene pago asociado`.
+- `HU-05A · La atención tiene un pago pendiente sin comprobante`.
 - `HU-05A · El pago ya está pagado`.
-- La migración `007` (`atencion`, `pago`, `comprobante_transferencia`), la idempotencia del seed y la consulta de solo lectura.
+- Las migraciones `007` (`atencion`, `pago`, `comprobante_transferencia`) y `008` (`reserva` con estado `Finalizada`), la idempotencia del seed y la consulta de solo lectura.
 - Las rutas `/pagos` y `/pagos/{atencion_id}`, incluido el 404 y el listado de atenciones con pago pendiente.
 - La creación automática e idempotente de la atención y el pago, el monto configurable, la ruta `/pagos/{atencion_id}/comprobante` y el enlace en el detalle de la reserva.
 - El envío real con un servidor SMTP falso local: éxito, error de conexión y reintento, credenciales rechazadas, SMTP no configurado, recuperación tras reinicio, duplicados e integridad.
 - El planificador automático, el reemplazo de solicitudes, el vencimiento con cargo y el estado de los correos en la pantalla.
 - El aislamiento de pytest: la base por defecto de las pruebas es temporal, el planificador está desactivado y no se modifica `data/app.db`.
 
-Resultado actual: **115 pruebas pasan** (93 existentes + 22 de HU-05A).
+**Resultado documentado: 115 pruebas pasan (93 existentes + 22 de HU-05A).**
 
-## Estructura
+## Estructura del proyecto
 
 ```text
 app/
-  main.py                  # fábrica de la aplicación y filtros de fechas
-  asgi.py                  # instancia ASGI app = crear_app()
+  main.py                       # fábrica de la aplicación y filtros de fechas
+  asgi.py                       # instancia ASGI app = crear_app()
+
   db/
-    conexion.py            # SQLite y migraciones
-    migrations/            # migraciones SQL numeradas
-    seed.py                # datos de ejemplo idempotentes
-  configuracion.py         # variables de entorno de SMTP, planificador, horas y monto de atención
-  tiempo.py                # zona America/Santiago y conversiones UTC/local
+    conexion.py                 # SQLite y migraciones
+    migrations/                 # migraciones SQL numeradas
+    seed.py                     # datos de ejemplo idempotentes
+
+  configuracion.py              # variables de entorno de SMTP, planificador, horas y monto de atención
+  tiempo.py                     # zona America/Santiago y conversiones UTC/local
+
   servicios/
-    disponibilidad.py      # lógica de consulta y regla de vigencia
-    paciente.py            # validación y registro de pacientes
-    reserva.py             # búsqueda de paciente, registro de reserva y consulta
-    confirmacion.py        # solicitudes, respuestas, tokens y cargo de HU-03
-    reagendamiento.py      # cancelación, alternativas, reagendamiento e historial de HU-04
-    pagos.py               # consulta de solo lectura de atención, pago y comprobantes de HU-05
-    atenciones.py          # origen automático de atención/pago y registro de comprobantes de HU-05A
-    notificaciones.py      # encolado del aviso de reserva
-    cola_correo.py         # cola persistente e idempotencia
-    correo.py              # adaptador SMTP y errores tipados
-    plantillas_correo.py   # texto y HTML de los correos
-    tokens.py              # tokens de un solo uso (hash, expiración)
-    planificador.py        # eventos temporales y envío de la cola
+    disponibilidad.py           # lógica de consulta y regla de vigencia
+    paciente.py                 # validación y registro de pacientes
+    reserva.py                  # búsqueda de paciente, registro de reserva y consulta
+    confirmacion.py             # solicitudes, respuestas, tokens y cargo de HU-03
+    reagendamiento.py           # cancelación, alternativas, reagendamiento e historial de HU-04
+    pagos.py                    # consulta de solo lectura de atención, pago y comprobantes de HU-05
+    atenciones.py               # origen automático de atención/pago y registro de comprobantes de HU-05A
+    notificaciones.py           # encolado del aviso de reserva
+    cola_correo.py              # cola persistente e idempotencia
+    correo.py                   # adaptador SMTP y errores tipados
+    plantillas_correo.py        # texto y HTML de los correos
+    tokens.py                   # tokens de un solo uso (hash, expiración)
+    planificador.py             # eventos temporales y envío de la cola
+
   rutas/
-    disponibilidad.py      # GET /disponibilidad
-    paciente.py            # GET/POST /pacientes/registro y GET /pacientes/{id}
-    reserva.py             # reserva, detalle, respuesta por plataforma o token
-    pagos.py               # GET /pagos, GET /pagos/{atencion_id} y GET/POST /pagos/{atencion_id}/comprobante
+    disponibilidad.py           # GET /disponibilidad
+    paciente.py                 # GET/POST /pacientes/registro y GET /pacientes/{id}
+    reserva.py                  # reserva, detalle, respuesta por plataforma o token
+    pagos.py                    # GET /pagos, GET /pagos/{atencion_id} y GET/POST /pagos/{atencion_id}/comprobante
+
   templates/
-    disponibilidad.html    # pantalla de consulta
-    registro_paciente.html # formulario de registro
-    registro_confirmado.html # confirmación del registro
-    reserva.html           # formulario de reserva
-    reserva_confirmada.html # detalle, correos, solicitudes, historial y cargo
-    reagendar.html         # alternativas de reagendamiento
-    pagos.html             # listado de atenciones con pago pendiente
-    pago_detalle.html      # detalle del pago y sus comprobantes
-    pago_comprobante.html  # formulario del paciente para registrar el comprobante
-    respuesta_token.html   # confirmación desde el enlace del correo
+    disponibilidad.html         # pantalla de consulta
+    registro_paciente.html      # formulario de registro
+    registro_confirmado.html   # confirmación del registro
+    reserva.html                # formulario de reserva
+    reserva_confirmada.html     # detalle, correos, solicitudes, historial y cargo
+    reagendar.html               # alternativas de reagendamiento
+    pagos.html                  # listado de atenciones con pago pendiente
+    pago_detalle.html           # detalle del pago y sus comprobantes
+    pago_comprobante.html       # formulario del paciente para registrar el comprobante
+    respuesta_token.html        # confirmación desde el enlace del correo
+
 tests/
-  conftest.py              # fixtures y aislamiento de la base de pruebas
-  smtp_falso.py            # servidor SMTP local para pruebas
+  conftest.py                   # fixtures y aislamiento de la base de pruebas
+  smtp_falso.py                 # servidor SMTP local para pruebas
   test_aislamiento.py
   test_hu01_disponibilidad.py
   test_hu02_reserva.py
@@ -380,7 +417,8 @@ tests/
   test_hu04_reagendamiento.py
   test_hu05_comprobar_pago.py
   test_hu05a_atencion_comprobante.py
-data/app.db                # base local (se crea con el seed)
+
+data/app.db                      # base local (se crea con el seed)
 ```
 
 ## Limitaciones de seguridad del prototipo
@@ -403,7 +441,7 @@ No debe utilizarse este prototipo con información clínica o personal real en u
 ## Fuera de alcance
 
 - Editar o eliminar los datos de un paciente ya registrado, y validar el dígito verificador del RUT.
-- **HU-05A y HU-06 a HU-09**: registro automático de la atención y del comprobante, registro del estado de pago, boletas, registro de asistencia y ficha clínica.
+- **HU-06 a HU-09:** registro del estado de pago, boletas, registro de asistencia y ficha clínica.
 - Autenticación real (el selector de rol es de demostración) y requisitos no funcionales.
 - WhatsApp real; el canal implementado es correo electrónico por SMTP.
 - Envío de correos a pacientes reales en pruebas; se usa un correo de prueba y un servidor SMTP falso.

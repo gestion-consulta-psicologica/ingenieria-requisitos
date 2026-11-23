@@ -1,0 +1,55 @@
+@startuml est-04
+' EST-04 — Ciclo de vida de Atención
+skinparam shadowing false
+skinparam nodesep 80
+skinparam ranksep 60
+hide empty description
+
+title EST-04 — Ciclo de vida de Atención
+
+state "Programada" as PRO
+state "Realizada" as REA
+state "Inasistencia" as INA
+state "Inasistencia justificada" as INJ
+
+[*] --> PRO : llega la hora de una reserva confirmada\n/ originar atención y pago pendiente\n/ registrar tipo de atención y monto
+
+PRO --> REA : psicóloga registra asistencia\n[paciente asistió]\n/ registrar asistencia del paciente
+
+PRO --> INA : psicóloga registra inasistencia\n[paciente no asistió y no presentó justificación]\n/ registrar inasistencia\n/ generar cargo de $5.000 asociado al paciente y a la atención
+
+PRO --> INJ : psicóloga registra inasistencia justificada\n[paciente no asistió y presentó justificación válida]\n/ registrar justificación\n/ no generar cargo
+
+note right of PRO
+  La atención se origina cuando
+  llega la hora de una reserva
+  confirmada.
+  Se crea un pago pendiente
+  asociado a la atención.
+end note
+
+note right of INA
+  Inasistencia injustificada:
+  - Genera cargo de $5.000.
+  - Se asocia al paciente.
+  - Se asocia a la atención.
+  La psicóloga registra la inasistencia.
+end note
+
+note right of INJ
+  Inasistencia justificada:
+  - No genera cargo.
+  - La psicóloga registra
+    la justificación.
+end note
+
+note bottom of REA
+  El pago mantiene su propio
+  ciclo de vida en EST-02.
+end note
+
+REA --> [*]
+INA --> [*]
+INJ --> [*]
+
+@enduml

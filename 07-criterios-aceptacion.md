@@ -1,6 +1,9 @@
 # Criterios de aceptación (Gherkin)
 
+> **Fuente de verdad:** los criterios de aceptación de cada historia se definen en `04-historias-usuario.md`. Este documento los deriva en escenarios Gherkin y mantiene la correspondencia CA ↔ escenario; ante una diferencia, prevalece `04-historias-usuario.md`.
+
 ## HU-01 — Consultar disponibilidad
+
 Historia: Como paciente, quiero consultar la disponibilidad de horas en la plataforma, para conocer las opciones de atención sin depender de una coordinación por WhatsApp.
 
 ```gherkin
@@ -22,15 +25,19 @@ Característica: Consulta de disponibilidad de horas
 ```
 
 ## HU-02 — Reservar una hora
+
 Historia: Como paciente, quiero seleccionar un horario disponible, para reservar una hora de atención directamente desde la plataforma.
 
 ```gherkin
 Característica: Reserva de hora de atención
 
-  Escenario: El paciente reserva un bloque horario disponible
+  Escenario: El paciente confirma la reserva de un bloque horario disponible
     Dado que el bloque del jueves 12 de noviembre a las 16:00 está disponible
     Y que el paciente tiene registrados su nombre completo, RUT y un medio de contacto
-    Cuando el paciente reserva ese bloque horario
+    Cuando el paciente selecciona ese bloque horario
+    Entonces el sistema muestra el horario seleccionado como opción para continuar
+    Y todavía no registra la reserva
+    Cuando el paciente confirma la reserva
     Entonces el sistema registra la reserva en estado "pendiente de confirmación"
     Y el bloque del jueves 12 de noviembre a las 16:00 deja de estar disponible para otros pacientes
     Y el sistema encola y envía al paciente el aviso de la reserva registrada por correo electrónico
@@ -50,6 +57,7 @@ Característica: Reserva de hora de atención
 ```
 
 ## HU-02A — Registrar datos del paciente
+
 Historia: Como paciente, quiero registrar mis datos personales en la plataforma, para poder reservar una hora de atención cuando aún no estoy registrado.
 
 ```gherkin
@@ -76,6 +84,7 @@ Característica: Registro de datos del paciente
 ```
 
 ## HU-03 — Confirmar o cancelar una hora
+
 Historia: Como paciente, quiero confirmar o cancelar mi hora desde la plataforma o desde el enlace seguro del correo, para gestionar mi asistencia sin tener que responder mediante WhatsApp.
 
 ```gherkin
@@ -96,7 +105,9 @@ Característica: Confirmación de asistencia
     Cuando el paciente responde que no asistirá
     Entonces la reserva queda en estado "cancelada"
     Y la solicitud pendiente más reciente queda en estado "respondida", con la respuesta "no asistirá" y su fecha de respuesta
+    Y el sistema registra un cargo de $5.000 asociado al paciente y a la reserva
     Y el bloque horario vuelve a estar disponible para otros pacientes
+    Y el aviso del cargo se encola para envío por correo electrónico
 
   Escenario: El enlace de correo ya fue utilizado
     Dado que el paciente ya respondió usando el enlace del correo
@@ -138,7 +149,7 @@ Característica: Confirmación de asistencia
     Entonces la reserva queda en estado "sin confirmar"
     Y la solicitud pendiente más reciente queda en estado "vencida", con la respuesta "sin respuesta" y la fecha de cierre de la atención
     Y no se registra una fecha de respuesta del paciente
-    Y el sistema registra un cargo de $5.000 por reserva de hora asociado al paciente y a la reserva
+    Y el sistema registra un cargo de $5.000 por falta de confirmación asociado al paciente y a la reserva
     Y el aviso de cargo se encola para envío por correo electrónico
 
   Escenario: El servidor SMTP no está disponible
@@ -156,60 +167,90 @@ Característica: Confirmación de asistencia
 ```
 
 ## HU-04 — Reagendar o cancelar una hora
+
 Historia: Como paciente, quiero solicitar el reagendamiento o cancelación de una hora desde la plataforma, para modificar mi reserva sin depender del contacto con la secretaria o psicóloga.
+
+**Trazabilidad:** los escenarios de esta sección derivan de los CA1–CA8 de HU-04 en `04-historias-usuario.md`; cada escenario indica el criterio que desarrolla. Se incorpora un escenario complementario para verificar que las cancelaciones realizadas por la psicóloga no generan cargos.
 
 ```gherkin
 Característica: Reagendamiento y cancelación de una reserva
 
+  # CA1
   Escenario: El paciente accede a las opciones de gestión
-    Dado que el paciente tiene una reserva confirmada
+    Dado que el paciente tiene una reserva en estado "Confirmada"
     Cuando accede al detalle de su reserva
     Entonces el sistema le permite elegir entre reagendar o cancelar la hora
 
+  # CA2
   Escenario: El paciente cancela una reserva
-    Dado que el paciente tiene una reserva confirmada para el viernes 13 de noviembre a las 18:00
-    Cuando el paciente cancela la reserva
-    Entonces la reserva queda en estado "cancelada"
+    Dado que el paciente tiene una reserva en estado "Confirmada" para el viernes 13 de noviembre a las 18:00
+    Cuando el paciente confirma la cancelación de la reserva
+    Entonces la reserva queda en estado "Cancelada"
+    Y el sistema registra un cargo de $5.000 asociado al paciente y a la reserva
     Y el bloque del viernes 13 de noviembre a las 18:00 vuelve a estar disponible
+    Y el historial de la reserva conserva el cambio de cancelación
+    Y el aviso del cargo se encola para envío por correo electrónico
 
+  Escenario complementario: La psicóloga cancela una reserva
+    Dado que existe una reserva en estado "Confirmada"
+    Cuando la psicóloga cancela la reserva desde la plataforma
+    Entonces la reserva queda en estado "Cancelada"
+    Y el bloque horario vuelve a estar disponible
+    Y el historial de la reserva conserva el cambio de cancelación
+    Y el sistema no genera un cargo de $5.000 al paciente
+
+  # CA3
   Escenario: El paciente solicita reagendar y existen alternativas
-    Dado que el paciente tiene una reserva confirmada para el viernes 13 de noviembre a las 18:00
-    Y que existen bloques horarios disponibles en las dos semanas siguientes
+    Dado que el paciente tiene una reserva en estado "Confirmada" para el viernes 13 de noviembre a las 18:00
+    Y que existen bloques horarios disponibles en los próximos 14 días
     Cuando el paciente solicita reagendar la reserva
-    Entonces el sistema informa los bloques horarios disponibles como alternativas
+    Entonces el sistema consulta la disponibilidad de los próximos 14 días
+    Y excluye el bloque actual y los bloques ocupados
     Y la reserva original se mantiene vigente mientras el paciente no elija una alternativa
 
+  # CA4
+  Escenario: El sistema muestra las alternativas disponibles
+    Dado que el sistema encontró bloques disponibles para el reagendamiento
+    Cuando presenta los resultados de la consulta
+    Entonces el paciente puede visualizar las alternativas disponibles para seleccionar un nuevo horario
+
+  # CA5
+  Escenario: El paciente elige una alternativa disponible
+    Dado que el sistema muestra alternativas disponibles
+    Cuando el paciente elige el bloque del lunes 16 de noviembre a las 17:00
+    Entonces el sistema identifica el bloque seleccionado
+    Y lo presenta como opción para confirmar el reagendamiento
+
+  # CA6
+  Escenario: El paciente confirma el nuevo horario
+    Dado que el paciente eligió el bloque del lunes 16 de noviembre a las 17:00
+    Y que el bloque continúa disponible
+    Cuando el paciente confirma el reagendamiento
+    Entonces la reserva queda asociada al lunes 16 de noviembre a las 17:00 en estado "Pendiente de confirmación"
+    Y el bloque del viernes 13 de noviembre a las 18:00 vuelve a estar disponible
+    Y el historial de la reserva conserva el cambio de reagendamiento
+    Y el sistema encola y envía al paciente el aviso de la reserva reagendada por correo electrónico para iniciar un nuevo ciclo
+    Y el sistema no genera un cargo de $5.000 por el reagendamiento
+
+  # CA7
+  Escenario: La alternativa elegida fue tomada por otro paciente
+    Dado que el paciente eligió el bloque del lunes 16 de noviembre a las 17:00
+    Y que ese bloque fue reservado por otro paciente antes de confirmar
+    Cuando el paciente intenta confirmar el cambio
+    Entonces el sistema responde con conflicto (409) e indica que el bloque ya no está disponible
+    Y la reserva original se mantiene sin cambios
+
+  # CA8
   Escenario: El paciente solicita reagendar y no existen alternativas
-    Dado que el paciente tiene una reserva confirmada
-    Y que no existen bloques horarios disponibles en las dos semanas siguientes
+    Dado que el paciente tiene una reserva en estado "Confirmada"
+    Y que no existen bloques horarios disponibles en los próximos 14 días
     Cuando el paciente solicita reagendar la reserva
     Entonces el sistema informa que no hay alternativas disponibles
     Y la reserva original se mantiene vigente
 ```
 
-### HU-04 — Seleccionar una nueva hora (continuación)
-Historia: Como paciente, quiero seleccionar un nuevo horario disponible al reagendar, para reemplazar mi reserva anterior por una alternativa que se adapte a mi disponibilidad.
-
-```gherkin
-Característica: Selección de nueva hora al reagendar
-
-  Escenario: El paciente elige una alternativa disponible
-    Dado que el paciente solicitó reagendar su reserva del viernes 13 de noviembre a las 18:00
-    Y que el bloque del lunes 16 de noviembre a las 17:00 está disponible
-    Cuando el paciente elige el bloque del lunes 16 de noviembre a las 17:00
-    Entonces la reserva queda asociada al lunes 16 de noviembre a las 17:00 en estado "pendiente de confirmación"
-    Y el bloque del viernes 13 de noviembre a las 18:00 vuelve a estar disponible
-    Y el sistema encola y envía al paciente el aviso de la reserva reagendada por correo electrónico
-
-  Escenario: La alternativa elegida fue tomada por otro paciente
-    Dado que el paciente solicitó reagendar su reserva
-    Y que el bloque del lunes 16 de noviembre a las 17:00 fue reservado por otro paciente
-    Cuando el paciente elige el bloque del lunes 16 de noviembre a las 17:00
-    Entonces el sistema rechaza el cambio indicando que el bloque ya no está disponible
-    Y la reserva original se mantiene sin cambios
-```
-
 ## HU-05 — Comprobar el pago
+
 Historia: Como psicóloga, quiero consultar la información del pago asociada a una atención, para comprobar el pago sin depender únicamente de comprobantes enviados por WhatsApp.
 
 ```gherkin
@@ -219,17 +260,20 @@ Característica: Comprobación del pago de una atención
     Dado que el paciente registró un comprobante de transferencia por $30.000 para su atención del jueves 12 de noviembre
     Cuando la psicóloga consulta el pago de esa atención
     Entonces el sistema informa el monto, la fecha de la transferencia y la cuenta de destino del comprobante
-    Y informa el monto que corresponde al tipo de atención
+    Y el monto informado es el registrado para la atención, sin tarifas por tipo de atención
 
-  Escenario: La atención no tiene comprobante de pago
-    Dado que el paciente no ha registrado un comprobante de pago para su atención del jueves 12 de noviembre
+  Escenario: La atención tiene un pago pendiente sin comprobante
+    Dado que la atención tiene un pago en estado "Pendiente" y el paciente no ha registrado un comprobante de pago
     Cuando la psicóloga consulta el pago de esa atención
     Entonces el sistema informa que la atención no tiene comprobante de pago
     Y la atención aparece en el listado de atenciones con pago pendiente
 ```
 
 ## HU-05A — Registrar la atención y el comprobante de pago
+
 Historia: Como paciente, quiero contar con la atención registrada y registrar el comprobante de mi transferencia en la plataforma, para que la psicóloga pueda comprobar el pago de mi atención.
+
+**Trazabilidad:** los escenarios de esta sección derivan de los CA1–CA6 de HU-05A en `04-historias-usuario.md`. CA1 y CA6 → escenario de la reserva que llega a la hora; CA2 y CA5 → escenario del registro del comprobante; CA3 → escenario de datos obligatorios; CA4 → escenario del segundo comprobante. Los demás escenarios cubren validaciones y rechazos.
 
 ```gherkin
 Característica: Registro de la atención y del comprobante de pago
@@ -239,6 +283,7 @@ Característica: Registro de la atención y del comprobante de pago
     Cuando llega la hora de la atención
     Entonces el sistema origina una atención en estado "programada"
     Y registra un pago en estado "Pendiente" con el monto registrado para la atención
+    Y la reserva queda en estado "Finalizada"
 
   Escenario: El paciente registra el comprobante de su transferencia
     Dado que el paciente tiene una atención registrada con pago pendiente
@@ -264,11 +309,11 @@ Característica: Registro de la atención y del comprobante de pago
     Entonces el sistema no registra el comprobante
     Y le informa el error
 
-  Escenario: La atención no tiene pago asociado
-    Dado que la atención no tiene un pago asociado
-    Cuando el paciente intenta registrar un comprobante
-    Entonces el sistema no registra el comprobante
-    Y le informa que no encontró el pago de la atención
+  Escenario: La atención tiene un pago pendiente sin comprobante
+    Dado que la atención tiene un pago en estado "Pendiente" y no tiene comprobantes registrados
+    Cuando el paciente registra un comprobante
+    Entonces el sistema asocia el comprobante al pago
+    Y el pago sigue en estado "Pendiente"
 
   Escenario: El pago ya está pagado
     Dado que el pago de la atención está en estado "Pagado"
@@ -280,9 +325,11 @@ Característica: Registro de la atención y del comprobante de pago
     Dado que la reserva confirmada ya tiene una atención originada
     Cuando el sistema vuelve a procesar la reserva
     Entonces no crea una nueva atención ni un nuevo pago
+    Y la reserva permanece en estado "Finalizada"
 ```
 
 ## HU-06 — Registrar el estado de pago
+
 Historia: Como psicóloga, quiero registrar el estado de pago de una atención en la plataforma, para mantener actualizada la información administrativa del paciente.
 
 ```gherkin
@@ -304,6 +351,7 @@ Característica: Registro del estado de pago
 ```
 
 ## HU-07 — Emitir boleta
+
 Historia: Como psicóloga, quiero emitir la boleta con apoyo de la plataforma, para reducir el tiempo destinado a tareas administrativas.
 
 ```gherkin
@@ -318,7 +366,7 @@ Característica: Emisión de boleta de honorarios
     Y la boleta queda asociada a la atención con su número de folio
 
   Escenario: La atención no tiene el pago verificado
-    Dado que la atención del jueves 12 de noviembre tiene su pago en estado "pendiente"
+    Dado que la atención del jueves 12 de noviembre tiene su pago en estado "Pendiente"
     Cuando la psicóloga solicita emitir la boleta de esa atención
     Entonces el sistema no prepara la boleta
     Y informa que la atención no tiene el pago verificado
@@ -332,7 +380,10 @@ Característica: Emisión de boleta de honorarios
 ```
 
 ## HU-08 — Registrar asistencia e inasistencia
+
 Historia: Como psicóloga, quiero registrar la asistencia o inasistencia del paciente en la plataforma, para mantener actualizado el estado de cada atención.
+
+**Trazabilidad:** los escenarios de inasistencia derivan de los CA4 y CA5 de HU-08 en `04-historias-usuario.md`.
 
 ```gherkin
 Característica: Registro de asistencia a la atención
@@ -347,16 +398,17 @@ Característica: Registro de asistencia a la atención
     Dado que el paciente tiene una reserva confirmada para el jueves 12 de noviembre a las 16:00
     Cuando la psicóloga registra que el paciente no asistió y no justificó la inasistencia
     Entonces la atención queda en estado "inasistencia"
-    Y el sistema registra un cargo de $5.000 por reserva de hora asociado al paciente
+    Y el sistema registra un cargo de $5.000 por inasistencia sin justificación, asociado a la atención y al paciente, sin modificar el estado del pago
 
   Escenario: El paciente justifica la inasistencia
     Dado que el paciente tiene una reserva confirmada para el jueves 12 de noviembre a las 16:00
     Cuando la psicóloga registra que el paciente no asistió y justificó la inasistencia
     Entonces la atención queda en estado "inasistencia justificada"
-    Y el sistema no registra cargo por reserva de hora
+    Y el sistema no registra el cargo de $5.000 por inasistencia
 ```
 
 ## HU-09 — Actualizar ficha clínica
+
 Historia: Como psicóloga, quiero actualizar la ficha clínica del paciente en una plataforma centralizada, para mantener la información clínica organizada y disponible para el seguimiento de sus atenciones.
 
 ```gherkin

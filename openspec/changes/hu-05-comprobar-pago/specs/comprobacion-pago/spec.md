@@ -15,7 +15,7 @@ El sistema DEBE mostrar, para una Atencion registrada, el nombre y el RUT del pa
 - **DADO** que el paciente registró un comprobante de transferencia por $30.000 para su atención del jueves 12 de noviembre
 - **CUANDO** la psicóloga consulta el pago de esa atención
 - **ENTONCES** el sistema informa el monto, la fecha de la transferencia y la cuenta de destino del comprobante
-- **Y** informa el monto que corresponde al tipo de atención
+- **Y** el monto informado es el registrado para la atención, sin tarifas por tipo de atención
 - **Y** muestra el nombre y el RUT del paciente de la atención
 
 ### Requirement: Informar la ausencia de comprobante y listar atenciones con pago pendiente

@@ -106,13 +106,34 @@ Paciente "1" -- "0..*" Reserva : realiza >
 Reserva "0..*" -- "1" BloqueHorario : ocupa >
 Reserva "1" -- "0..*" SolicitudConfirmacion : recibe >
 Reserva "1" -- "0..1" Atencion : origina >
-Reserva "1" -- "0..1" Cargo : genera >
+
+' --- Asociaciones de Cargo ---
+Reserva "0..1" -- "0..1" Cargo : genera >
+Atencion "0..1" -- "0..1" Cargo : genera >
 Paciente "1" -- "0..*" Cargo : adeuda >
+
+' Restricción: cada Cargo tiene exactamente un origen.
+note right of Cargo
+  Reglas de Cargo:
+  - Monto: $5.000.
+  - Cancelación del paciente: genera cargo.
+  - Falta de confirmación: genera cargo.
+  - Inasistencia injustificada: genera cargo.
+  - Inasistencia justificada: sin cargo.
+  - Cancelación de la psicóloga: sin cargo.
+  - Reagendamiento: sin cargo.
+
+  {xor}
+  Cada Cargo se asocia a exactamente
+  una Reserva o una Atencion,
+  nunca a ambas.
+end note
+
 Atencion "1" -- "1" Pago : se paga con >
 Pago "1" -- "0..*" ComprobanteTransferencia : se respalda con >
 Atencion "1" -- "0..1" Boleta : se documenta con >
 Psicologa "1" -- "0..*" Boleta : emite >
-Paciente "1" -- "1" FichaClinica : tiene >
+Paciente "1" -- "0..1" FichaClinica : tiene >
 FichaClinica "1" *-- "0..*" RegistroEvolucion : contiene >
 Atencion "1" -- "0..1" RegistroEvolucion : se registra en >
 

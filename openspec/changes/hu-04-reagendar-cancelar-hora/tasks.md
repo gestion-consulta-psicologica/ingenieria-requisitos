@@ -37,4 +37,4 @@
 - [x] 5.2 Actualizar `08-modelo-dominio.md`, `10-diagramas-secuencia.md`, `11-diagramas-estado.md` y `12-trazabilidad.md` con DSS-04, el historial y el nuevo ciclo.
 - [x] 5.3 Crear y exportar `diagramas/dss-04.puml/png`; actualizar `est-01.puml/png`.
 - [x] 5.4 Actualizar `README.md`, `.cin324/proyecto.md`, `.cin324/historias/HU-04.md` y la propuesta OpenSpec.
-- [ ] 5.5 Ejecutar `openspec validate hu-04-reagendar-cancelar-hora`, `git diff --check` y verificar el hash de `data/app.db`.
+- [x] 5.5 Ejecutar `openspec validate hu-04-reagendar-cancelar-hora --strict`, `git diff --check` y verificar el hash de `data/app.db` (`97E01B0E05CA75E8C42D62755D32779AA36D304A6B980CC47DA5AD83A3E60B29`, sin cambios).

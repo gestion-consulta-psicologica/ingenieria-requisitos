@@ -28,7 +28,7 @@ La aplicación ya tiene las tablas `atencion`, `pago` y `comprobante_transferenc
 Se agrega un servicio `app/servicios/atenciones.py` con `crear_atenciones_vencidas(conexion, ahora, zona_horaria)`.
 
 - Consulta las `Reserva` en estado `Confirmada` que no tengan una `Atencion` y cuyo `BloqueHorario` ya haya comenzado.
-- Por cada una inserta una `Atencion` (`tipo_atencion` = modalidad del bloque, `monto` = monto configurable, `estado = programada`) y un `Pago` (`monto_atencion` = mismo monto, `monto_pagado = 0`, `estado = Pendiente`) en una misma transacción.
+- Por cada una inserta una `Atencion` (`tipo_atencion` = modalidad del bloque, `monto` = monto configurable, `estado = programada`), un `Pago` (`monto_atencion` = mismo monto, `monto_pagado = 0`, `estado = Pendiente`) y actualiza la `Reserva` a `Finalizada`, todo en una misma transacción.
 - La idempotencia se apoya en `atencion.reserva_id UNIQUE`: si otra ejecución ya creó la atención, la inserción falla y se ignora sin duplicar.
 - El planificador llama al servicio en cada ciclo, después de procesar las reservas pendientes de confirmación. Así se cumple el inicio y la ejecución periódica sin agregar otro proceso.
 - Alternativa considerada: crear la atención desde la ruta de confirmación. Se descartó porque la atención se origina cuando llega la hora, no cuando el paciente confirma.
@@ -76,7 +76,7 @@ Ninguna. No hay banco, pasarela de pago ni correo en esta historia; no se crea a
   - creación automática e idempotencia sobre una reserva confirmada vencida;
   - registro de un comprobante y conservación de uno anterior;
   - datos obligatorios y datos inválidos;
-  - atención sin pago y pago `Pagado`;
+  - pago inexistente por datos inconsistentes y pago `Pagado`;
   - enlace visible en el detalle de la reserva y formulario disponible.
 - Las pruebas de rutas usan `crear_app(..., planificador_activo=False)` para que la creación automática no altere los datos de ejemplo durante la prueba; la creación automática se prueba llamando al servicio con un `ahora` controlado.
 

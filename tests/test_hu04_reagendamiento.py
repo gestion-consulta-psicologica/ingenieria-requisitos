@@ -151,6 +151,42 @@ def test_no_se_puede_cancelar_una_reserva_pendiente(conexion):
     assert listar_historial(conexion, 1) == []
 
 
+def test_no_se_puede_cancelar_una_reserva_con_atencion(conexion):
+    preparar_base(conexion)
+    conexion.execute(
+        """
+        INSERT INTO atencion (reserva_id, tipo_atencion, monto, estado)
+        VALUES (1, 'presencial', 30000, 'programada')
+        """
+    )
+    conexion.commit()
+
+    with pytest.raises(EstadoReservaInvalido):
+        cancelar_reserva(conexion, 1)
+
+    fila = conexion.execute("SELECT * FROM reserva WHERE id = 1").fetchone()
+    assert fila["estado"] == "Confirmada"
+    assert listar_historial(conexion, 1) == []
+
+
+def test_no_se_puede_reagendar_una_reserva_con_atencion(conexion):
+    preparar_base(conexion)
+    conexion.execute(
+        """
+        INSERT INTO atencion (reserva_id, tipo_atencion, monto, estado)
+        VALUES (1, 'presencial', 30000, 'programada')
+        """
+    )
+    conexion.commit()
+
+    with pytest.raises(EstadoReservaInvalido):
+        reagendar_reserva(conexion, 1, 2)
+
+    fila = conexion.execute("SELECT * FROM reserva WHERE id = 1").fetchone()
+    assert fila["estado"] == "Confirmada"
+    assert listar_historial(conexion, 1) == []
+
+
 def test_alternativas_excluyen_bloque_actual_ocupados_y_fuera_de_rango(conexion):
     preparar_base(conexion)
     insertar_reserva_tomada(conexion)

@@ -8,7 +8,7 @@ Permite originar automáticamente la Atencion y el Pago de una Reserva confirmad
 
 ### Requirement: Originar automáticamente la Atencion y el Pago
 
-El sistema DEBE procesar las Reservas en estado "Confirmada" cuya fecha y hora de atención ya llegaron y que no tienen una Atencion. Por cada una DEBE crear una Atencion en estado "programada" y un Pago en estado "Pendiente" con el monto de la atención y `montoPagado` en 0. El procesamiento DEBE ser idempotente y NO DEBE originar una segunda Atencion para la misma Reserva.
+El sistema DEBE procesar las Reservas en estado "Confirmada" cuya fecha y hora de atención ya llegaron y que no tienen una Atencion. Por cada una DEBE crear una Atencion en estado "programada", un Pago en estado "Pendiente" con el monto de la atención y `montoPagado` en 0, y DEBE dejar la Reserva en estado "Finalizada". El procesamiento DEBE ser idempotente y NO DEBE originar una segunda Atencion para la misma Reserva.
 
 #### Scenario: La reserva confirmada llega a la hora de la atención
 
@@ -16,12 +16,14 @@ El sistema DEBE procesar las Reservas en estado "Confirmada" cuya fecha y hora d
 - **CUANDO** llega la hora de la atención
 - **ENTONCES** el sistema origina una atención en estado "programada"
 - **Y** registra un pago en estado "Pendiente" con el monto registrado para la atención
+- **Y** la reserva queda en estado "Finalizada"
 
 #### Scenario: El sistema no duplica una atención ya originada
 
 - **DADO** que la reserva confirmada ya tiene una atención originada
 - **CUANDO** el sistema vuelve a procesar la reserva
 - **ENTONCES** no crea una nueva atención ni un nuevo pago
+- **Y** la reserva permanece en estado "Finalizada"
 
 ### Requirement: Registrar el comprobante de transferencia
 
@@ -40,6 +42,13 @@ Cuando el Pago de una Atencion está en estado "Pendiente" o "Pago incompleto", 
 - **CUANDO** el paciente registra otro comprobante para la misma atención
 - **ENTONCES** el sistema conserva el comprobante anterior
 - **Y** asocia el nuevo comprobante al mismo pago
+
+#### Scenario: La atención tiene un pago pendiente sin comprobante
+
+- **DADO** que la atención tiene un pago en estado "Pendiente" y no tiene comprobantes registrados
+- **CUANDO** el paciente registra un comprobante
+- **ENTONCES** el sistema asocia el comprobante al pago
+- **Y** el pago sigue en estado "Pendiente"
 
 ### Requirement: Validar los datos del comprobante
 
@@ -61,14 +70,14 @@ El sistema NO DEBE registrar el ComprobanteTransferencia si falta el monto, la f
 
 ### Requirement: Rechazar el registro cuando la atención o el pago no lo permiten
 
-El sistema NO DEBE permitir el registro de un ComprobanteTransferencia si la Atencion no existe, si no tiene un Pago asociado o si el Pago está en estado "Pagado". En esos casos DEBE informar el motivo sin modificar datos.
+El sistema NO DEBE permitir el registro de un ComprobanteTransferencia si la Atencion no existe o si el Pago está en estado "Pagado". En esos casos DEBE informar el motivo sin modificar datos. Un pago inexistente se considera una inconsistencia de datos, no un caso de negocio: toda Atencion tiene un Pago.
 
-#### Scenario: La atención no tiene pago asociado
+#### Scenario: La atención no existe
 
-- **DADO** que la atención no tiene un pago asociado
-- **CUANDO** el paciente intenta registrar un comprobante
+- **DADO** que el paciente intenta registrar un comprobante para una atención inexistente
+- **CUANDO** envía los datos del comprobante
 - **ENTONCES** el sistema no registra el comprobante
-- **Y** le informa que no encontró el pago de la atención
+- **Y** le informa que no encontró la atención
 
 #### Scenario: El pago ya está pagado
 

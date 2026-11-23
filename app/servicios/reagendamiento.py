@@ -77,6 +77,14 @@ def _contexto(conexion: sqlite3.Connection, reserva_id: int) -> dict:
     }
 
 
+def _tiene_atencion(conexion: sqlite3.Connection, reserva_id: int) -> bool:
+    fila = conexion.execute(
+        "SELECT 1 FROM atencion WHERE reserva_id = ? LIMIT 1",
+        (reserva_id,),
+    ).fetchone()
+    return fila is not None
+
+
 def _obtener_bloque(conexion: sqlite3.Connection, bloque_id: int) -> dict:
     fila = conexion.execute(
         "SELECT * FROM bloque_horario WHERE id = ?", (bloque_id,)
@@ -171,6 +179,10 @@ def cancelar_reserva(
             raise EstadoReservaInvalido(
                 "Solo se puede cancelar una reserva confirmada."
             )
+        if _tiene_atencion(conexion, reserva_id):
+            raise EstadoReservaInvalido(
+                "La reserva ya tiene una atención y no se puede cancelar."
+            )
 
         cursor = conexion.execute(
             """
@@ -239,6 +251,10 @@ def reagendar_reserva(
         if contexto["reserva"]["estado"] != ESTADO_CONFIRMADA:
             raise EstadoReservaInvalido(
                 "Solo se puede reagendar una reserva confirmada."
+            )
+        if _tiene_atencion(conexion, reserva_id):
+            raise EstadoReservaInvalido(
+                "La reserva ya tiene una atención y no se puede reagendar."
             )
 
         nuevo_bloque = _obtener_bloque(conexion, nuevo_bloque_id)

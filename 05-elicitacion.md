@@ -13,8 +13,8 @@
   - Para agendar una hora se solicitan datos como nombre completo, RUT, dirección, fecha de nacimiento, edad, escolaridad, profesión o actividad y motivo de consulta.
   - Los cambios y cancelaciones se gestionan comunicándose con la secretaria o la psicóloga, quienes revisan las horas disponibles y ofrecen una nueva alternativa.
   - Las horas son confirmadas por la secretaria y la psicóloga, normalmente el día anterior y nuevamente durante la mañana.
-  - Si el paciente no responde a la confirmación, debe pagar $5.000 por la reserva de la hora.
-  - Los pagos pueden realizarse a cuentas bancarias distintas dependiendo del tipo de atención, y la comprobación del pago la realiza la psicóloga.
+  - Si el paciente no responde a la confirmación, debe pagar $5.000 por la reserva de la hora; la inasistencia sin justificación también genera un cargo de $5.000.
+  - Los pagos se realizan a la cuenta bancaria de la psicóloga, y la comprobación del pago la realiza la psicóloga.
   - El estado de los pagos, asistencia, reagendamientos e inasistencias se registra en la planilla Excel.
   - La psicóloga identifica dificultades para reconocer oportunamente quién ha pagado, debido a que los pagos no siempre se realizan el mismo día y deben ser comprobados mediante comprobantes enviados por WhatsApp.
   - La información de los pacientes se mantiene en fichas clínicas digitales.

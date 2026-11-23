@@ -17,7 +17,7 @@ Como paciente, quiero registrar mis datos personales en la plataforma, para pode
 ## Entidades del modelo de dominio
 | Entidad | Operación en esta historia | Atributos usados | Asociaciones y multiplicidades |
 |---------|----------------------------|------------------|--------------------------------|
-| **Paciente** | Crea si el RUT no existe; reutiliza si ya existe | Obligatorios: nombreCompleto, rut y al menos uno de telefono o correo. Opcionales: fechaNacimiento, direccion, escolaridad, ocupacion | Paciente `1 – 0..*` Reserva; Paciente `1 – 1` FichaClinica |
+| **Paciente** | Crea si el RUT no existe; reutiliza si ya existe | Obligatorios: nombreCompleto, rut y al menos uno de telefono o correo. Opcionales: fechaNacimiento, direccion, escolaridad, ocupacion | Paciente `1 – 0..*` Reserva; Paciente `1 – 0..1` FichaClinica |
 
 El RUT identifica al Paciente y es único en el sistema. Los demás datos personales del modelo quedan opcionales en esta historia.
 
