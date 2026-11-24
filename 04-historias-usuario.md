@@ -213,7 +213,7 @@ Como psicóloga, quiero actualizar la ficha clínica del paciente en una platafo
 
 Como psicologo, quiero poder derivar a un paciente a un psiquiatra registrado en el sistema si es que el paciente necesita una atencion mas especializada.
 
-**Actividad de TO-BE asociada:** 
+**Actividad de TO-BE asociada:** No hay ninguna actividad a la que se pueda asociar, por lo que se deberia hacer un cambio en el TO-BE.
 
 **Criterios de acpetación:**
 
