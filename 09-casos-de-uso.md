@@ -9,7 +9,7 @@
 | SII | Sistema externo | Servicio de Impuestos Internos, que recibe y registra las boletas de honorarios electrónicas emitidas por la psicóloga. |
 
 ## Diagrama de casos de uso
-![Casos de uso](./diagramas/casos de uso nuevo.drawio.png)
+![Casos de uso](./diagramas/casosdeusonuevo.drawio.png)
 
 Archivo fuente: [`./diagramas/casos-de-uso.puml`](./diagramas/casos-de-uso.puml)
 
