@@ -427,3 +427,17 @@ Característica: Actualización de la ficha clínica
     Entonces el sistema niega el acceso a la ficha clínica
     Y registra el intento de acceso en la bitácora de accesos
 ```
+
+## HU-10 - Derivación a psiquiatra
+
+Historia: Como psicologa, quiero poder derivar a un paciente a un psiquiatra registrado en el sistema si es que el paciente necesita una atencion mas especializada.
+
+```gherkin
+Característica:
+
+  Escenario: La psicóloga deriva al paciente a psiquiatra
+  Dado que la psicóloga lo deriva
+  Y que el paciente confirmo la hora
+  Cuando el paciente vea la confirmación saldrá "asignado a psiquiatra"
+  Entonces el sistema pone al paciente a cargo del psiquiatra.
+```
