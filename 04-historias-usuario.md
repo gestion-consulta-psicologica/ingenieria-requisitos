@@ -208,3 +208,16 @@ Como psicóloga, quiero actualizar la ficha clínica del paciente en una platafo
 - **CA2 — Actualización de información clínica:** Dado que la psicóloga ha accedido a la ficha clínica y cuenta con los permisos necesarios, cuando registra o modifica información clínica y guarda los cambios, entonces el sistema informa que la actualización se ha realizado correctamente.
 - **CA3 — Persistencia de los cambios:** Dado que la psicóloga ha guardado correctamente los cambios en la ficha clínica, cuando vuelve a consultar esa ficha, entonces el sistema muestra la información actualizada.
 - **CA4 — Acceso no autorizado:** Dado que un usuario no cuenta con los permisos necesarios para acceder a una ficha clínica, cuando intenta consultar o modificar esa información, entonces el sistema deniega el acceso e impide la consulta o modificación de los datos clínicos.
+
+## HU-10 - derivación a psiquiatra
+
+Como psicologo, quiero poder derivar a un paciente a un psiquiatra registrado en el sistema si es que el paciente necesita una atencion mas especializada.
+
+**Actividad de TO-BE asociada:** 
+
+**Criterios de acpetación:**
+
+- **CA1 - Revisión de la solicitud de derivación a psiquiatra:** Dado que el paciente reservo una hora el sistema le manda una solicitud a la psicologa para que elija si deriva al paciente a psiquiatra o no.
+- **CA2 - Derivación a psiquiatra:** Dado que la psicologa derivo al paciente a psiquiatra, el sistema le asigna al paciente el psiquiatra registrado para una consulta.
+- **CA3 - Derivación exitosa:** Dado que la psicologa derivo al paciente, se manda la solicitud de confirmación de la reserva con el psiquiatra.
+- **CA4 - Derivación descartada:** Dado que la psicologa no derivo al paciente, se manda la solicitud de confirmación de la reserva.
