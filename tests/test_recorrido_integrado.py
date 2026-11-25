@@ -513,3 +513,32 @@ def test_reserva_reagendamiento_y_revision_del_comprobante(
             assert tuple(cargo) == ("cancelación", 5000)
     finally:
         smtp.cerrar()
+
+
+def test_mis_reservas_en_demo_lista_lo_del_navegador_y_navega_desde_todas_las_pantallas(
+    base_temporal, conexion,
+):
+    from tests.test_hu02a_registro_paciente import insertar_bloque, preparar_psicologa
+
+    preparar_psicologa(conexion)
+    insertar_bloque(conexion, 10, "2026-11-12")
+    app = crear_app(base_temporal, clave_psicologa_demo="clave-admin")
+    with TestClient(app) as navegador, TestClient(app) as otro:
+        assert "No tienes reservas en este navegador" in navegador.get("/mis-reservas").text
+        navegador.post("/pacientes/registro", data={
+            "nombre_completo": "Paciente Nuevo", "rut": "12.345.678-5",
+            "correo": "nuevo@example.cl", "bloque_id": "10",
+        })
+        reserva = navegador.post("/reservar/10", data={"rut": "123456785"}, follow_redirects=False)
+        ruta_reserva_nueva = reserva.headers["location"]
+
+        lista = navegador.get("/mis-reservas")
+        assert f'href="{ruta_reserva_nueva}"' in lista.text
+        # La cookie de acceso sobrevive al cierre del navegador (12 h).
+        assert "Max-Age=43200" in reserva.headers["set-cookie"]
+        # Otro navegador no ve reservas ajenas.
+        assert f'href="{ruta_reserva_nueva}"' not in otro.get("/mis-reservas").text
+
+        detalle = navegador.get(ruta_reserva_nueva)
+        for enlace in ('href="/disponibilidad"', 'href="/mis-reservas"', 'href="/psicologa"'):
+            assert enlace in detalle.text

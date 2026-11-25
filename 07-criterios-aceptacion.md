@@ -65,14 +65,14 @@ Característica: Registro de datos del paciente
 
   Escenario: Un paciente nuevo se registra desde la reserva
     Dado que el paciente ingresó un RUT que no está registrado
-    Cuando ingresa su nombre completo, su RUT y un medio de contacto
+    Cuando ingresa su nombre completo, su RUT y su correo electrónico
     Y guarda sus datos
     Entonces el sistema registra al paciente
     Y retoma la reserva del bloque horario seleccionado
 
   Escenario: El paciente no completa los datos obligatorios
     Dado que el paciente está registrando sus datos
-    Cuando intenta guardar sin nombre completo, RUT o medio de contacto
+    Cuando intenta guardar sin nombre completo, RUT o correo electrónico
     Entonces el sistema no registra al paciente
     Y le informa qué dato falta
 

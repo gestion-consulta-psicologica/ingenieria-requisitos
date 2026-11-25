@@ -3,6 +3,12 @@
 **Estado:** lista para especificar  ·  **Confirmada por el estudiante:** 2026-11-19
 **Fuente de la historia:** `04-historias-usuario.md` · **Gherkin:** `07-criterios-aceptacion.md`
 
+## Cambios posteriores a la validación (2026-11-25)
+- **Acceso:** solo el titular de la reserva puede abrir el formulario y registrar el comprobante; la psicóloga lo consulta desde HU-05 (`/pagos/{atencion_id}`).
+- **Modalidad válida:** la base rechaza bloques con modalidad distinta de `presencial` u `online` (migración `016`), para que la atención siempre pueda originarse; si algo falla al originarla, queda registrado en el log en vez de ignorarse.
+- **Origen idempotente y seguro:** la reserva solo pasa a Finalizada si no cambió (versión, bloque y modalidad) desde que se leyó.
+- **Datos de ejemplo:** las reservas sembradas que ya tienen atención quedan en **Finalizada**, coherente con EST-01.
+
 ## Historia
 Como paciente, quiero contar con la atención registrada y registrar el comprobante de mi transferencia en la plataforma, para que la psicóloga pueda comprobar el pago de mi atención.
 
@@ -45,7 +51,7 @@ El monto de la atención se toma de un valor configurable. **$30.000 es un valor
 5. El sistema muestra el formulario con los datos de la atención (fecha, hora, tipo y monto) y los campos **monto**, **fecha de transferencia** y **cuenta de destino**.
 6. El paciente completa y guarda el formulario. Si los datos son válidos, el sistema registra el `ComprobanteTransferencia` asociado al `Pago`, conserva los comprobantes anteriores y muestra una confirmación.
 7. Si falta el monto, la fecha de transferencia o la cuenta de destino, el sistema no registra el comprobante y le informa al paciente qué dato falta.
-8. Si el monto no es un valor positivo o la fecha de transferencia no es válida, el sistema tampoco registra el comprobante y lo informa.
+8. Si el monto no es un valor positivo o la fecha de transferencia no es válida, el sistema tampoco registra el comprobante y lo informa. El monto acepta el formato chileno (`30000`, `30.000`, `$30.000`); se rechazan comas y textos.
 9. Si la atención no existe o el pago ya está en estado `Pagado`, el sistema no muestra el formulario o rechaza el registro y lo informa, sin modificar datos. Un pago inexistente se trata como una inconsistencia de datos, no como un caso de negocio: toda atención tiene un pago.
 10. En todos los casos, el estado del `Pago` se mantiene sin cambios; el comprobante queda disponible para que la psicóloga lo consulte en HU-05.
 

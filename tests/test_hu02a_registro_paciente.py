@@ -136,15 +136,33 @@ def insertar_bloque(
     conexion.commit()
 
 
-def test_registrar_paciente_solo_telefono(conexion):
+def test_registrar_paciente_solo_telefono_no_lo_registra(conexion):
+    # El correo es obligatorio: sin él no llega la solicitud de confirmación (HU-03).
+    with pytest.raises(DatosPacienteInvalidos) as error:
+        registrar_paciente(
+            conexion, "Paciente Nuevo", "99.999.999-9", "+56 9 1234 5678", ""
+        )
+
+    assert error.value.faltantes == ["correo electrónico"]
+    assert contar_pacientes(conexion) == 0
+
+
+def test_registrar_paciente_con_correo_invalido_no_lo_registra(conexion):
+    with pytest.raises(DatosPacienteInvalidos) as error:
+        registrar_paciente(conexion, "Paciente Nuevo", "99.999.999-9", "", "asdf")
+
+    assert error.value.faltantes == ["un correo electrónico válido"]
+    assert contar_pacientes(conexion) == 0
+
+
+def test_registrar_paciente_con_correo_y_telefono(conexion):
     resultado = registrar_paciente(
-        conexion, "Paciente Nuevo", "99.999.999-9", "+56 9 1234 5678", ""
+        conexion, "Paciente Nuevo", "99.999.999-9", "+56 9 1234 5678", "nuevo@example.cl"
     )
 
     assert resultado["creado"] is True
-    assert resultado["paciente"]["nombre_completo"] == "Paciente Nuevo"
     assert resultado["paciente"]["telefono"] == "+56 9 1234 5678"
-    assert resultado["paciente"]["correo"] is None
+    assert resultado["paciente"]["correo"] == "nuevo@example.cl"
 
 
 def test_registrar_paciente_solo_correo(conexion):
@@ -161,15 +179,13 @@ def test_registrar_paciente_sin_contacto_no_lo_registra(conexion):
     with pytest.raises(DatosPacienteInvalidos) as error:
         registrar_paciente(conexion, "Paciente Nuevo", "97.777.777-7", "", "  ")
 
-    assert error.value.faltantes == [
-        "un medio de contacto (teléfono o correo)"
-    ]
+    assert error.value.faltantes == ["correo electrónico"]
     assert contar_pacientes(conexion) == 0
 
 
 def test_registrar_paciente_sin_nombre_no_lo_registra(conexion):
     with pytest.raises(DatosPacienteInvalidos) as error:
-        registrar_paciente(conexion, "   ", "97.777.777-7", "123", None)
+        registrar_paciente(conexion, "   ", "97.777.777-7", "123", "p@example.cl")
 
     assert error.value.faltantes == ["nombre completo"]
     assert contar_pacientes(conexion) == 0
@@ -184,7 +200,7 @@ def test_registrar_paciente_rechaza_un_rut_con_letras_ignoradas_por_la_busqueda(
 
 def test_registrar_paciente_sin_rut_no_lo_registra(conexion):
     with pytest.raises(DatosPacienteInvalidos) as error:
-        registrar_paciente(conexion, "Paciente Nuevo", "   ", "123", "")
+        registrar_paciente(conexion, "Paciente Nuevo", "   ", "123", "p@example.cl")
 
     assert error.value.faltantes == ["RUT"]
     assert contar_pacientes(conexion) == 0
@@ -217,7 +233,7 @@ def test_registrar_paciente_captura_carrera_de_rut(conexion, monkeypatch):
     )
 
     resultado = registrar_paciente(
-        conexion, "Otro Nombre", "22.222.222-2", "+56 9 9999 9999", ""
+        conexion, "Otro Nombre", "22.222.222-2", "+56 9 9999 9999", "otro@example.cl"
     )
 
     assert resultado["creado"] is False
@@ -260,7 +276,7 @@ def test_registro_sin_bloque_muestra_confirmacion(base_temporal, conexion):
                 "nombre_completo": "Paciente Nuevo",
                 "rut": "99.999.999-9",
                 "telefono": "+56 9 1234 5678",
-                "correo": "",
+                "correo": "nuevo@example.cl",
                 "bloque_id": "",
             },
             follow_redirects=False,
@@ -311,7 +327,7 @@ def test_paciente_nuevo_se_registra_desde_la_reserva(
                 "nombre_completo": "Paciente Nuevo",
                 "rut": "99.999.999-9",
                 "telefono": "+56 9 1234 5678",
-                "correo": "",
+                "correo": "nuevo@example.cl",
                 "bloque_id": "10",
             },
             follow_redirects=False,
@@ -337,7 +353,7 @@ def test_paciente_nuevo_se_registra_desde_la_reserva(
         "SELECT * FROM paciente WHERE rut = '99.999.999-9'"
     ).fetchone()
     assert paciente is not None
-    assert paciente["correo"] is None
+    assert paciente["correo"] == "nuevo@example.cl"
 
     reserva_guardada = conexion.execute(
         "SELECT * FROM reserva WHERE bloque_horario_id = 10"
@@ -367,8 +383,8 @@ def test_paciente_nuevo_se_registra_desde_la_reserva(
                 "correo": "",
                 "bloque_id": "",
             },
-            "un medio de contacto",
-            id="HU-02A · El paciente no completa los datos obligatorios (sin contacto)",
+            "correo electrónico",
+            id="HU-02A · El paciente no completa los datos obligatorios (sin correo)",
         ),
     ],
 )

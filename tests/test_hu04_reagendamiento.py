@@ -196,6 +196,44 @@ def test_no_se_puede_reagendar_una_reserva_con_atencion(conexion):
     assert listar_historial(conexion, 1) == []
 
 
+@pytest.mark.parametrize("operacion", ["cancelar", "reagendar"])
+def test_no_se_gestiona_una_hora_que_ya_comenzo(conexion, operacion):
+    # El bloque 1 empieza a las 18:00 de FECHA_ACTUAL; aún no hay atención porque
+    # el planificador no ha pasado, pero la reserva ya no se puede gestionar.
+    preparar_base(conexion)
+    inicio = programado(FECHA_ACTUAL, "18:00")
+
+    with pytest.raises(EstadoReservaInvalido, match="ya comenzó"):
+        if operacion == "cancelar":
+            cancelar_reserva(conexion, 1, ahora=inicio)
+        else:
+            reagendar_reserva(conexion, 1, 2, ahora=inicio)
+
+    fila = conexion.execute("SELECT * FROM reserva WHERE id = 1").fetchone()
+    assert (fila["estado"], fila["bloque_horario_id"]) == ("Confirmada", 1)
+    assert listar_historial(conexion, 1) == []
+    assert conexion.execute("SELECT COUNT(*) FROM cargo").fetchone()[0] == 0
+
+
+def test_detalle_oculta_gestion_cuando_la_hora_ya_comenzo(base_temporal, monkeypatch):
+    from app.rutas import reserva as ruta_reserva
+
+    conexion = conectar(base_temporal)
+    try:
+        preparar_base(conexion)
+    finally:
+        conexion.close()
+    monkeypatch.setattr(ruta_reserva, "ahora_utc", lambda: programado(FECHA_ACTUAL, "18:00"))
+
+    with TestClient(crear_app(base_temporal)) as cliente:
+        detalle = cliente.get("/reservas/1")
+        reagendar = cliente.get("/reservas/1/reagendar")
+
+    assert detalle.status_code == 200
+    assert 'action="/reservas/1/cancelar"' not in detalle.text
+    assert reagendar.status_code == 409
+
+
 def test_alternativas_excluyen_bloque_actual_ocupados_y_fuera_de_rango(conexion):
     preparar_base(conexion)
     insertar_reserva_tomada(conexion)

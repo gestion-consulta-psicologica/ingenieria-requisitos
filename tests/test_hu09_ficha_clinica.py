@@ -41,7 +41,17 @@ def test_psicologa_registra_y_paciente_no_puede_consultar_ni_modificar(
     assert [(e["rol"], e["operacion"]) for e in eventos] == [
         ("Paciente", "lectura"), ("Paciente", "escritura"),
     ]
-    assert set(eventos[0].keys()) == {"id", "fecha", "rol", "operacion", "resultado"}
+    # Sin contenido clínico: solo quién, qué ficha, qué operación y el resultado.
+    assert set(eventos[0].keys()) == {
+        "id", "fecha", "rol", "operacion", "resultado", "paciente_id", "usuario",
+    }
+    assert [(e["paciente_id"], e["usuario"]) for e in eventos] == [
+        (1, "paciente"), (1, "paciente"),
+    ]
+    permitidos = conexion.execute(
+        "SELECT DISTINCT paciente_id, usuario FROM bitacora_clinica WHERE resultado = 'permitido'"
+    ).fetchall()
+    assert [tuple(fila) for fila in permitidos] == [(1, "psicologa")]
 
 
 def test_antecedentes_y_dos_evoluciones_conservan_historial(base_temporal, conexion):
@@ -95,6 +105,7 @@ def test_antecedentes_y_dos_evoluciones_conservan_historial(base_temporal, conex
         for texto in ("Motivo sintético actualizado", "Primera evolución", "Segunda evolución", "Primera prueba"):
             assert texto in ficha.text
         assert "Motivo sintético inicial" not in ficha.text
+        assert "Historial de cambios (1 versión anterior)" in ficha.text
         assert "Motivo sintético actualizado" not in cliente.get("/psicologa/fichas/2", auth=admin).text
 
     evoluciones = conexion.execute(
@@ -107,3 +118,25 @@ def test_antecedentes_y_dos_evoluciones_conservan_historial(base_temporal, conex
         "SELECT rol, operacion, resultado FROM bitacora_clinica WHERE resultado = 'denegado'"
     ).fetchall()
     assert [tuple(fila) for fila in eventos] == [("Paciente", "escritura", "denegado")]
+
+    # El antecedente reemplazado no se pierde: queda en el historial.
+    historial = conexion.execute(
+        "SELECT paciente_id, motivo_consulta FROM ficha_clinica_historial"
+    ).fetchall()
+    assert [tuple(fila) for fila in historial] == [(1, "Motivo sintético inicial")]
+
+
+def test_guardar_antecedentes_sin_cambios_no_crea_versiones(base_temporal, conexion):
+    cargar_datos_ejemplo(str(base_temporal))
+    admin = ("psicologa", "clave-admin")
+    app = crear_app(base_temporal, clave_psicologa_demo=admin[1], clave_paciente_demo="otra-clave")
+    datos = {
+        "csrf": app.state.csrf_psicologa_demo, "motivo_consulta": "Motivo sintético",
+        "antecedentes_salud_mental": "", "diagnosticos": "", "medicamentos": "",
+        "datos_adulto_responsable": "",
+    }
+    with TestClient(app) as cliente:
+        for _ in range(3):
+            cliente.post("/psicologa/fichas/1/antecedentes", data=datos, auth=admin)
+
+    assert conexion.execute("SELECT COUNT(*) FROM ficha_clinica_historial").fetchone()[0] == 0

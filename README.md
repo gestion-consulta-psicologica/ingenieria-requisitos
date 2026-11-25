@@ -90,7 +90,7 @@ $env:CONSULTA_DB = Join-Path $PWD 'data/ejemplo-aislado.db'
 python -m app.db.seed
 ```
 
-El comando aplica las migraciones `001` a `014` a la base seleccionada y carga
+El comando aplica las migraciones `001` a `016` a la base seleccionada y carga
 datos de ejemplo de forma idempotente. El seed usa fechas fijas para
 reproducir casos de prueba con reloj controlado:
 
@@ -109,11 +109,11 @@ reproducir casos de prueba con reloj controlado:
 
 Ejecutar el seed varias veces no duplica los datos.
 
-Las migraciones se aplican automáticamente al arrancar la aplicación o el seed. La migración `002` deja `correo` opcional para que un paciente pueda registrarse solo con teléfono. La migración `003` agrega `solicitud_confirmacion` y `cargo`; la `004` agrega `estado`, `fecha_cierre` y el índice único de solicitud pendiente; la `005` agrega `correo_pendiente` y `token_confirmacion`; la `006` agrega `reserva.version`, reconstruye las solicitudes con unicidad por `(reserva_id, version, tipo)` y crea `reserva_historial` para HU-04; la `007` agrega `atencion`, `pago` y `comprobante_transferencia` para HU-05; la `008` reconstruye `reserva` para permitir el estado `Finalizada` cuando la reserva confirmada origina su atención y su pago.
+Las migraciones se aplican automáticamente al arrancar la aplicación o el seed. La migración `002` dejó `correo` opcional en la base (se conservan pacientes antiguos sin correo); desde el 2026-11-25 la aplicación exige el correo al registrarse. La migración `003` agrega `solicitud_confirmacion` y `cargo`; la `004` agrega `estado`, `fecha_cierre` y el índice único de solicitud pendiente; la `005` agrega `correo_pendiente` y `token_confirmacion`; la `006` agrega `reserva.version`, reconstruye las solicitudes con unicidad por `(reserva_id, version, tipo)` y crea `reserva_historial` para HU-04; la `007` agrega `atencion`, `pago` y `comprobante_transferencia` para HU-05; la `008` reconstruye `reserva` para permitir el estado `Finalizada` cuando la reserva confirmada origina su atención y su pago.
 
 La `007` no modifica las tablas de reservas, pacientes o bloques; la `008` solo amplía los estados permitidos de `reserva`.
 
-La migración `009` admite el cargo por cancelación; la `010` registra qué comprobantes verificó la psicóloga y la `011` permite asociar el cargo por inasistencia a una atención y guardar su justificación. Para empezar de cero, elige una ruta nueva con `CONSULTA_DB` o usa `python -m app.demo`.
+La `015` agrega el usuario y la ficha a la bitácora clínica y el historial de antecedentes; la `016` restringe la modalidad del bloque a `presencial` u `online`. La migración `009` admite el cargo por cancelación; la `010` registra qué comprobantes verificó la psicóloga y la `011` permite asociar el cargo por inasistencia a una atención y guardar su justificación. Para empezar de cero, elige una ruta nueva con `CONSULTA_DB` o usa `python -m app.demo`.
 
 ## Configuración del correo electrónico
 
@@ -244,12 +244,12 @@ El aviso de reserva se envía por **correo electrónico real** mediante SMTP. Si
 
 1. Con una base recién sembrada, abre <http://localhost:8000/reservar/4> (martes 24 de noviembre a las 10:00, modalidad online) e intenta reservar con el RUT **99.999.999-9**.
    - Debes llegar a `/pacientes/registro?bloque_id=4` con el formulario de registro.
-2. Completa **nombre completo** y **RUT**, deja el **teléfono** con un valor y el **correo** vacío; pulsa **Guardar datos**.
+2. Completa **nombre completo**, **RUT** y **correo** (el teléfono es opcional); pulsa **Guardar datos**.
    - Debes volver a `/reservar/4?rut=999999999` con el RUT precargado.
-   - En la base, el paciente queda con `correo` nulo; se permite registrarse solo con teléfono.
+   - Si dejas el correo vacío o con un formato inválido, el registro se rechaza e informa el dato faltante: el correo es obligatorio porque la confirmación de HU-03 llega por correo.
 3. Pulsa **Confirmar reserva**.
    - La reserva queda en estado **Pendiente de confirmación**.
-4. Para probar los datos obligatorios, abre <http://localhost:8000/pacientes/registro> y guarda sin nombre o sin teléfono ni correo.
+4. Para probar los datos obligatorios, abre <http://localhost:8000/pacientes/registro> y guarda sin nombre o sin correo.
    - Debes ver **«Falta completar: …»** y el paciente no se registra.
 5. Para probar el RUT ya registrado, abre `/pacientes/registro` y usa el RUT **22.222.222-2** con otro nombre; puedes dejar teléfono y correo vacíos.
    - Debes volver a la confirmación del paciente existente (o a la reserva, si venías con un bloque).

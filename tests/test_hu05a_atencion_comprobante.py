@@ -577,3 +577,53 @@ def test_detalle_de_reserva_muestra_enlace_solo_si_el_pago_lo_permite(base_tempo
         con_pago_pagado = cliente.get("/reservas/3")
 
     assert "Registrar comprobante de pago" not in con_pago_pagado.text
+
+
+@pytest.mark.parametrize("escrito", ["30000", "30.000", "$30.000", "$ 30.000"])
+def test_monto_del_comprobante_acepta_formato_chileno(base_temporal, escrito):
+    _sembrar(base_temporal)
+    conexion = conectar(base_temporal)
+    try:
+        comprobante = registrar_comprobante(
+            conexion, 2, escrito, "2026-11-10", "Cuenta destino"
+        )
+    finally:
+        conexion.close()
+
+    assert comprobante["monto"] == 30000
+
+
+@pytest.mark.parametrize("escrito", ["30,000", "$", "treinta mil", "-30000"])
+def test_monto_del_comprobante_rechaza_formatos_ambiguos(base_temporal, escrito):
+    _sembrar(base_temporal)
+    conexion = conectar(base_temporal)
+    try:
+        with pytest.raises(DatosComprobanteInvalidos) as error:
+            registrar_comprobante(conexion, 2, escrito, "2026-11-10", "Cuenta destino")
+    finally:
+        conexion.close()
+
+    assert set(error.value.errores) == {"monto"}
+
+
+@pytest.mark.parametrize("modalidad", ["Presencial", "remota", ""])
+def test_bloque_con_modalidad_invalida_se_rechaza_en_la_base(conexion, modalidad):
+    conexion.execute(
+        "INSERT INTO psicologa (id, nombre_completo, rut, correo) VALUES (1, 'A', '1-9', 'a@a.cl')"
+    )
+    with pytest.raises(sqlite3.IntegrityError, match="modalidad inválida"):
+        conexion.execute(
+            """
+            INSERT INTO bloque_horario (psicologa_id, fecha, hora_inicio, hora_termino, modalidad)
+            VALUES (1, '2026-11-12', '10:00', '10:50', ?)
+            """,
+            (modalidad,),
+        )
+    conexion.execute(
+        """
+        INSERT INTO bloque_horario (id, psicologa_id, fecha, hora_inicio, hora_termino, modalidad)
+        VALUES (50, 1, '2026-11-12', '10:00', '10:50', 'online')
+        """
+    )
+    with pytest.raises(sqlite3.IntegrityError, match="modalidad inválida"):
+        conexion.execute("UPDATE bloque_horario SET modalidad = ? WHERE id = 50", (modalidad,))
