@@ -74,7 +74,7 @@ Como paciente, quiero confirmar si mantengo o no una hora que tengo reservada, p
 
 - **CA5 — Respuesta sin solicitud pendiente:** Dado que el paciente tiene una hora reservada, cuando intenta confirmar o informar que no asistirá sin una solicitud pendiente de respuesta, entonces el sistema rechaza la operación con HTTP 409 y no modifica la reserva, las solicitudes ni el cargo.
 
-- **CA6 — Sin respuesta:** Dado que el paciente no responde la solicitud pendiente más reciente y llega la hora de la atención, cuando el planificador automático cierra el plazo, entonces la solicitud queda en estado «vencida» con respuesta «sin respuesta» y fecha de cierre, sin registrar fecha de respuesta del paciente; la reserva queda en estado «Sin confirmar», se registra el cargo de $5.000 asociado al paciente y a la reserva y se encola el aviso de cargo por correo electrónico.
+- **CA6 — Sin respuesta:** Dado que el paciente no responde la solicitud pendiente más reciente y llega la hora de la atención, el planificador marca la solicitud como «vencida» con respuesta «sin respuesta» y fecha de cierre, sin fecha de respuesta del paciente, y deja la reserva «Sin confirmar». El cargo de $5.000 y su aviso proceden solo si SMTP aceptó el envío de una solicitud de confirmación del ciclo vigente antes del inicio de la atención.
 
 - **CA7 — Reemplazo de la solicitud anterior:** Dado que existe una solicitud de víspera pendiente, cuando el planificador envía el recordatorio por correo electrónico, entonces la solicitud anterior pasa a estado «reemplazada» con su fecha de cierre, su correo pendiente se cancela y el recordatorio queda como la única solicitud pendiente, en una misma transacción.
 
@@ -162,6 +162,8 @@ Como psicóloga, quiero registrar el estado de pago de una atención en la plata
   
 ## HU-07 — Emitir boleta
 
+**Estado de entrega:** pendiente de integración externa por definición de alcance. La implementación se retomará tras acordar con la psicóloga el sistema tributario, el canal de emisión, las autorizaciones y la configuración. Se conservan los cuatro criterios de aceptación. [Dependencias de la entrega posterior](./README.md#pendientes-para-la-entrega-a-la-psicóloga)
+
 Como psicóloga, quiero emitir una boleta desde la plataforma mediante un servicio de emisión integrado, para reducir el tiempo destinado a tareas administrativas.
 
 **Actividad TO-BE asociada:** Emitir boleta con apoyo del sistema.
@@ -208,3 +210,5 @@ Como psicóloga, quiero actualizar la ficha clínica del paciente en una platafo
 - **CA2 — Actualización de información clínica:** Dado que la psicóloga ha accedido a la ficha clínica y cuenta con los permisos necesarios, cuando registra o modifica información clínica y guarda los cambios, entonces el sistema informa que la actualización se ha realizado correctamente.
 - **CA3 — Persistencia de los cambios:** Dado que la psicóloga ha guardado correctamente los cambios en la ficha clínica, cuando vuelve a consultar esa ficha, entonces el sistema muestra la información actualizada.
 - **CA4 — Acceso no autorizado:** Dado que un usuario no cuenta con los permisos necesarios para acceder a una ficha clínica, cuando intenta consultar o modificar esa información, entonces el sistema deniega el acceso e impide la consulta o modificación de los datos clínicos.
+
+**Verificación de HU-09 en demostración.** CA1–CA3 cubren la consulta y edición de antecedentes de anamnesis y el registro de evoluciones de atenciones realizadas, conservando los registros anteriores. CA4 usa un paciente autenticado sin permiso clínico y verifica la denegación de consulta y modificación y su bitácora sin contenido clínico. Quedan pendientes las cuentas persistentes y el cifrado para datos reales.

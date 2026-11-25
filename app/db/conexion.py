@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import os
 import sqlite3
 from pathlib import Path
@@ -7,6 +8,7 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 RUTA_DB_POR_DEFECTO = BASE_DIR / "data" / "app.db"
 DIRECTORIO_MIGRACIONES = Path(__file__).resolve().parent / "migrations"
+logger = logging.getLogger(__name__)
 
 
 class MigracionDatosAmbiguos(RuntimeError):
@@ -27,6 +29,30 @@ class MigracionDatosAmbiguos(RuntimeError):
 
 def ruta_base_datos() -> Path:
     return Path(os.environ.get("CONSULTA_DB", RUTA_DB_POR_DEFECTO))
+
+
+def _permitir_base_principal() -> bool:
+    valor = os.environ.get("CONSULTA_PERMITIR_BASE_PRINCIPAL", "")
+    return valor.strip().lower() in {"1", "si", "sí", "true", "yes", "on"}
+
+
+def ruta_operativa(ruta: str | Path | None = None) -> Path:
+    destino = Path(ruta) if ruta is not None else ruta_base_datos()
+    original = RUTA_DB_POR_DEFECTO
+    es_base_principal = (
+        destino.resolve() == original.resolve()
+        or (destino.exists() and original.exists() and destino.samefile(original))
+    )
+    if es_base_principal and not _permitir_base_principal():
+        raise ValueError(
+            "Selecciona una base distinta de data/app.db mediante CONSULTA_DB "
+            "o habilita CONSULTA_PERMITIR_BASE_PRINCIPAL=1."
+        )
+    if es_base_principal:
+        logger.warning(
+            "Usando data/app.db en modo operativo por CONSULTA_PERMITIR_BASE_PRINCIPAL=1."
+        )
+    return destino
 
 
 def conectar(ruta: str | Path | None = None) -> sqlite3.Connection:

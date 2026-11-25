@@ -10,6 +10,8 @@ Permite al Paciente consultar la disponibilidad semanal de bloques horarios de l
 
 El sistema DEBE mostrar al Paciente únicamente los bloques horarios de la semana consultada que no tienen una reserva vigente. Una reserva es vigente mientras esté en estado "Pendiente de confirmación" o "Confirmada"; las reservas "Cancelada", "Sin confirmar" y "Finalizada" no bloquean el bloque horario.
 
+Un bloque reservable DEBE comenzar después del instante actual y quedar completo dentro de la jornada de lunes a sábado, de 09:00 a 19:00, según la zona horaria configurada. Su término DEBE ser posterior a su inicio. El domingo permanece cerrado. La misma regla aplica a las alternativas y al guardar una reserva o un reagendamiento.
+
 #### Scenario: El paciente consulta una semana con bloques horarios libres
 
 - **DADO** que la psicóloga definió su disponibilidad para la semana del 9 de noviembre

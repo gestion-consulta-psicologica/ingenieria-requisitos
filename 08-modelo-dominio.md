@@ -76,7 +76,7 @@ Estas entidades no forman parte del lenguaje del negocio, pero sostienen la entr
 
 ## Decisiones de modelado
 
-- **Secretaria como rol, no como clase:** el negocio no registra información propia de la secretaria, por lo que no se modela como clase del dominio. En el proceso TO-BE sus tareas de coordinación pasan a ser realizadas por el paciente y por el sistema. El acceso a la ficha clínica se restringe mediante autenticación y permisos según el rol del usuario, sin incorporar a Secretaria como actor funcional de esta entrega. Paciente y Psicologa sí son clases porque el negocio guarda datos propios de cada uno (RUT, contacto, emisión de boletas).
+- **Roles del TO-BE:** Paciente y Administrador (Psicóloga) son los únicos roles funcionales. La secretaria pertenece al proceso AS-IS. En el TO-BE, el paciente y el sistema asumen sus tareas de coordinación. HU-09 exige restringir el acceso clínico a la psicóloga autorizada y registrar los intentos denegados. Su escenario negativo usa un paciente autenticado. Paciente y Psicologa se modelan como clases por sus datos de negocio.
 - **Adulto responsable como dato de la ficha:** la ficha de anamnesis registra al adulto responsable y a las personas que viven con el paciente. En esta entrega se guarda como atributo de FichaClinica (datosAdultoResponsable), ya que en el proceso TO-BE quien reserva y confirma es el Paciente.
 - **Composición:** se usó solo entre FichaClinica y RegistroEvolucion, porque un registro de evolución no tiene sentido fuera de la ficha del paciente. No se usó agregación.
 - **Herencia:** no se usó. La modalidad presencial u online no cambia los datos ni las reglas de la atención, por lo que se modela como atributo (modalidad, tipoAtencion).

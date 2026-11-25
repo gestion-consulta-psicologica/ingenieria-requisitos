@@ -12,6 +12,7 @@ from app.servicios.disponibilidad import (
     obtener_proximo_bloque,
     rango_semana,
 )
+from app.tiempo import ahora_utc, zona
 
 router = APIRouter()
 
@@ -33,6 +34,8 @@ def consultar_disponibilidad(
         description="Fecha de la semana en formato AAAA-MM-DD",
     ),
 ):
+    ahora = ahora_utc()
+    zona_horaria = request.app.state.configuracion_correo.zona_horaria
     if semana:
         try:
             fecha_semana = date.fromisoformat(semana)
@@ -42,13 +45,17 @@ def consultar_disponibilidad(
                 detail="Formato de fecha inválido. Use AAAA-MM-DD.",
             ) from error
     else:
-        fecha_semana = date.today()
+        fecha_semana = ahora.astimezone(zona(zona_horaria)).date()
 
     inicio, fin = rango_semana(fecha_semana)
-    bloques = obtener_disponibilidad_semana(conexion, fecha_semana)
+    bloques = obtener_disponibilidad_semana(
+        conexion, fecha_semana, ahora=ahora, zona_horaria=zona_horaria,
+    )
     proximo_bloque = None
     if not bloques:
-        proximo_bloque = obtener_proximo_bloque(conexion, fecha_semana)
+        proximo_bloque = obtener_proximo_bloque(
+            conexion, fecha_semana, ahora=ahora, zona_horaria=zona_horaria,
+        )
 
     templates = request.app.state.templates
     return templates.TemplateResponse(

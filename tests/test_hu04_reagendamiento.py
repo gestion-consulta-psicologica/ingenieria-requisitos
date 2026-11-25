@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import date, timedelta
 
 import pytest
-from fastapi.testclient import TestClient
+from tests.acceso_demo import cliente_con_reserva_de_prueba as TestClient
 
 from app.configuracion import ConfiguracionCorreo
 from app.db.conexion import conectar
@@ -22,9 +22,11 @@ from app.servicios.reagendamiento import (
     reagendar_reserva,
 )
 from app.servicios.reserva import bloque_esta_disponible
-from app.tiempo import ahora_utc
+from app.tiempo import programado
+from app.servicios.cola_correo import marcar_enviado
 
-HOY = date.today()
+HOY = date(2026, 11, 9)
+AHORA = programado(HOY, "08:00")
 FECHA_ACTUAL = (HOY + timedelta(days=1)).isoformat()
 FECHA_NUEVA = (HOY + timedelta(days=2)).isoformat()
 FECHA_TOMADA = (HOY + timedelta(days=3)).isoformat()
@@ -138,6 +140,13 @@ def test_cancelar_reserva_confirmada_libera_bloque_y_registra_historial(conexion
     assert historial[0]["tipo"] == "cancelacion"
     assert historial[0]["estado_anterior"] == "Confirmada"
     assert historial[0]["estado_nuevo"] == "Cancelada"
+    cargo = conexion.execute(
+        "SELECT monto, motivo FROM cargo WHERE reserva_id = 1"
+    ).fetchone()
+    assert dict(cargo) == {"monto": 5000, "motivo": "cancelación"}
+    assert conexion.execute(
+        "SELECT COUNT(*) FROM correo_pendiente WHERE tipo = 'aviso_cargo'"
+    ).fetchone()[0] == 1
 
 
 def test_no_se_puede_cancelar_una_reserva_pendiente(conexion):
@@ -198,6 +207,25 @@ def test_alternativas_excluyen_bloque_actual_ocupados_y_fuera_de_rango(conexion)
     assert [bloque["id"] for bloque in alternativas] == [2]
 
 
+def test_guardado_rechaza_bloque_fuera_de_la_ventana(conexion):
+    preparar_base(conexion)
+    fecha_fuera = (HOY + timedelta(days=14)).isoformat()
+    conexion.execute(
+        "UPDATE bloque_horario SET fecha = ? WHERE id = 2", (fecha_fuera,)
+    )
+    conexion.commit()
+
+    with pytest.raises(BloqueNoDisponible):
+        reagendar_reserva(conexion, 1, 2, ahora=AHORA)
+
+    reserva = conexion.execute(
+        "SELECT bloque_horario_id, estado, version FROM reserva WHERE id = 1"
+    ).fetchone()
+    assert tuple(reserva) == (1, "Confirmada", 1)
+    assert listar_historial(conexion, 1) == []
+    assert conexion.execute("SELECT COUNT(*) FROM correo_pendiente").fetchone()[0] == 0
+
+
 def test_sin_alternativas_conserva_reserva(conexion):
     preparar_base(conexion)
     insertar_reserva_tomada(conexion)
@@ -221,7 +249,7 @@ def test_reagendar_actualiza_reserva_libera_anterior_y_encola_aviso(conexion):
         1,
         2,
         configuracion=configuracion_prueba(),
-        ahora=ahora_utc(),
+        ahora=AHORA,
     )
 
     assert resultado["reserva"]["id"] == 1
@@ -256,7 +284,7 @@ def test_reagendar_bloque_tomado_no_cambia_nada(conexion):
             1,
             3,
             configuracion=configuracion_prueba(),
-            ahora=ahora_utc(),
+            ahora=AHORA,
         )
 
     reserva = conexion.execute("SELECT * FROM reserva WHERE id = 1").fetchone()
@@ -276,7 +304,7 @@ def test_reagendar_al_mismo_bloque_se_rechaza(conexion):
             1,
             1,
             configuracion=configuracion_prueba(),
-            ahora=ahora_utc(),
+            ahora=AHORA,
         )
 
 
@@ -302,15 +330,16 @@ def test_reagendar_inicia_un_nuevo_ciclo_de_confirmacion(conexion):
         1,
         2,
         configuracion=configuracion_prueba(),
-        ahora=ahora_utc(),
+        ahora=AHORA,
     )
-    enviar_solicitud(
+    solicitud = enviar_solicitud(
         conexion,
         1,
         TIPO_VISPERA,
         configuracion=configuracion_prueba(),
-        ahora=ahora_utc(),
+        ahora=AHORA,
     )
+    marcar_enviado(conexion, solicitud["correo"]["id"], "smtp-prueba", AHORA)
 
     solicitudes = [
         dict(fila)
@@ -323,7 +352,7 @@ def test_reagendar_inicia_un_nuevo_ciclo_de_confirmacion(conexion):
     assert solicitudes[1]["tipo"] == TIPO_VISPERA
 
     resultado = registrar_respuesta(
-        conexion, 1, "confirma", ahora=ahora_utc()
+        conexion, 1, "confirma", ahora=AHORA
     )
     assert resultado["reserva"]["estado"] == "Confirmada"
     fila = conexion.execute("SELECT * FROM reserva WHERE id = 1").fetchone()
@@ -363,6 +392,41 @@ def test_rutas_de_gestion_muestran_alternativas_y_permiten_reagendar(base_tempor
         assert "Pendiente de confirmación" in detalle_nuevo.text
         assert "Reagendamiento" in detalle_nuevo.text
         assert "Aviso de reserva reagendada" in detalle_nuevo.text
+
+
+def test_http_reagendar_bloque_tomado_muestra_conflicto(base_temporal, conexion):
+    preparar_base(conexion)
+    insertar_reserva_tomada(conexion)
+
+    with TestClient(crear_app(base_temporal, planificador_activo=False)) as cliente:
+        respuesta = cliente.post("/reservas/1/reagendar", data={"bloque_id": 3})
+
+    assert respuesta.status_code == 409
+    assert "El bloque seleccionado ya no está disponible." in respuesta.text
+    fila = conexion.execute(
+        "SELECT bloque_horario_id, estado, version FROM reserva WHERE id = 1"
+    ).fetchone()
+    assert tuple(fila) == (1, "Confirmada", 1)
+    assert listar_historial(conexion, 1) == []
+
+
+def test_http_reagendar_sin_alternativas_muestra_mensaje(base_temporal, conexion):
+    preparar_base(conexion)
+    insertar_reserva_tomada(conexion)
+    conexion.execute("UPDATE bloque_horario SET fecha = ? WHERE id = 2", (FECHA_LEJANA,))
+    conexion.commit()
+
+    with TestClient(crear_app(base_temporal, planificador_activo=False)) as cliente:
+        respuesta = cliente.get("/reservas/1/reagendar")
+
+    assert respuesta.status_code == 200
+    assert "No hay alternativas disponibles en los próximos 14 días." in respuesta.text
+    assert "La reserva original se conserva sin cambios." in respuesta.text
+    assert 'name="bloque_id"' not in respuesta.text
+    fila = conexion.execute(
+        "SELECT bloque_horario_id, estado, version FROM reserva WHERE id = 1"
+    ).fetchone()
+    assert tuple(fila) == (1, "Confirmada", 1)
 
 
 def test_ruta_de_cancelacion_libera_bloque(base_temporal):

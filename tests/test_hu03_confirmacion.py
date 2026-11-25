@@ -4,11 +4,13 @@ import sqlite3
 from datetime import timedelta
 
 import pytest
-from fastapi.testclient import TestClient
+from fastapi.testclient import TestClient as ClienteSinPermisos
+from tests.acceso_demo import cliente_con_reserva_de_prueba as TestClient
 
 from app.configuracion import ConfiguracionCorreo
 from app.db.seed import cargar_datos_ejemplo
 from app.main import crear_app
+from app.servicios.cola_correo import marcar_enviado
 from app.servicios.confirmacion import (
     ESTADO_SOLICITUD_PENDIENTE,
     ESTADO_SOLICITUD_REEMPLAZADA,
@@ -378,9 +380,12 @@ def test_recordatorio_reemplaza_y_cancela_correo_anterior(conexion):
 
 def test_registrar_respuesta_confirma(conexion):
     preparar_reserva_pendiente(conexion)
-    enviar_solicitud(conexion, 1, TIPO_VISPERA, configuracion=configuracion_prueba())
+    solicitud = enviar_solicitud(conexion, 1, TIPO_VISPERA, configuracion=configuracion_prueba())
+    marcar_enviado(conexion, solicitud["correo"]["id"], "smtp-prueba", programado("2026-11-11", "09:00"))
 
-    resultado = registrar_respuesta(conexion, 1, RESPUESTA_CONFIRMA)
+    resultado = registrar_respuesta(
+        conexion, 1, RESPUESTA_CONFIRMA, ahora=programado("2026-11-12", "09:00"),
+    )
 
     assert resultado["reserva"]["estado"] == "Confirmada"
     assert resultado["respuesta"] == RESPUESTA_CONFIRMA
@@ -401,9 +406,12 @@ def test_registrar_respuesta_confirma(conexion):
 
 def test_registrar_respuesta_no_asistira_libera_bloque(conexion):
     preparar_reserva_pendiente(conexion)
-    enviar_solicitud(conexion, 1, TIPO_VISPERA, configuracion=configuracion_prueba())
+    solicitud = enviar_solicitud(conexion, 1, TIPO_VISPERA, configuracion=configuracion_prueba())
+    marcar_enviado(conexion, solicitud["correo"]["id"], "smtp-prueba", programado("2026-11-11", "09:00"))
 
-    resultado = registrar_respuesta(conexion, 1, RESPUESTA_NO_ASISTIRA)
+    resultado = registrar_respuesta(
+        conexion, 1, RESPUESTA_NO_ASISTIRA, ahora=programado("2026-11-12", "09:00"),
+    )
 
     assert resultado["reserva"]["estado"] == "Cancelada"
     assert bloque_esta_disponible(conexion, 10) is True
@@ -412,12 +420,17 @@ def test_registrar_respuesta_no_asistira_libera_bloque(conexion):
     ).fetchone()
     assert solicitud["estado"] == ESTADO_SOLICITUD_RESPONDIDA
     assert solicitud["respuesta"] == RESPUESTA_NO_ASISTIRA
+    cargo = conexion.execute(
+        "SELECT monto, motivo FROM cargo WHERE reserva_id = 1"
+    ).fetchone()
+    assert dict(cargo) == {"monto": 5000, "motivo": "cancelación"}
 
 
 def test_marcar_hora_sin_respuesta_crea_cargo_y_correo(conexion):
     preparar_reserva_pendiente(conexion)
     config = configuracion_prueba()
-    enviar_solicitud(conexion, 1, TIPO_VISPERA, configuracion=config)
+    vispera = enviar_solicitud(conexion, 1, TIPO_VISPERA, configuracion=config)
+    marcar_enviado(conexion, vispera["correo"]["id"], "smtp-prueba", programado("2026-11-11", "09:00"))
     enviar_solicitud(conexion, 1, TIPO_RECORDATORIO, configuracion=config)
 
     resultado = marcar_hora_sin_respuesta(conexion, 1, configuracion=config)
@@ -454,6 +467,43 @@ def test_marcar_hora_sin_respuesta_crea_cargo_y_correo(conexion):
     assert conexion.execute("SELECT COUNT(*) FROM cargo").fetchone()[0] == 1
 
 
+@pytest.mark.parametrize("estado_correo", ["pendiente", "fallido", "omitido"])
+def test_planificador_cierra_sin_cargo_si_smtp_no_acepto(
+    base_temporal, conexion, estado_correo,
+):
+    preparar_reserva_pendiente(conexion)
+    if estado_correo == "omitido":
+        conexion.execute("UPDATE paciente SET correo = NULL WHERE id = 1")
+        conexion.commit()
+    config = configuracion_prueba()
+    solicitud = enviar_solicitud(
+        conexion, 1, TIPO_VISPERA, configuracion=config,
+        ahora=programado("2026-11-11", "09:00"),
+    )
+    if estado_correo == "fallido":
+        conexion.execute(
+            "UPDATE correo_pendiente SET estado = 'fallido' WHERE id = ?",
+            (solicitud["correo"]["id"],),
+        )
+        conexion.commit()
+
+    correo = CorreoFalso()
+    planificador = PlanificadorCorreos(str(base_temporal), correo, config)
+    inicio = programado("2026-11-12", "16:00")
+    planificador.ejecutar_ciclo(inicio)
+    planificador.ejecutar_ciclo(inicio)
+
+    assert conexion.execute("SELECT estado FROM reserva WHERE id = 1").fetchone()[0] == "Sin confirmar"
+    assert tuple(conexion.execute(
+        "SELECT estado, respuesta FROM solicitud_confirmacion WHERE reserva_id = 1"
+    ).fetchone()) == ("vencida", "sin respuesta")
+    assert conexion.execute("SELECT COUNT(*) FROM cargo").fetchone()[0] == 0
+    assert conexion.execute(
+        "SELECT COUNT(*) FROM correo_pendiente WHERE tipo = 'aviso_cargo'"
+    ).fetchone()[0] == 0
+    assert correo.enviados == []
+
+
 def test_operaciones_invalidas_no_modifican_datos(conexion):
     preparar_datos(conexion)
     insertar_bloque(conexion, 10)
@@ -483,9 +533,10 @@ def test_confirmacion_por_enlace_seguro(base_temporal, conexion):
         TIPO_VISPERA,
         configuracion=config,
     )
+    marcar_enviado(conexion, resultado["correo"]["id"], "smtp-prueba", programado("2026-11-09", "08:00"))
     token = resultado["tokens"]["confirmar"]
 
-    with TestClient(
+    with ClienteSinPermisos(
         crear_app(
             base_temporal,
             servicio_correo=CorreoFalso(),
@@ -494,10 +545,13 @@ def test_confirmacion_por_enlace_seguro(base_temporal, conexion):
         )
     ) as cliente:
         pagina = cliente.get(f"/respuesta/confirmar/{token}")
+        assert cliente.get("/reservas/1").status_code == 403
+        assert cliente.post("/reservas/1/confirmar").status_code == 403
         respuesta = cliente.post(
             f"/respuesta/confirmar/{token}", follow_redirects=False
         )
         reutilizado = cliente.get(f"/respuesta/confirmar/{token}")
+        assert cliente.get("/reservas/1").status_code == 200
 
     assert pagina.status_code == 200
     assert "Confirmar asistencia" in pagina.text
@@ -517,6 +571,7 @@ def test_cancelacion_por_enlace_seguro(base_temporal, conexion):
         TIPO_VISPERA,
         configuracion=config,
     )
+    marcar_enviado(conexion, resultado["correo"]["id"], "smtp-prueba", programado("2026-11-09", "08:00"))
     token = resultado["tokens"]["cancelar"]
 
     with TestClient(
@@ -537,9 +592,19 @@ def test_cancelacion_por_enlace_seguro(base_temporal, conexion):
     reserva = conexion.execute("SELECT estado FROM reserva WHERE id = 1").fetchone()
     assert reserva["estado"] == "Cancelada"
     assert bloque_esta_disponible(conexion, 10) is True
+    aviso = conexion.execute(
+        "SELECT cuerpo_texto FROM correo_pendiente "
+        "WHERE reserva_id = 1 AND tipo = 'aviso_cargo'"
+    ).fetchone()
+    assert "Se registró la cancelación" in aviso["cuerpo_texto"]
 
 
-def test_token_vencido_y_accion_incorrecta(base_temporal, conexion):
+def test_token_vencido_y_accion_incorrecta(base_temporal, conexion, monkeypatch):
+    from app.rutas import reserva as ruta_reserva
+
+    monkeypatch.setattr(
+        ruta_reserva, "ahora_utc", lambda: programado("2026-11-12", "16:00"),
+    )
     preparar_reserva_pendiente(conexion)
     config = configuracion_prueba()
     vencida = enviar_solicitud(
@@ -558,6 +623,7 @@ def test_token_vencido_y_accion_incorrecta(base_temporal, conexion):
         TIPO_VISPERA,
         configuracion=config,
     )
+    marcar_enviado(conexion, vigente["correo"]["id"], "smtp-prueba", programado("2026-11-12", "08:00"))
 
     with TestClient(
         crear_app(
@@ -636,7 +702,7 @@ def test_planificador_envia_vispera_recordatorio_y_vence(base_temporal, conexion
 def test_detalle_muestra_estado_de_correos_y_recordatorio(base_temporal, conexion):
     preparar_reserva_pendiente(conexion)
     config = configuracion_prueba()
-    enviar_solicitud(
+    solicitud = enviar_solicitud(
         conexion,
         1,
         TIPO_VISPERA,
@@ -653,6 +719,11 @@ def test_detalle_muestra_estado_de_correos_y_recordatorio(base_temporal, conexio
         )
     ) as cliente:
         respuesta = cliente.get("/reservas/1")
+        assert cliente.post("/reservas/1/confirmar").status_code == 409
+        token = solicitud["tokens"]["confirmar"]
+        assert cliente.get(f"/respuesta/confirmar/{token}").status_code == 409
+        marcar_enviado(conexion, solicitud["correo"]["id"], "smtp-prueba", programado("2026-11-09", "08:00"))
+        detalle_enviado = cliente.get("/reservas/1")
 
     assert respuesta.status_code == 200
     assert "Estado de las notificaciones por correo" in respuesta.text
@@ -660,7 +731,10 @@ def test_detalle_muestra_estado_de_correos_y_recordatorio(base_temporal, conexio
     assert "Pendiente de envío" in respuesta.text
     assert "Recordatorio programado" in respuesta.text
     assert "2026-11-12 08:00" in respuesta.text
-    assert "Confirmar asistencia" in respuesta.text
+    assert 'action="/reservas/1/confirmar"' not in respuesta.text
+    assert 'action="/reservas/1/no-asistir"' not in respuesta.text
+    assert 'action="/reservas/1/confirmar"' in detalle_enviado.text
+    assert 'action="/reservas/1/no-asistir"' in detalle_enviado.text
     assert "Enviar solicitud (víspera)" not in respuesta.text
     assert "Simulación de tiempo" not in respuesta.text
 
@@ -770,6 +844,31 @@ def test_respuesta_a_solicitud_reemplazada_o_vencida_devuelve_409(
     reserva = conexion.execute("SELECT estado FROM reserva WHERE id = 1").fetchone()
     assert reserva["estado"] == ESTADO_PENDIENTE
     assert conexion.execute("SELECT COUNT(*) FROM cargo").fetchone()[0] == 0
+
+
+def test_respuesta_web_al_inicio_se_rechaza_aunque_la_solicitud_siga_pendiente(
+    base_temporal, conexion, monkeypatch,
+):
+    from app.rutas import reserva as ruta_reserva
+
+    preparar_reserva_pendiente(conexion)
+    enviar_solicitud(
+        conexion, 1, TIPO_VISPERA, configuracion=configuracion_prueba(),
+        ahora=programado("2026-11-11", "09:00"),
+    )
+    monkeypatch.setattr(
+        ruta_reserva, "ahora_utc", lambda: programado("2026-11-12", "16:00"),
+    )
+    with TestClient(crear_app(base_temporal, planificador_activo=False)) as cliente:
+        detalle = cliente.get("/reservas/1")
+        respuesta = cliente.post("/reservas/1/confirmar")
+
+    assert 'action="/reservas/1/confirmar"' not in detalle.text
+    assert respuesta.status_code == 409
+    assert "El plazo de respuesta ya venció" in respuesta.text
+    assert conexion.execute("SELECT estado FROM reserva WHERE id = 1").fetchone()[0] == (
+        "Pendiente de confirmación"
+    )
 
 
 def test_reserva_inexistente_devuelve_404(base_temporal):

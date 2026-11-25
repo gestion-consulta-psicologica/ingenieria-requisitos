@@ -15,6 +15,17 @@ os.environ.pop("SMTP_HOST", None)
 os.environ.pop("SMTP_REMITENTE", None)
 
 from app.db.conexion import conectar, inicializar_base
+from app.rutas import disponibilidad as ruta_disponibilidad
+from app.rutas import reserva as ruta_reserva
+from app.servicios import disponibilidad, reagendamiento
+from app.tiempo import programado
+
+
+@pytest.fixture(autouse=True)
+def reloj_agenda(monkeypatch):
+    instante = programado("2026-11-09", "08:00")
+    for modulo in (disponibilidad, ruta_disponibilidad, ruta_reserva, reagendamiento):
+        monkeypatch.setattr(modulo, "ahora_utc", lambda: instante)
 
 
 @pytest.fixture

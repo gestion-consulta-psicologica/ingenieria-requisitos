@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import smtplib
+import ssl
 import socket
 from email.message import EmailMessage
 from email.utils import formatdate, make_msgid
@@ -99,6 +100,7 @@ class ServicioCorreoSMTP:
                     config.smtp_host,
                     config.smtp_puerto,
                     timeout=config.smtp_timeout,
+                    context=ssl.create_default_context(),
                 )
             else:
                 cliente = smtplib.SMTP(
@@ -108,7 +110,7 @@ class ServicioCorreoSMTP:
                 )
                 cliente.ehlo()
                 if config.smtp_seguridad == "starttls":
-                    cliente.starttls()
+                    cliente.starttls(context=ssl.create_default_context())
                     cliente.ehlo()
 
             if config.smtp_usuario and config.smtp_clave:

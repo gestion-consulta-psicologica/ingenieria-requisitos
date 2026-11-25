@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Panel de la psicóloga</title>
+  <style>
+    body { margin: 0; font-family: system-ui, sans-serif; color: #172554; background: #f8fafc; }
+    header { background: #0f766e; color: white; padding: 1rem 1.5rem; }
+    header a { color: white; margin-right: 1rem; }
+    main { max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
+    section { background: white; border: 1px solid #e2e8f0; border-radius: .5rem; padding: 1rem; margin-bottom: 1rem; }
+    form { display: flex; flex-wrap: wrap; align-items: end; gap: .75rem; }
+    label { display: grid; gap: .25rem; }
+    input, select, button { font: inherit; padding: .4rem; }
+    li { margin-block: .4rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Panel de la psicóloga</h1>
+    <nav>
+      <a href="/disponibilidad">Vista del paciente</a>
+      <a href="/pagos">Comprobar pagos pendientes</a>
+      {% include "cuenta_nav.html" %}
+    </nav>
+  </header>
+  <main>
+    {% if request.app.state.cuentas_persistentes %}
+    <section id="identidades">
+      <h2>Solicitudes de vinculación</h2>
+      <p>Confirma la identidad y el RUT de la persona por un canal de confianza antes de aprobar.</p>
+      {% for solicitud in solicitudes_identidad %}
+      <form method="post" action="/psicologa/identidades/{{ solicitud.id }}/aprobar">
+        <input type="hidden" name="csrf" value="{{ request.state.csrf }}">
+        <p>{{ solicitud.nombre_solicitado }} · {{ solicitud.rut_solicitado }} · {{ solicitud.correo }}</p>
+        <button type="submit">Aprobar identidad verificada</button>
+      </form>
+      {% else %}
+      <p>No hay solicitudes con correo verificado pendientes de revisión.</p>
+      {% endfor %}
+    </section>
+    {% endif %}
+    <section id="disponibilidad">
+      <h2>Disponibilidad</h2>
+      <p>Lunes a sábado, de 09:00 a 19:00. Cada atención dura 50 minutos.</p>
+      {% if bloques_generados is not none and semana_generada %}
+      <p role="status">Bloques agregados: {{ bloques_generados }}.</p>
+      <p><a href="/disponibilidad?semana={{ semana_generada.isoformat() }}">Consultar semana como paciente</a></p>
+      {% endif %}
+      <form method="post" action="/psicologa/horarios">
+        <input type="hidden" name="csrf" value="{{ request.state.csrf }}">
+        <label>Fecha <input type="date" name="fecha" required></label>
+        <label>Inicio <input type="time" name="inicio" min="09:00" max="19:00" required></label>
+        <label>Término <input type="time" name="termino" min="09:00" max="19:00" required></label>
+        <label>Modalidad
+          <select name="modalidad">
+            <option value="presencial">Presencial</option>
+            <option value="online">En línea</option>
+          </select>
+        </label>
+        <button type="submit">Agregar bloque</button>
+      </form>
+      <h3>Cargar una semana con inicios cada hora</h3>
+      <p>Agrega bloques de 09:00 a 18:00 donde no haya otro bloque.</p>
+      <form method="post" action="/psicologa/horarios/generar">
+        <input type="hidden" name="csrf" value="{{ request.state.csrf }}">
+        <label>Fecha de la semana <input type="date" name="semana" required></label>
+        <label>Modalidad
+          <select name="modalidad">
+            <option value="presencial">Presencial</option>
+            <option value="online">En línea</option>
+          </select>
+        </label>
+        <button type="submit">Agregar bloques de la semana</button>
+      </form>
+      <ul>
+        {% for bloque in bloques %}
+        <li>{{ bloque.fecha|fecha_dia }} · {{ bloque.hora_inicio }} a {{ bloque.hora_termino }} · {{ bloque.modalidad }}</li>
+        {% else %}
+        <li>Sin bloques registrados.</li>
+        {% endfor %}
+      </ul>
+    </section>
+    <section>
+      <h2>Reservas y atenciones</h2>
+      <ul>
+        {% for reserva in reservas %}
+        <li{% if reserva.atencion_id %} id="atencion-{{ reserva.atencion_id }}"{% endif %}>
+          {{ reserva.fecha|fecha_dia }} · {{ reserva.hora_inicio }} · {{ reserva.nombre_completo }}
+          · <a href="/reservas/{{ reserva.id }}">Reserva {{ reserva.id }}</a> · {{ reserva.estado }}
+          {% if request.app.state.cuentas_persistentes or request.app.state.clave_paciente_demo %}
+          · <a href="/psicologa/fichas/{{ reserva.paciente_id }}">Ficha clínica</a>
+          {% endif %}
+          {% if reserva.atencion_id %}
+          · <a href="/pagos/{{ reserva.atencion_id }}">Atención y pago</a> · {{ reserva.atencion_estado }}
+          {% if asistencia_registrada == reserva.atencion_id and reserva.atencion_estado != "programada" %}
+          <p role="status">Asistencia registrada para {{ reserva.nombre_completo }}: {{ reserva.atencion_estado }}.</p>
+          {% endif %}
+          {% endif %}
+          {% if reserva.estado == "Confirmada" and not reserva.atencion_id %}
+          <form method="post" action="/psicologa/reservas/{{ reserva.id }}/cancelar">
+            <input type="hidden" name="csrf" value="{{ request.state.csrf }}">
+            <button type="submit">Cancelar reserva sin cargo</button>
+          </form>
+          {% endif %}
+          {% if reserva.atencion_estado == "programada" %}
+          <form method="post" action="/psicologa/atenciones/{{ reserva.atencion_id }}/asistencia">
+            <input type="hidden" name="csrf" value="{{ request.state.csrf }}">
+            <label>Resultado
+              <select name="estado" required>
+                <option value="">Seleccionar</option>
+                <option value="realizada">Asistió</option>
+                <option value="inasistencia">Inasistencia sin justificación</option>
+                <option value="inasistencia justificada">Inasistencia justificada</option>
+              </select>
+            </label>
+            <label>Justificación, si corresponde <input name="justificacion"></label>
+            <button type="submit">Registrar asistencia</button>
+          </form>
+          {% endif %}
+        </li>
+        {% else %}
+        <li>Sin reservas registradas.</li>
+        {% endfor %}
+      </ul>
+    </section>
+  </main>
+</body>
+</html>

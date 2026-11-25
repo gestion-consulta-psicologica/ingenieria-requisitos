@@ -15,8 +15,9 @@
     .error { background: #fef2f2; border: 1px solid #fca5a5; border-radius: .5rem; padding: .75rem 1rem; margin-bottom: 1rem; color: #991b1b; }
     .advertencia { background: #fffbeb; border: 1px solid #f59e0b; border-radius: .5rem; padding: .75rem 1rem; margin-bottom: 1rem; color: #92400e; }
     .acciones form { display: inline-block; margin: 0 .5rem .5rem 0; }
-    button { font: inherit; padding: .45rem .8rem; border-radius: .375rem; border: 1px solid #0f766e; background: #0f766e; color: white; cursor: pointer; }
-    button.secundario { background: white; color: #0f766e; }
+    button, a.accion { font: inherit; padding: .45rem .8rem; border-radius: .375rem; border: 1px solid #0f766e; background: #0f766e; color: white; cursor: pointer; }
+    button.secundario, a.accion.secundaria { background: white; color: #0f766e; }
+    a.accion { display: inline-block; text-decoration: none; }
     table { border-collapse: collapse; width: 100%; margin-bottom: .5rem; }
     th, td { text-align: left; padding: .35rem .5rem; border-bottom: 1px solid #e2e8f0; vertical-align: top; }
     .estado-enviado { color: #047857; font-weight: 600; }
@@ -67,7 +68,11 @@
       {% elif reserva.estado == "Cancelada" %}
       <p>La reserva fue cancelada y el bloque horario quedó disponible.</p>
       {% elif reserva.estado == "Sin confirmar" %}
+      {% if cargo %}
       <p>La reserva quedó sin confirmar y se registró el cargo por reserva de hora.</p>
+      {% else %}
+      <p>La reserva quedó sin confirmar y no se registró un cargo.</p>
+      {% endif %}
       {% endif %}
     </div>
 
@@ -88,47 +93,48 @@
       <p><strong>Vencimiento sin respuesta:</strong> {{ atencion_programada }}</p>
     </section>
 
-    {% if puede_responder %}
+    {% if puede_responder and not request.state.lectura_admin %}
     <section class="acciones">
       <h3>Responder la confirmación</h3>
       <p class="detalle">
         También puedes responder desde los enlaces seguros enviados por correo.
       </p>
       <form method="post" action="/reservas/{{ reserva.reserva_id }}/confirmar">
+        <input type="hidden" name="csrf" value="{{ request.state.csrf }}">
         <button type="submit">Confirmar asistencia</button>
       </form>
       <form method="post" action="/reservas/{{ reserva.reserva_id }}/no-asistir">
+        <input type="hidden" name="csrf" value="{{ request.state.csrf }}">
         <button type="submit" class="secundario">No asistiré</button>
       </form>
     </section>
+    {% elif reserva.estado == "Pendiente de confirmación" and not correo_configurado %}
+    <p class="advertencia">El envío de correo está deshabilitado. Las solicitudes sin envío aceptado no habilitan la respuesta ni generan un cargo por falta de confirmación.</p>
     {% endif %}
 
-    {% if puede_gestionar %}
+    {% if puede_gestionar and not request.state.lectura_admin %}
     <section class="acciones">
       <h3>Gestión de la reserva</h3>
       <p class="detalle">
         Puedes cambiar la hora por otra disponible o cancelar la reserva.
         La cancelación es inmediata y libera el bloque.
       </p>
-      <a href="/reservas/{{ reserva.reserva_id }}/reagendar">
-        <button type="button" class="secundario">Reagendar hora</button>
-      </a>
+      <a class="accion secundaria" href="/reservas/{{ reserva.reserva_id }}/reagendar">Reagendar hora</a>
       <form method="post" action="/reservas/{{ reserva.reserva_id }}/cancelar">
+        <input type="hidden" name="csrf" value="{{ request.state.csrf }}">
         <button type="submit" class="secundario">Cancelar reserva</button>
       </form>
     </section>
     {% endif %}
 
-    {% if atencion_pago and atencion_pago.pago_estado in ["Pendiente", "Pago incompleto"] %}
+    {% if atencion_pago and atencion_pago.pago_estado in ["Pendiente", "Pago incompleto"] and not request.state.lectura_admin %}
     <section class="acciones">
       <h3>Pago de la atención</h3>
       <p class="detalle">
         Puedes registrar el comprobante de tu transferencia para que la
         psicóloga lo revise.
       </p>
-      <a href="/pagos/{{ atencion_pago.atencion_id }}/comprobante">
-        <button type="button">Registrar comprobante de pago</button>
-      </a>
+      <a class="accion" href="/pagos/{{ atencion_pago.atencion_id }}/comprobante">Registrar comprobante de pago</a>
     </section>
     {% endif %}
 

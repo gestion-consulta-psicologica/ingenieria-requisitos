@@ -175,6 +175,13 @@ def test_registrar_paciente_sin_nombre_no_lo_registra(conexion):
     assert contar_pacientes(conexion) == 0
 
 
+def test_registrar_paciente_rechaza_un_rut_con_letras_ignoradas_por_la_busqueda(conexion):
+    with pytest.raises(DatosPacienteInvalidos, match="RUT"):
+        registrar_paciente(conexion, "Paciente", "ab99.999.999-9", telefono="12345678")
+
+    assert conexion.execute("SELECT COUNT(*) FROM paciente").fetchone()[0] == 0
+
+
 def test_registrar_paciente_sin_rut_no_lo_registra(conexion):
     with pytest.raises(DatosPacienteInvalidos) as error:
         registrar_paciente(conexion, "Paciente Nuevo", "   ", "123", "")
@@ -409,9 +416,10 @@ def test_rut_ya_registrado(base_temporal, conexion, caso):
     insertar_paciente(conexion)
     insertar_bloque(conexion, 10, "2026-11-12")
 
-    with TestClient(crear_app(base_temporal)) as cliente:
+    with TestClient(crear_app(base_temporal, clave_paciente_demo="clave-prueba")) as cliente:
         respuesta = cliente.post(
             "/pacientes/registro",
+            auth=("paciente", "clave-prueba"),
             data={
                 "nombre_completo": "Otro Nombre",
                 "rut": "222222222",

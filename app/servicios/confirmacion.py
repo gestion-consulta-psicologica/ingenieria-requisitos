@@ -5,6 +5,7 @@ from datetime import date, datetime, timedelta
 
 from app.configuracion import ConfiguracionCorreo, cargar_configuracion
 from app.servicios import cola_correo, plantillas_correo, tokens
+from app.servicios.notificaciones import MOTIVO_CANCELACION, registrar_cargo_con_aviso
 from app.servicios.reserva import ESTADO_PENDIENTE
 from app.tiempo import ahora_utc, iso_utc, programado, zona
 
@@ -24,7 +25,6 @@ RESPUESTA_CONFIRMA = "confirma"
 RESPUESTA_NO_ASISTIRA = "no asistirá"
 RESPUESTA_SIN_RESPUESTA = "sin respuesta"
 
-MONTO_CARGO = 5000
 MOTIVO_SIN_CONFIRMAR = "sin confirmar"
 
 
@@ -335,10 +335,12 @@ def _registrar_respuesta(
     *,
     token_id: int | None = None,
     ahora: datetime | None = None,
+    configuracion: ConfiguracionCorreo | None = None,
 ) -> dict:
     if respuesta not in (RESPUESTA_CONFIRMA, RESPUESTA_NO_ASISTIRA):
         raise ValueError("Respuesta de confirmación inválida.")
 
+    configuracion = configuracion or cargar_configuracion()
     ahora = ahora or ahora_utc()
     contexto = _contexto(conexion, reserva_id)
     version = contexto["reserva"]["version"]
@@ -353,12 +355,21 @@ def _registrar_respuesta(
             _mensaje_solicitud_no_disponible(ultima)
         )
 
+    bloque = contexto["bloque"]
+    inicio = programado(bloque["fecha"], bloque["hora_inicio"], configuracion.zona_horaria)
+    if ahora >= inicio:
+        raise SolicitudPendienteNoDisponible("El plazo de respuesta ya venció.")
+    if not cola_correo.solicitud_enviada(conexion, ultima["id"]):
+        raise SolicitudPendienteNoDisponible("La solicitud de confirmación aún no fue enviada.")
+
     nuevo_estado = (
         ESTADO_CONFIRMADA
         if respuesta == RESPUESTA_CONFIRMA
         else ESTADO_CANCELADA
     )
-    fecha_respuesta = ahora.astimezone(zona()).isoformat(timespec="seconds")
+    fecha_respuesta = ahora.astimezone(zona(configuracion.zona_horaria)).isoformat(
+        timespec="seconds"
+    )
 
     try:
         if token_id is not None:
@@ -405,6 +416,11 @@ def _registrar_respuesta(
                 "La solicitud pendiente cambió antes de registrar la respuesta."
             )
 
+        if respuesta == RESPUESTA_NO_ASISTIRA:
+            registrar_cargo_con_aviso(
+                conexion, contexto, MOTIVO_CANCELACION,
+                configuracion, ahora,
+            )
         conexion.commit()
     except Exception:
         conexion.rollback()
@@ -429,9 +445,10 @@ def registrar_respuesta(
     respuesta: str,
     *,
     ahora: datetime | None = None,
+    configuracion: ConfiguracionCorreo | None = None,
 ) -> dict:
     return _registrar_respuesta(
-        conexion, reserva_id, respuesta, ahora=ahora
+        conexion, reserva_id, respuesta, ahora=ahora, configuracion=configuracion,
     )
 
 
@@ -441,6 +458,7 @@ def registrar_respuesta_con_token(
     respuesta: str,
     *,
     ahora: datetime | None = None,
+    configuracion: ConfiguracionCorreo | None = None,
 ) -> dict:
     ahora = ahora or ahora_utc()
     fila = tokens.buscar_token(conexion, token, ahora)
@@ -459,6 +477,7 @@ def registrar_respuesta_con_token(
         respuesta,
         token_id=fila["id"],
         ahora=ahora,
+        configuracion=configuracion,
     )
 
 
@@ -527,41 +546,28 @@ def marcar_hora_sin_respuesta(
                 "La solicitud pendiente cambió antes de marcar la hora."
             )
 
-        cursor_cargo = conexion.execute(
+        cola_correo.cancelar_pendientes_de_solicitud(
+            conexion, ultima["id"], ahora, motivo="La solicitud de confirmación venció.",
+        )
+        cargo = correo_encolado = None
+        inicio = programado(
+            contexto["bloque"]["fecha"], contexto["bloque"]["hora_inicio"],
+            configuracion.zona_horaria,
+        )
+        enviado = conexion.execute(
             """
-            INSERT INTO cargo (
-                paciente_id, reserva_id, monto, motivo, fecha
-            )
-            VALUES (?, ?, ?, ?, ?)
+            SELECT 1 FROM solicitud_confirmacion s
+            JOIN correo_pendiente c ON c.solicitud_id = s.id
+            WHERE s.reserva_id = ? AND s.version = ? AND c.estado = ?
+              AND c.enviado_en < ?
+            LIMIT 1
             """,
-            (
-                contexto["reserva"]["paciente_id"],
-                reserva_id,
-                MONTO_CARGO,
-                MOTIVO_SIN_CONFIRMAR,
-                contexto["bloque"]["fecha"],
-            ),
-        )
-        cargo = conexion.execute(
-            "SELECT * FROM cargo WHERE id = ?", (cursor_cargo.lastrowid,)
+            (reserva_id, version, cola_correo.ESTADO_ENVIADO, iso_utc(inicio)),
         ).fetchone()
-
-        correo = plantillas_correo.aviso_cargo(
-            contexto["paciente"], contexto["reserva"], cargo, contexto["bloque"]
-        )
-        correo_encolado = cola_correo.encolar(
-            conexion,
-            clave=f"cargo:{cargo['id']}",
-            tipo=cola_correo.TIPO_AVISO_CARGO,
-            asunto=correo.asunto,
-            cuerpo_texto=correo.texto,
-            cuerpo_html=correo.html,
-            destinatario=contexto["paciente"]["correo"],
-            reserva_id=reserva_id,
-            solicitud_id=None,
-            creado_en=ahora,
-            max_intentos=configuracion.max_intentos,
-        )
+        if enviado is not None:
+            cargo, correo_encolado = registrar_cargo_con_aviso(
+                conexion, contexto, MOTIVO_SIN_CONFIRMAR, configuracion, ahora,
+            )
         conexion.commit()
     except sqlite3.IntegrityError as error:
         conexion.rollback()

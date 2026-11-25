@@ -30,7 +30,7 @@ else la atención existe
     SIS --> PSI : mostrar la atención en el listado\nde atenciones con pago pendiente
   end
 
-  SIS --> PSI : ofrecer opción «Registrar estado de pago»\ninactiva hasta la implementación de HU-06
+  SIS --> PSI : ofrecer «Registrar estado de pago»\nsi hay comprobantes que puede verificar
 end
 
 note over PSI, SIS

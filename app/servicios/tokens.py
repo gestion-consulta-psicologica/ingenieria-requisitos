@@ -6,6 +6,7 @@ import sqlite3
 from datetime import datetime
 
 from app.tiempo import desde_iso_utc, iso_utc
+from app.servicios.cola_correo import solicitud_enviada
 
 ACCION_CONFIRMAR = "confirmar"
 ACCION_CANCELAR = "cancelar"
@@ -92,6 +93,7 @@ def buscar_token(
     if (
         fila["solicitud_estado"] != "pendiente"
         or fila["reserva_estado"] != "Pendiente de confirmación"
+        or not solicitud_enviada(conexion, fila["solicitud_id"])
     ):
         raise TokenSolicitudInvalida(
             "La solicitud de confirmación ya no admite respuesta."

@@ -152,6 +152,13 @@ Característica: Confirmación de asistencia
     Y el sistema registra un cargo de $5.000 por falta de confirmación asociado al paciente y a la reserva
     Y el aviso de cargo se encola para envío por correo electrónico
 
+  Escenario: Vence una solicitud cuyo correo nunca se envió
+    Dado que existe una solicitud pendiente del ciclo vigente de la reserva
+    Y que SMTP no aceptó el envío de ninguna solicitud de ese ciclo
+    Cuando llega la hora de la atención sin respuesta del paciente
+    Entonces la solicitud queda "vencida" y la reserva queda "sin confirmar"
+    Y el sistema no registra ni encola un cargo por falta de confirmación
+
   Escenario: El servidor SMTP no está disponible
     Dado que existe un correo pendiente en la cola de notificaciones
     Y el servidor SMTP no responde
@@ -421,9 +428,9 @@ Característica: Actualización de la ficha clínica
     Entonces la ficha clínica conserva el registro con la fecha de la atención
     Y los registros anteriores de la ficha clínica se mantienen sin cambios
 
-  Escenario: La secretaria intenta acceder a una ficha clínica
-    Dado que la secretaria inició sesión con su cuenta
-    Cuando la secretaria intenta consultar la ficha clínica de un paciente
-    Entonces el sistema niega el acceso a la ficha clínica
-    Y registra el intento de acceso en la bitácora de accesos
+  Escenario: Un paciente autenticado intenta acceder a una ficha clínica
+    Dado que el paciente inició sesión y su rol no tiene permiso de acceso clínico
+    Cuando intenta consultar o modificar una ficha clínica
+    Entonces el sistema deniega la solicitud sin revelar ni modificar datos clínicos
+    Y registra el intento de acceso en la bitácora sin guardar contenido clínico
 ```

@@ -66,17 +66,25 @@ def encolar(
     ).fetchone()
 
 
+def solicitud_enviada(conexion: sqlite3.Connection, solicitud_id: int) -> bool:
+    return conexion.execute(
+        "SELECT 1 FROM correo_pendiente WHERE solicitud_id = ? AND estado = ?",
+        (solicitud_id, ESTADO_ENVIADO),
+    ).fetchone() is not None
+
+
 def cancelar_pendientes_de_solicitud(
-    conexion: sqlite3.Connection, solicitud_id: int, ahora: datetime
+    conexion: sqlite3.Connection, solicitud_id: int, ahora: datetime,
+    *, motivo: str = "Reemplazado por el recordatorio.",
 ) -> int:
     cursor = conexion.execute(
         """
         UPDATE correo_pendiente
         SET estado = ?, actualizado_en = ?,
-            ultimo_error = 'Reemplazado por el recordatorio.'
+            ultimo_error = ?
         WHERE solicitud_id = ? AND estado = ?
         """,
-        (ESTADO_CANCELADO, iso_utc(ahora), solicitud_id, ESTADO_PENDIENTE),
+        (ESTADO_CANCELADO, iso_utc(ahora), motivo, solicitud_id, ESTADO_PENDIENTE),
     )
     return cursor.rowcount
 

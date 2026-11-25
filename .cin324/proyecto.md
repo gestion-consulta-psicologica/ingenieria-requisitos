@@ -64,7 +64,7 @@ Estas limitaciones son propias del prototipo académico actual. No debe utilizar
 - Pruebas: pytest + `TestClient` de FastAPI
 - Python instalado: `C:\Users\nicol\AppData\Local\Programs\Python\Python312` (usar `.venv\Scripts\python.exe`)
 - Cómo instalar: `python -m venv .venv` → `.venv\Scripts\activate` → `pip install -r requirements.txt`
-- Cómo ejecutar: `uvicorn app.asgi:app --reload` — URL: `http://localhost:8000`
+- Cómo ejecutar: `python -m app.demo` para datos sintéticos. El [arranque con cuentas persistentes](../README.md#arranque-con-cuentas-persistentes) usa HTTPS y una base explícita aislada.
 - Cómo probar: `pytest`
 
 ## Base de datos y respaldo
@@ -102,6 +102,27 @@ Estas limitaciones son propias del prototipo académico actual. No debe utilizar
 | HU-03 — Confirmar o cancelar una hora | Pruebas y migraciones | 72 pruebas en total pasan; migraciones 003, 004 y 005 cubiertas; no hay datos ambiguos en la base local | 2026-11-18 |
 
 ## Cambios posteriores
+
+La [revisión final académica](../12-trazabilidad.md#cierre-académico-por-historia) consolida las 11 historias, los 57 criterios y las corridas verificadas. HU-07 queda diferida hasta acordar con la psicóloga el sistema tributario, el canal, las autorizaciones y la configuración de emisión.
+
+### Consolidación del recorrido de demostración
+
+- **HU-01 y HU-02:** el recorrido verifica disponibilidad, alta de paciente
+  mediante HU-02A, reserva y exclusión de bloques consumidos. Si un bloque se
+  ocupa antes del envío, se informa el conflicto antes de iniciar el alta.
+- **HU-03:** el recorrido verifica la confirmación por correo con SMTP local y
+  la cancelación web con cargo. Al vencer una solicitud, se cobra solo si SMTP
+  aceptó antes el envío de una solicitud del ciclo vigente.
+- **HU-04:** el recorrido verifica reagendamiento, liberación del bloque anterior
+  y nuevo ciclo de confirmación. La prueba de conflicto comprueba que un destino
+  fuera de los 14 días conserva la reserva y su historial.
+- **Integración administrativa:** la misma instancia verifica que la psicóloga
+  autenticada pueda ver el comprobante registrado por el paciente. El arranque
+  local usa una base sintética nueva.
+- **HU-09:** la demostración permite consultar y registrar evoluciones. La prueba
+  verifica CA4 con el rol Paciente y comprueba la bitácora sin contenido clínico.
+  El panel consulta y guarda antecedentes de anamnesis. El arranque operativo
+  usa cuentas persistentes y HTTPS. RD-02 sigue pendiente.
 | Cambio | Historia afectada | Motivo | Fecha |
 |--------|-------------------|--------|-------|
 | Alineación de HU-04, HU-05, HU-05A, HU-08, modelo, CU y estados | HU-04, HU-05, HU-05A, HU-08 | Aplicar las 10 decisiones de la auditoría y eliminar contradicciones | 2026-11-23 |

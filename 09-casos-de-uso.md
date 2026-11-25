@@ -4,11 +4,13 @@
 | Actor | Tipo (humano / sistema externo) | Descripción |
 |-------|----------------------------------|-------------|
 | Paciente | Humano | Persona que consulta la disponibilidad, reserva, confirma, cancela y reagenda sus horas de atención. |
-| Psicóloga | Humano | Profesional que comprueba y registra los pagos, emite las boletas, registra la asistencia y actualiza la ficha clínica de sus pacientes. |
+| Administrador (Psicóloga) | Humano | Profesional que administra horarios, reservas, pacientes, atenciones, asistencia, pagos y comprobantes, y a quien corresponden la emisión de boletas y la gestión clínica. |
 | Servicio de correo electrónico (SMTP) | Sistema externo | Servicio que entrega al paciente los avisos de reserva, las solicitudes de confirmación, los recordatorios y los avisos de cargo por correo electrónico. En pruebas se reemplaza por un servidor SMTP falso local. |
 | SII | Sistema externo | Servicio de Impuestos Internos, que recibe y registra las boletas de honorarios electrónicas emitidas por la psicóloga. |
 
 ## Diagrama de casos de uso
+
+Paciente y Administrador (Psicóloga) son los únicos roles funcionales. SMTP y SII son sistemas externos.
 ![Casos de uso](./diagramas/casos-de-uso.png)
 
 Archivo fuente: [`./diagramas/casos-de-uso.puml`](./diagramas/casos-de-uso.puml)

@@ -6,10 +6,12 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.main import crear_app
+from app.servicios.atenciones import crear_atenciones_vencidas
 from app.servicios.disponibilidad import (
     obtener_disponibilidad_semana,
     obtener_proximo_bloque,
 )
+from app.tiempo import programado
 
 
 def preparar_psicologa_y_paciente(conexion):
@@ -87,7 +89,7 @@ def test_semana_con_bloques_libres(base_temporal, conexion, semana):
     assert "11:00" in respuesta.text
     assert "10:00" not in respuesta.text
     assert "martes 10 de noviembre" in respuesta.text
-    assert "Rol de demostración" in respuesta.text
+    assert 'href="/disponibilidad" aria-current="page">Paciente' in respuesta.text
     assert "Paciente" in respuesta.text
 
 
@@ -125,7 +127,7 @@ def test_regla_vigencia_est01(conexion):
         (13, "12:00", "Sin confirmar"),
     )
     for bloque_id, hora_inicio, estado in datos:
-        insertar_bloque(conexion, bloque_id, "2026-11-10", hora_inicio, "10:50")
+        insertar_bloque(conexion, bloque_id, "2026-11-10", hora_inicio, "13:00")
         insertar_reserva(conexion, bloque_id, bloque_id, estado)
 
     bloques = obtener_disponibilidad_semana(conexion, date(2026, 11, 9))
@@ -154,3 +156,49 @@ def test_semana_omitida_usa_semana_actual(base_temporal):
         respuesta = cliente.get("/disponibilidad")
 
     assert respuesta.status_code == 200
+
+
+def test_jornada_y_hora_de_inicio_filtran_la_disponibilidad(conexion):
+    preparar_psicologa_y_paciente(conexion)
+    insertar_bloque(conexion, 1, "2026-11-14", "08:59", "09:50")
+    insertar_bloque(conexion, 2, "2026-11-14", "09:00", "09:50")
+    insertar_bloque(conexion, 3, "2026-11-14", "18:10", "19:00")
+    insertar_bloque(conexion, 4, "2026-11-14", "18:15", "19:01")
+    insertar_bloque(conexion, 5, "2026-11-15", "09:00", "09:50")
+    insertar_bloque(conexion, 6, "2026-11-13", "10:00", "10:50")
+
+    sabado = date(2026, 11, 14)
+    antes = obtener_disponibilidad_semana(
+        conexion, sabado, ahora=programado(sabado, "08:59"),
+    )
+    al_inicio = obtener_disponibilidad_semana(
+        conexion, sabado, ahora=programado(sabado, "09:00"),
+    )
+
+    assert [bloque["id"] for bloque in antes] == [2, 3]
+    assert [bloque["id"] for bloque in al_inicio] == [3]
+
+
+def test_bloque_finalizado_no_se_ofrece_ni_se_puede_reservar(
+    base_temporal, conexion, monkeypatch,
+):
+    from app.rutas import disponibilidad as ruta_disponibilidad
+    from app.servicios import disponibilidad
+
+    preparar_psicologa_y_paciente(conexion)
+    insertar_bloque(conexion, 1, "2026-11-10", "10:00", "10:50")
+    insertar_reserva(conexion, 1, 1, "Confirmada")
+    inicio = programado("2026-11-10", "10:00")
+    assert crear_atenciones_vencidas(conexion, inicio)
+    monkeypatch.setattr(disponibilidad, "ahora_utc", lambda: inicio)
+    monkeypatch.setattr(ruta_disponibilidad, "ahora_utc", lambda: inicio)
+
+    with TestClient(crear_app(base_temporal)) as cliente:
+        listado = cliente.get("/disponibilidad")
+        reserva = cliente.post("/reservar/1", data={"rut": "22.222.222-2"})
+
+    assert 'href="/reservar/1"' not in listado.text
+    assert reserva.status_code == 409
+    assert [fila["estado"] for fila in conexion.execute("SELECT estado FROM reserva")] == [
+        "Finalizada",
+    ]

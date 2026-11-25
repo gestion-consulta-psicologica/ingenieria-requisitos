@@ -25,7 +25,15 @@ Cuando el Paciente confirma la cancelación de una reserva **Confirmada**, el si
 - **GIVEN** que el paciente tiene una reserva confirmada para el viernes 13 de noviembre a las 18:00
 - **WHEN** el paciente cancela la reserva
 - **THEN** la reserva queda en estado "cancelada"
+- **AND** se registra un cargo de $5.000 asociado al paciente y la reserva y se encola su aviso
 - **AND** el bloque del viernes 13 de noviembre a las 18:00 vuelve a estar disponible
+
+#### Scenario: La psicóloga cancela una reserva confirmada
+
+- **GIVEN** que la psicóloga tiene acceso a la gestión de una reserva confirmada sin atención asociada
+- **WHEN** confirma la cancelación
+- **THEN** la reserva queda en estado "cancelada" y se registra el cambio en el historial
+- **AND** el sistema no genera un cargo al paciente
 
 ### Requirement: Consultar alternativas de reagendamiento
 

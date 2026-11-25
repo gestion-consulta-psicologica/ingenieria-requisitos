@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ficha clínica</title>
+</head>
+<body>
+  <main>
+    <p><a href="/psicologa">Volver al panel</a></p>
+    <h1>Ficha clínica de {{ paciente.nombre_completo }}</h1>
+    <section id="antecedentes">
+      <h2>Antecedentes clínicos</h2>
+      {% if antecedentes %}
+      <p>Fecha de apertura: {{ antecedentes.fecha_apertura|fecha_larga }}</p>
+      {% endif %}
+      {% if antecedentes_guardados %}
+      <p role="status">Los antecedentes quedaron guardados.</p>
+      {% endif %}
+      <form method="post" action="/psicologa/fichas/{{ paciente_id }}/antecedentes">
+        <input type="hidden" name="csrf" value="{{ request.state.csrf }}">
+        {% for clave, etiqueta in campos_antecedentes %}
+        <p><label>{{ etiqueta }} <textarea name="{{ clave }}">{{ antecedentes[clave] if antecedentes else "" }}</textarea></label></p>
+        {% endfor %}
+        <button type="submit">Guardar antecedentes</button>
+      </form>
+    </section>
+    {% for atencion in atenciones %}
+    <section id="evolucion-{{ atencion.id }}">
+      <h2>Atención del {{ atencion.fecha|fecha_larga }}</h2>
+      {% if atencion.observaciones is not none %}
+      <p>Evolución registrada</p>
+      <p><strong>Observaciones:</strong> {{ atencion.observaciones }}</p>
+      {% if atencion.pruebas_aplicadas %}
+      <p><strong>Pruebas aplicadas:</strong> {{ atencion.pruebas_aplicadas }}</p>
+      {% endif %}
+      {% else %}
+      <form method="post" action="/psicologa/fichas/{{ paciente_id }}">
+        <input type="hidden" name="atencion_id" value="{{ atencion.id }}">
+        <input type="hidden" name="csrf" value="{{ request.state.csrf }}">
+        <p><label>Observaciones <textarea name="observaciones" required></textarea></label></p>
+        <p><label>Pruebas aplicadas <textarea name="pruebas_aplicadas"></textarea></label></p>
+        <button type="submit">Guardar evolución</button>
+      </form>
+      {% endif %}
+    </section>
+    {% else %}
+    <p>Sin atenciones realizadas.</p>
+    {% endfor %}
+  </main>
+</body>
+</html>

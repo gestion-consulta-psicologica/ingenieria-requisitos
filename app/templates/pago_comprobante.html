@@ -73,6 +73,7 @@
         si necesitas complementar el pago.
       </p>
       <form method="post" action="/pagos/{{ detalle.atencion.id }}/comprobante">
+        <input type="hidden" name="csrf" value="{{ request.state.csrf }}">
         <label for="monto">Monto transferido (CLP)</label>
         <input
           id="monto"

@@ -103,6 +103,7 @@ Cuando el paciente responde que no asistirá desde la plataforma o desde el enla
 - **WHEN** el paciente responde que no asistirá
 - **THEN** la reserva queda en estado "cancelada"
 - **AND** la solicitud pendiente más reciente queda en estado "respondida", con la respuesta "no asistirá" y su fecha de respuesta
+- **AND** se registra un cargo de $5.000 asociado al paciente y la reserva y se encola su aviso
 - **AND** el bloque horario vuelve a estar disponible para otros pacientes
 
 ### Requirement: Cerrar la solicitud sin respuesta

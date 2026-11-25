@@ -1,0 +1,109 @@
+from fastapi.testclient import TestClient
+
+from app.db.seed import cargar_datos_ejemplo
+from app.main import crear_app
+
+
+def test_psicologa_registra_y_paciente_no_puede_consultar_ni_modificar(
+    base_temporal, conexion,
+):
+    cargar_datos_ejemplo(str(base_temporal))
+    conexion.execute("UPDATE atencion SET estado = 'realizada' WHERE id = 1")
+    conexion.commit()
+    admin = ("psicologa", "clave-admin")
+    paciente = ("paciente", "clave-paciente")
+    app = crear_app(
+        base_temporal, clave_psicologa_demo=admin[1], clave_paciente_demo=paciente[1],
+    )
+    url = "/psicologa/fichas/1"
+    datos = {
+        "atencion_id": 1, "observaciones": "Contenido clínico sintético",
+        "csrf": app.state.csrf_psicologa_demo,
+    }
+    with TestClient(app) as cliente:
+        assert url in cliente.get("/psicologa", auth=admin).text
+        assert cliente.post(url, data=datos, auth=admin, follow_redirects=False).status_code == 303
+        vista = cliente.get(url, auth=admin)
+        assert datos["observaciones"] in vista.text
+        assert vista.headers["cache-control"] == "no-store"
+        assert cliente.post(url, data=datos, auth=admin).status_code == 409
+        assert cliente.post("/psicologa/fichas/2", data=datos, auth=admin).status_code == 409
+        intentos = (
+            cliente.get(url, auth=paciente),
+            cliente.post(url, data={**datos, "observaciones": "Texto rechazado"}, auth=paciente),
+        )
+        for intento in intentos:
+            assert intento.status_code == 403
+            assert intento.json() == {"detail": "Acceso denegado."}
+    registros = conexion.execute("SELECT observaciones FROM registro_evolucion").fetchall()
+    assert [fila[0] for fila in registros] == [datos["observaciones"]]
+    eventos = conexion.execute("SELECT * FROM bitacora_clinica WHERE resultado = 'denegado'").fetchall()
+    assert [(e["rol"], e["operacion"]) for e in eventos] == [
+        ("Paciente", "lectura"), ("Paciente", "escritura"),
+    ]
+    assert set(eventos[0].keys()) == {"id", "fecha", "rol", "operacion", "resultado"}
+
+
+def test_antecedentes_y_dos_evoluciones_conservan_historial(base_temporal, conexion):
+    cargar_datos_ejemplo(str(base_temporal))
+    conexion.execute("UPDATE atencion SET estado = 'realizada' WHERE id = 1")
+    nueva = conexion.execute(
+        """
+        INSERT INTO atencion (reserva_id, tipo_atencion, monto, estado)
+        VALUES (2, 'presencial', 30000, 'realizada')
+        """
+    ).lastrowid
+    conexion.commit()
+    admin = ("psicologa", "clave-admin")
+    paciente = ("paciente", "clave-paciente")
+    app = crear_app(
+        base_temporal, clave_psicologa_demo=admin[1], clave_paciente_demo=paciente[1],
+    )
+    csrf = app.state.csrf_psicologa_demo
+    url = "/psicologa/fichas/1"
+    antecedentes = {
+        "csrf": csrf, "motivo_consulta": "Motivo sintético inicial",
+        "antecedentes_salud_mental": "Antecedente sintético",
+        "diagnosticos": "Diagnóstico sintético", "medicamentos": "Medicamento sintético",
+        "datos_adulto_responsable": "Responsable sintético",
+    }
+    modificados = {**antecedentes, "motivo_consulta": "Motivo sintético actualizado"}
+    with TestClient(app) as cliente:
+        primero = cliente.post(url + "/antecedentes", data=antecedentes, auth=admin)
+        assert "Los antecedentes quedaron guardados." in primero.text
+        for clave in antecedentes.keys() - {"csrf"}:
+            assert antecedentes[clave] in primero.text
+        anterior = cliente.post(url, auth=admin, data={
+            "atencion_id": 1, "observaciones": "Primera evolución", "csrf": csrf,
+            "pruebas_aplicadas": "Primera prueba",
+        })
+        assert "Primera evolución" in anterior.text
+        assert cliente.post(url + "/antecedentes", data=modificados, auth=paciente).status_code == 403
+        assert cliente.post(
+            url + "/antecedentes", data={**modificados, "csrf": "inválido"}, auth=admin,
+        ).status_code == 403
+        assert "Motivo sintético inicial" in cliente.get(url, auth=admin).text
+        assert "Los antecedentes quedaron guardados." in cliente.post(
+            url + "/antecedentes", data=modificados, auth=admin,
+        ).text
+        segunda = cliente.post(url, auth=admin, data={
+            "atencion_id": nueva, "observaciones": "Segunda evolución", "csrf": csrf,
+        })
+        assert segunda.status_code == 200
+        ficha = cliente.get(url, auth=admin)
+        assert ficha.headers["cache-control"] == "no-store"
+        for texto in ("Motivo sintético actualizado", "Primera evolución", "Segunda evolución", "Primera prueba"):
+            assert texto in ficha.text
+        assert "Motivo sintético inicial" not in ficha.text
+        assert "Motivo sintético actualizado" not in cliente.get("/psicologa/fichas/2", auth=admin).text
+
+    evoluciones = conexion.execute(
+        "SELECT atencion_id, observaciones, pruebas_aplicadas FROM registro_evolucion ORDER BY atencion_id"
+    ).fetchall()
+    assert [tuple(fila) for fila in evoluciones] == [
+        (1, "Primera evolución", "Primera prueba"), (nueva, "Segunda evolución", ""),
+    ]
+    eventos = conexion.execute(
+        "SELECT rol, operacion, resultado FROM bitacora_clinica WHERE resultado = 'denegado'"
+    ).fetchall()
+    assert [tuple(fila) for fila in eventos] == [("Paciente", "escritura", "denegado")]

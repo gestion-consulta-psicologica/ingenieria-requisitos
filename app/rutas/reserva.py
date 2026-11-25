@@ -6,8 +6,11 @@ from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.security import HTTPBasicCredentials
 
 from app.db.conexion import conectar
+from app.rutas.acceso_reserva import conceder_acceso_reserva, es_psicologa, verificar_paciente, verificar_titular
+from app.rutas.psicologa import autenticacion
 from app.servicios import cola_correo, tokens
 from app.servicios.atenciones import obtener_atencion_de_reserva
 from app.servicios.confirmacion import (
@@ -21,7 +24,6 @@ from app.servicios.confirmacion import (
     registrar_respuesta_con_token,
 )
 from app.servicios.disponibilidad import obtener_bloques_cercanos
-from app.servicios.notificaciones import encolar_aviso_reserva
 from app.servicios.reagendamiento import (
     BloqueNoDisponible as BloqueNoDisponibleReagenda,
     BloqueNoEncontrado as BloqueNoEncontradoReagenda,
@@ -31,6 +33,7 @@ from app.servicios.reagendamiento import (
     listar_historial,
     obtener_alternativas,
     reagendar_reserva,
+    reserva_tiene_atencion,
 )
 from app.servicios.reserva import (
     ESTADO_PENDIENTE,
@@ -52,6 +55,23 @@ def obtener_conexion(request: Request):
         yield conexion
     finally:
         conexion.close()
+
+
+def verificar_acceso_reserva(
+    reserva_id: int,
+    request: Request,
+    conexion: sqlite3.Connection = Depends(obtener_conexion),
+    credenciales: HTTPBasicCredentials | None = Depends(autenticacion),
+) -> None:
+    if request.method == "GET" and es_psicologa(request, credenciales):
+        request.state.lectura_admin = True
+        return
+    titular = conexion.execute(
+        "SELECT paciente_id FROM reserva WHERE id = ?", (reserva_id,),
+    ).fetchone()
+    if titular is None:
+        raise HTTPException(status_code=404, detail="Reserva no encontrada.")
+    verificar_titular(request, reserva_id, titular["paciente_id"], credenciales)
 
 
 def _render_formulario(
@@ -129,6 +149,7 @@ def _obtener_detalle(
     fecha_bloque = reserva["fecha"]
     vispera = (date.fromisoformat(fecha_bloque) - timedelta(days=1)).isoformat()
     configuracion = request.app.state.configuracion_correo
+    inicio = programado(fecha_bloque, reserva["hora_inicio"], configuracion.zona_horaria)
 
     return {
         "reserva": reserva,
@@ -138,8 +159,14 @@ def _obtener_detalle(
             f"{cargo['monto']:,}".replace(",", ".") if cargo is not None else None
         ),
         "solicitud_pendiente": solicitud_pendiente,
-        "puede_responder": pendiente and solicitud_pendiente is not None,
-        "puede_gestionar": reserva["estado"] == "Confirmada",
+        "puede_responder": (
+            pendiente and solicitud_pendiente is not None and ahora_utc() < inicio
+            and cola_correo.solicitud_enviada(conexion, solicitud_pendiente["id"])
+        ),
+        "puede_gestionar": (
+            reserva["estado"] == "Confirmada"
+            and not reserva_tiene_atencion(conexion, reserva_id)
+        ),
         "atencion_pago": obtener_atencion_de_reserva(conexion, reserva_id),
         "historial": listar_historial(conexion, reserva_id),
         "correos": correos,
@@ -185,6 +212,7 @@ def _render_detalle(
         name="reserva_confirmada.html",
         context=contexto,
         status_code=status_code,
+        headers={"Cache-Control": "no-store"},
     )
 
 
@@ -227,7 +255,7 @@ def _render_respuesta_token(
         )
 
     reserva = obtener_reserva(conexion, fila["reserva_id"])
-    return request.app.state.templates.TemplateResponse(
+    respuesta = request.app.state.templates.TemplateResponse(
         request=request,
         name="respuesta_token.html",
         context={
@@ -238,6 +266,8 @@ def _render_respuesta_token(
         },
         status_code=status_code,
     )
+    respuesta.headers["Cache-Control"] = "no-store"
+    return respuesta
 
 
 @router.get("/reservar/{bloque_id}", response_class=HTMLResponse)
@@ -250,6 +280,10 @@ def mostrar_formulario(
     bloque = obtener_bloque(conexion, bloque_id)
     if bloque is None:
         raise HTTPException(status_code=404, detail="Bloque horario no encontrado")
+    if request.app.state.cuentas_persistentes and request.state.cuenta:
+        paciente_id = request.state.cuenta["paciente_id"]
+        if paciente_id:
+            rut = conexion.execute("SELECT rut FROM paciente WHERE id = ?", (paciente_id,)).fetchone()["rut"]
     return _render_formulario(request, bloque, rut=rut)
 
 
@@ -259,9 +293,16 @@ def reservar(
     request: Request,
     rut: str = Form(default=""),
     conexion: sqlite3.Connection = Depends(obtener_conexion),
+    credenciales: HTTPBasicCredentials | None = Depends(autenticacion),
 ):
+    if request.app.state.cuentas_persistentes and not request.state.cuenta:
+        return RedirectResponse(f"/cuenta/ingresar?bloque_id={bloque_id}", status_code=303)
+    configuracion = request.app.state.configuracion_correo
     try:
-        resultado = registrar_reserva(conexion, bloque_id, rut)
+        resultado = registrar_reserva(
+            conexion, bloque_id, rut, configuracion=configuracion,
+            autorizar_paciente=lambda paciente_id: verificar_paciente(request, paciente_id, credenciales),
+        )
     except PacienteNoRegistrado:
         return RedirectResponse(
             url=f"/pacientes/registro?bloque_id={bloque_id}", status_code=303
@@ -277,7 +318,8 @@ def reservar(
                 status_code=404, detail="Bloque horario no encontrado"
             )
         cercanos = obtener_bloques_cercanos(
-            conexion, date.fromisoformat(bloque["fecha"])
+            conexion, date.fromisoformat(bloque["fecha"]),
+            zona_horaria=configuracion.zona_horaria,
         )
         return _render_formulario(
             request,
@@ -288,19 +330,13 @@ def reservar(
             status_code=409,
         )
 
-    encolar_aviso_reserva(
-        conexion,
-        dict(resultado["paciente"]),
-        dict(resultado["bloque"]),
-        dict(resultado["reserva"]),
-        request.app.state.configuracion_correo,
-    )
-    return RedirectResponse(
-        url=f"/reservas/{resultado['reserva']['id']}", status_code=303
+    reserva_id = resultado["reserva"]["id"]
+    return conceder_acceso_reserva(
+        request, RedirectResponse(f"/reservas/{reserva_id}", status_code=303), reserva_id,
     )
 
 
-@router.get("/reservas/{reserva_id}", response_class=HTMLResponse)
+@router.get("/reservas/{reserva_id}", response_class=HTMLResponse, dependencies=[Depends(verificar_acceso_reserva)])
 def mostrar_reserva(
     reserva_id: int,
     request: Request,
@@ -309,14 +345,17 @@ def mostrar_reserva(
     return _render_detalle(request, conexion, reserva_id)
 
 
-@router.post("/reservas/{reserva_id}/confirmar", response_class=HTMLResponse)
+@router.post("/reservas/{reserva_id}/confirmar", response_class=HTMLResponse, dependencies=[Depends(verificar_acceso_reserva)])
 def confirmar_asistencia(
     reserva_id: int,
     request: Request,
     conexion: sqlite3.Connection = Depends(obtener_conexion),
 ):
     try:
-        registrar_respuesta(conexion, reserva_id, RESPUESTA_CONFIRMA)
+        registrar_respuesta(
+            conexion, reserva_id, RESPUESTA_CONFIRMA, ahora=ahora_utc(),
+            configuracion=request.app.state.configuracion_correo,
+        )
     except ReservaNoEncontrada:
         return _render_detalle(
             request,
@@ -332,14 +371,18 @@ def confirmar_asistencia(
     return RedirectResponse(url=f"/reservas/{reserva_id}", status_code=303)
 
 
-@router.post("/reservas/{reserva_id}/no-asistir", response_class=HTMLResponse)
+@router.post("/reservas/{reserva_id}/no-asistir", response_class=HTMLResponse, dependencies=[Depends(verificar_acceso_reserva)])
 def responder_no_asistira(
     reserva_id: int,
     request: Request,
     conexion: sqlite3.Connection = Depends(obtener_conexion),
 ):
     try:
-        registrar_respuesta(conexion, reserva_id, RESPUESTA_NO_ASISTIRA)
+        registrar_respuesta(
+            conexion, reserva_id, RESPUESTA_NO_ASISTIRA,
+            ahora=ahora_utc(),
+            configuracion=request.app.state.configuracion_correo,
+        )
     except ReservaNoEncontrada:
         return _render_detalle(
             request,
@@ -355,14 +398,17 @@ def responder_no_asistira(
     return RedirectResponse(url=f"/reservas/{reserva_id}", status_code=303)
 
 
-@router.post("/reservas/{reserva_id}/cancelar", response_class=HTMLResponse)
+@router.post("/reservas/{reserva_id}/cancelar", response_class=HTMLResponse, dependencies=[Depends(verificar_acceso_reserva)])
 def cancelar_gestion(
     reserva_id: int,
     request: Request,
     conexion: sqlite3.Connection = Depends(obtener_conexion),
 ):
     try:
-        cancelar_reserva(conexion, reserva_id)
+        cancelar_reserva(
+            conexion, reserva_id,
+            configuracion=request.app.state.configuracion_correo,
+        )
     except ReservaNoGestionable:
         return _render_detalle(
             request,
@@ -397,12 +443,12 @@ def _render_alternativas(
             error="Reserva no encontrada.",
             status_code=404,
         )
-    if detalle["reserva"]["estado"] != "Confirmada":
+    if not detalle["puede_gestionar"]:
         return _render_detalle(
             request,
             conexion,
             reserva_id,
-            error="Solo se puede reagendar una reserva confirmada.",
+            error=error or "Solo se puede reagendar una reserva confirmada sin atención asociada.",
             status_code=409,
         )
     return request.app.state.templates.TemplateResponse(
@@ -412,14 +458,18 @@ def _render_alternativas(
             **detalle,
             "alternativas": alternativas
             if alternativas is not None
-            else obtener_alternativas(conexion, reserva_id),
+            else obtener_alternativas(
+                conexion, reserva_id,
+                zona_horaria=request.app.state.configuracion_correo.zona_horaria,
+            ),
             "error": error,
         },
         status_code=status_code,
+        headers={"Cache-Control": "no-store"},
     )
 
 
-@router.get("/reservas/{reserva_id}/reagendar", response_class=HTMLResponse)
+@router.get("/reservas/{reserva_id}/reagendar", response_class=HTMLResponse, dependencies=[Depends(verificar_acceso_reserva)])
 def mostrar_reagendamiento(
     reserva_id: int,
     request: Request,
@@ -428,7 +478,7 @@ def mostrar_reagendamiento(
     return _render_alternativas(request, conexion, reserva_id)
 
 
-@router.post("/reservas/{reserva_id}/reagendar", response_class=HTMLResponse)
+@router.post("/reservas/{reserva_id}/reagendar", response_class=HTMLResponse, dependencies=[Depends(verificar_acceso_reserva)])
 def ejecutar_reagendamiento(
     reserva_id: int,
     request: Request,
@@ -520,7 +570,11 @@ def _ejecutar_respuesta_token(
     respuesta: str,
 ):
     try:
-        resultado = registrar_respuesta_con_token(conexion, token, respuesta)
+        resultado = registrar_respuesta_con_token(
+            conexion, token, respuesta,
+            ahora=ahora_utc(),
+            configuracion=request.app.state.configuracion_correo,
+        )
     except tokens.TokenInvalido as error:
         return request.app.state.templates.TemplateResponse(
             request=request,
@@ -542,6 +596,16 @@ def _ejecutar_respuesta_token(
             context={"accion": None, "error": str(error), "reserva": None},
             status_code=409,
         )
-    return RedirectResponse(
-        url=f"/reservas/{resultado['reserva']['id']}", status_code=303
+    reserva_id = resultado["reserva"]["id"]
+    if request.app.state.cuentas_persistentes:
+        return request.app.state.templates.TemplateResponse(
+            request=request, name="respuesta_token.html",
+            context={
+                "resultado": "La asistencia quedó confirmada."
+                if respuesta == RESPUESTA_CONFIRMA else "La reserva quedó cancelada.",
+                "error": None, "reserva": None,
+            },
+        )
+    return conceder_acceso_reserva(
+        request, RedirectResponse(f"/reservas/{reserva_id}", status_code=303), reserva_id,
     )
