@@ -55,13 +55,20 @@ Para reproducir solo el recorrido integrado y la ficha clínica, con el servidor
 Para una demostración local, ejecuta `python -m app.demo` y abre
 `http://127.0.0.1:8000`. El arranque crea una base sintética temporal con
 bloques futuros, imprime la clave de la psicóloga en la consola y deshabilita
-el SMTP externo. La base temporal se elimina al cerrar normalmente el servidor.
+el SMTP externo. En su lugar usa un **correo de demostración**: cada correo
+(aviso de reserva, solicitud de confirmación, recordatorio, aviso de cargo) se
+imprime en la consola con sus enlaces y queda registrado como enviado, sin salir
+del equipo. El planificador corre cada 10 segundos. La base temporal se elimina
+al cerrar normalmente el servidor.
 El usuario `paciente` de la consola corresponde al RUT de ejemplo **22.222.222-2**. Un alta nueva concede acceso en el navegador donde se completó el registro. Para una reserva existente también se puede recuperar el acceso al responder mediante un enlace seguro válido. Los permisos del navegador son temporales y se invalidan al reiniciar la aplicación.
 El enlace **Psicóloga** abre el panel para consultar reservas, atenciones y
 pagos, agregar bloques a la agenda del paciente, cancelar reservas confirmadas
 sin cargo, verificar comprobantes y registrar asistencia. La reserva pendiente
-de ejemplo muestra el estado de la cola. Las acciones de respuesta requieren
-un envío aceptado por SMTP; el recorrido automatizado usa SMTP local.
+de ejemplo muestra el estado de la cola. Las acciones **Confirmar asistencia** y
+**No asistiré** aparecen cuando el correo de la solicitud fue entregado; en la
+demo eso ocurre en el siguiente ciclo del planificador. La solicitud se genera
+la víspera de la atención (09:00 por defecto), así que para probar HU-03 a HU-05A
+de inmediato conviene reservar un bloque de mañana.
 
 La jornada reservable es de lunes a sábado de 09:00 a 19:00. El bloque completo
 debe quedar dentro de ese horario y su inicio debe ser futuro.
