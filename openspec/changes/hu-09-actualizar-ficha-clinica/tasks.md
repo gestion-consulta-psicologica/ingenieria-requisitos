@@ -1,6 +1,6 @@
 # Tasks
 
-> **Cambio documentado de forma retroactiva (2026-11-25).** La implementación se integró en el commit `cec5538` antes de abrir este cambio. Este cambio registra la propuesta, el diseño y la especificación a partir de la ficha `.cin324/historias/HU-09.md` y del código, para completar la trazabilidad. Queda pendiente la confirmación del estudiante.
+> **Cambio documentado de forma retroactiva (2026-11-25).** La implementación se integró en el commit `cec5538` antes de abrir este cambio. Este cambio registra la propuesta, el diseño y la especificación a partir de la ficha `.cin324/historias/HU-09.md` y del código, para completar la trazabilidad. El estudiante confirmó la ficha el 2026-11-25.
 
 ## 1. Datos
 
@@ -18,6 +18,6 @@
 
 ## 4. Cierre
 
-- [ ] 4.1 Confirmación del estudiante de la ficha `.cin324/historias/HU-09.md`.
+- [x] 4.1 Confirmación del estudiante de la ficha `.cin324/historias/HU-09.md`.
 - [ ] 4.2 RD-02 — cifrado de la información sensible (pendiente).
 - [ ] 4.3 Sincronizar la especificación en `openspec/specs/` y archivar el cambio.

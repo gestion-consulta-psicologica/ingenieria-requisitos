@@ -1,6 +1,6 @@
 # Tasks
 
-> **Cambio documentado de forma retroactiva (2026-11-25).** La implementación se integró en el commit `cec5538` antes de abrir este cambio. Este cambio registra la propuesta, el diseño y la especificación a partir de la ficha `.cin324/historias/HU-08.md` y del código, para completar la trazabilidad. Queda pendiente la confirmación del estudiante.
+> **Cambio documentado de forma retroactiva (2026-11-25).** La implementación se integró en el commit `cec5538` antes de abrir este cambio. Este cambio registra la propuesta, el diseño y la especificación a partir de la ficha `.cin324/historias/HU-08.md` y del código, para completar la trazabilidad. El estudiante confirmó la ficha el 2026-11-25.
 
 ## 1. Datos
 
@@ -21,5 +21,5 @@
 ## 5. Cierre
 
 - [x] 5.1 Regla del pago ante inasistencia decidida por el estudiante (2026-11-25): se mantiene el cobro completo.
-- [ ] 5.2 Confirmación del estudiante de la ficha `.cin324/historias/HU-08.md`.
+- [x] 5.2 Confirmación del estudiante de la ficha `.cin324/historias/HU-08.md`.
 - [ ] 5.3 Sincronizar la especificación en `openspec/specs/` y archivar el cambio.

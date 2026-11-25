@@ -3,7 +3,7 @@
 **Estado:** lista para especificar  ·  **Confirmada por el estudiante:** 2026-11-19
 **Fuente de la historia:** `04-historias-usuario.md` · **Gherkin:** `07-criterios-aceptacion.md`
 
-## Cambios posteriores a la validación (2026-11-25)
+## Cambios posteriores a la validación (2026-11-25 · confirmados por el estudiante el 2026-11-25)
 - **Acceso:** solo el titular de la reserva puede abrir el formulario y registrar el comprobante; la psicóloga lo consulta desde HU-05 (`/pagos/{atencion_id}`).
 - **Modalidad válida:** la base rechaza bloques con modalidad distinta de `presencial` u `online` (migración `016`), para que la atención siempre pueda originarse; si algo falla al originarla, queda registrado en el log en vez de ignorarse.
 - **Origen idempotente y seguro:** la reserva solo pasa a Finalizada si no cambió (versión, bloque y modalidad) desde que se leyó.
