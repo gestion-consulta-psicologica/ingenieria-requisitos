@@ -19,6 +19,7 @@ actor "Servicio de correo (SMTP)\n<<sistema externo>>" as MSJ
 actor "SII\n<<sistema externo>>" as SII
 
 rectangle "Sistema de gestión de consulta psicológica" {
+
   usecase "CU-01\nConsultar disponibilidad" as CU01
   usecase "CU-02\nReservar hora" as CU02
   usecase "CU-03\nConfirmar o informar\nque no asistirá" as CU03
@@ -31,9 +32,13 @@ rectangle "Sistema de gestión de consulta psicológica" {
   usecase "CU-10\nActualizar ficha clínica" as CU10
   usecase "CU-11\nRegistrar datos del paciente" as CU11
   usecase "CU-12\nRegistrar comprobante de pago" as CU12
-  usecase "CU-13\nDerivar y transferir consulta" as CU13
+
+  ' HU-10: responsabilidades diferenciadas
+  usecase "CU-13\nSolicitar derivación\na psiquiatría" as CU13
+  usecase "CU-14\nRevisar derivación recibida:\naceptar o rechazar" as CU14
 }
 
+' Paciente
 PAC --> CU01
 PAC --> CU02
 PAC --> CU03
@@ -42,21 +47,45 @@ PAC --> CU05
 PAC --> CU11
 PAC --> CU12
 
+' Psicóloga
 PSI --> CU06
 PSI --> CU07
 PSI --> CU08
 PSI --> CU09
 PSI --> CU10
 PSI --> CU13
-MED --> CU13
 
+' Médico psiquiatra
+MED --> CU14
+
+' Relaciones
 CU02 ..> CU01 : <<include>>
 CU05 ..> CU01 : <<include>>
 CU11 ..> CU02 : <<extend>>\n(RUT no registrado)
-' CU-03 cubre ambas respuestas; CU-04 es cancelación independiente desde la gestión de la reserva.
 
+' Comunicación externa
 CU02 --> MSJ
 CU03 --> MSJ
 CU05 --> MSJ
 CU08 --> SII
+
+note right of CU13
+  La psicóloga selecciona
+  un psiquiatra registrado
+  y solicita la derivación.
+end note
+
+note right of CU14
+  El psiquiatra revisa la solicitud.
+
+  Si acepta:
+  el sistema transfiere la reserva
+  y actualiza el responsable,
+  bloque horario e historial.
+
+  Si rechaza:
+  la reserva permanece
+  con la psicóloga.
+end note
+
 @enduml
