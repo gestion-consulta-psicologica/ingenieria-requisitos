@@ -38,12 +38,14 @@ def test_arranque_demo_usa_una_base_temporal_y_sin_smtp_externo(
         assert ruta.name == "demo.db" and ruta.parent.name.startswith("consulta-demo-")
         assert ruta.is_file() and ruta != ruta_alternativa
         assert host == "127.0.0.1" and port == 8000
-        assert not app.state.servicio_correo.configurado()
+        # El demo ignora el SMTP del entorno y usa el correo local de consola.
+        assert isinstance(app.state.servicio_correo, demo.ServicioCorreoDemo)
+        assert app.state.configuracion_correo.smtp_host is None
         cliente = TestClient(app)
         assert 'href="/psicologa"' in cliente.get("/").text
         reserva = cliente.get("/reservas/1", auth=("paciente", app.state.clave_paciente_demo))
         assert reserva.status_code == 200
-        assert "El envío de correo está deshabilitado" in reserva.text
+        # Antes de que el planificador entregue la solicitud no se puede responder.
         assert 'action="/reservas/1/confirmar"' not in reserva.text
         if bloques_por_hora:
             semana = cliente.get("/disponibilidad?semana=2026-11-16")
@@ -58,6 +60,37 @@ def test_arranque_demo_usa_una_base_temporal_y_sin_smtp_externo(
     assert len(rutas) == 1
     assert not rutas[0].exists()
     assert not ruta_alternativa.exists()
+
+
+def test_correo_demo_entrega_la_solicitud_y_habilita_la_respuesta(
+    base_temporal, conexion, capsys,
+):
+    cargar_datos_ejemplo(str(base_temporal))
+    configuracion = replace(
+        cargar_configuracion(), smtp_host=None, smtp_remitente=None,
+        url_publica=demo.URL_DEMO,
+    )
+    ahora = programado("2026-11-09", "09:30")
+    confirmacion.enviar_solicitud(
+        conexion, 1, confirmacion.TIPO_VISPERA, configuracion=configuracion, ahora=ahora,
+    )
+    PlanificadorCorreos(
+        str(base_temporal), demo.ServicioCorreoDemo(), configuracion,
+    ).ejecutar_ciclo(ahora)
+
+    salida = capsys.readouterr().out
+    assert "[CORREO DEMO" in salida
+    assert f"{demo.URL_DEMO}/respuesta/confirmar/" in salida
+    correo = conexion.execute(
+        "SELECT estado, id_mensaje FROM correo_pendiente WHERE tipo = 'solicitud_confirmacion'"
+    ).fetchone()
+    assert correo["estado"] == "enviado" and correo["id_mensaje"]
+
+    resultado = confirmacion.registrar_respuesta(
+        conexion, 1, confirmacion.RESPUESTA_CONFIRMA,
+        ahora=ahora, configuracion=configuracion,
+    )
+    assert resultado["reserva"]["estado"] == "Confirmada"
 
 
 def test_titularidad_de_reservas_y_comprobantes(base_temporal, conexion):
@@ -480,3 +513,32 @@ def test_reserva_reagendamiento_y_revision_del_comprobante(
             assert tuple(cargo) == ("cancelación", 5000)
     finally:
         smtp.cerrar()
+
+
+def test_mis_reservas_en_demo_lista_lo_del_navegador_y_navega_desde_todas_las_pantallas(
+    base_temporal, conexion,
+):
+    from tests.test_hu02a_registro_paciente import insertar_bloque, preparar_psicologa
+
+    preparar_psicologa(conexion)
+    insertar_bloque(conexion, 10, "2026-11-12")
+    app = crear_app(base_temporal, clave_psicologa_demo="clave-admin")
+    with TestClient(app) as navegador, TestClient(app) as otro:
+        assert "No tienes reservas en este navegador" in navegador.get("/mis-reservas").text
+        navegador.post("/pacientes/registro", data={
+            "nombre_completo": "Paciente Nuevo", "rut": "12.345.678-5",
+            "correo": "nuevo@example.cl", "bloque_id": "10",
+        })
+        reserva = navegador.post("/reservar/10", data={"rut": "123456785"}, follow_redirects=False)
+        ruta_reserva_nueva = reserva.headers["location"]
+
+        lista = navegador.get("/mis-reservas")
+        assert f'href="{ruta_reserva_nueva}"' in lista.text
+        # La cookie de acceso sobrevive al cierre del navegador (12 h).
+        assert "Max-Age=43200" in reserva.headers["set-cookie"]
+        # Otro navegador no ve reservas ajenas.
+        assert f'href="{ruta_reserva_nueva}"' not in otro.get("/mis-reservas").text
+
+        detalle = navegador.get(ruta_reserva_nueva)
+        for enlace in ('href="/disponibilidad"', 'href="/mis-reservas"', 'href="/psicologa"'):
+            assert enlace in detalle.text

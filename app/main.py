@@ -130,6 +130,11 @@ def crear_app(
             "El servicio de correo no está configurado: %s",
             correo.motivo_no_configurado(),
         )
+        if cuentas_persistentes:
+            logger.warning(
+                "Modo con cuentas sin correo: los pacientes no podrán registrarse "
+                "ni recuperar el acceso hasta configurar SMTP."
+            )
     if not activo:
         logger.warning("El planificador automático de correos está desactivado.")
 

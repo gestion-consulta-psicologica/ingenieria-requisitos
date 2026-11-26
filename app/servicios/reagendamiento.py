@@ -7,7 +7,7 @@ from app.configuracion import ConfiguracionCorreo, cargar_configuracion
 from app.servicios import cola_correo, plantillas_correo
 from app.servicios.disponibilidad import consultar_bloques_reservables
 from app.servicios.notificaciones import MOTIVO_CANCELACION, registrar_cargo_con_aviso
-from app.tiempo import ZONA_POR_DEFECTO, ahora_utc, zona
+from app.tiempo import ZONA_POR_DEFECTO, ahora_utc, programado, zona
 
 ESTADO_CONFIRMADA = "Confirmada"
 ESTADO_CANCELADA = "Cancelada"
@@ -76,6 +76,13 @@ def _contexto(conexion: sqlite3.Connection, reserva_id: int) -> dict:
             "modalidad": fila["modalidad"],
         },
     }
+
+
+def atencion_ya_comenzo(
+    bloque: dict, ahora: datetime, zona_horaria: str = ZONA_POR_DEFECTO,
+) -> bool:
+    """Desde el inicio del bloque la reserva ya no se gestiona: sigue HU-05A/HU-08."""
+    return ahora >= programado(bloque["fecha"], bloque["hora_inicio"], zona_horaria)
 
 
 def reserva_tiene_atencion(conexion: sqlite3.Connection, reserva_id: int) -> bool:
@@ -166,6 +173,10 @@ def cancelar_reserva(
             raise EstadoReservaInvalido(
                 "La reserva ya tiene una atención y no se puede cancelar."
             )
+        if atencion_ya_comenzo(contexto["bloque"], ahora, configuracion.zona_horaria):
+            raise EstadoReservaInvalido(
+                "La hora de la atención ya comenzó; no se puede cancelar."
+            )
 
         cursor = conexion.execute(
             """
@@ -243,6 +254,10 @@ def reagendar_reserva(
         if reserva_tiene_atencion(conexion, reserva_id):
             raise EstadoReservaInvalido(
                 "La reserva ya tiene una atención y no se puede reagendar."
+            )
+        if atencion_ya_comenzo(contexto["bloque"], ahora, configuracion.zona_horaria):
+            raise EstadoReservaInvalido(
+                "La hora de la atención ya comenzó; no se puede reagendar."
             )
 
         nuevo_bloque = _obtener_bloque(conexion, nuevo_bloque_id)

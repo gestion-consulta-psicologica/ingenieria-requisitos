@@ -89,8 +89,8 @@ def test_semana_con_bloques_libres(base_temporal, conexion, semana):
     assert "11:00" in respuesta.text
     assert "10:00" not in respuesta.text
     assert "martes 10 de noviembre" in respuesta.text
-    assert 'href="/disponibilidad" aria-current="page">Paciente' in respuesta.text
-    assert "Paciente" in respuesta.text
+    assert 'href="/disponibilidad" aria-current="page">Disponibilidad' in respuesta.text
+    assert 'href="/mis-reservas"' in respuesta.text
 
 
 @pytest.mark.parametrize(

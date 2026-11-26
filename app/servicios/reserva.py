@@ -8,7 +8,7 @@ from datetime import datetime
 from app.configuracion import ConfiguracionCorreo, cargar_configuracion
 from app.servicios.disponibilidad import consultar_bloques_reservables
 from app.servicios.notificaciones import encolar_aviso_reserva
-from app.tiempo import ZONA_POR_DEFECTO
+from app.tiempo import ZONA_POR_DEFECTO, ahora_utc, zona
 
 ESTADO_PENDIENTE = "Pendiente de confirmación"
 
@@ -95,7 +95,10 @@ def registrar_reserva(
             (
                 paciente["id"],
                 bloque_id,
-                datetime.now().isoformat(timespec="seconds"),
+                # Hora local con desfase, como fecha_respuesta y el historial.
+                (ahora or ahora_utc()).astimezone(
+                    zona(configuracion.zona_horaria)
+                ).isoformat(timespec="seconds"),
                 ESTADO_PENDIENTE,
             ),
         )

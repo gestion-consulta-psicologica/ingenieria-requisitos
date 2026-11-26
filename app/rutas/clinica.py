@@ -18,11 +18,23 @@ CAMPOS_ANTECEDENTES = (
 )
 
 
-def registrar_acceso(conexion, rol, operacion, resultado):
+def registrar_acceso(conexion, rol, operacion, resultado, paciente_id=None, usuario=None):
+    """Bitácora sin contenido clínico: rol, usuario, ficha, operación y resultado."""
     conexion.execute(
-        "INSERT INTO bitacora_clinica (rol, operacion, resultado) VALUES (?, ?, ?)",
-        (rol, operacion, resultado),
+        """
+        INSERT INTO bitacora_clinica (rol, operacion, resultado, paciente_id, usuario)
+        VALUES (?, ?, ?, ?, ?)
+        """,
+        (rol, operacion, resultado, paciente_id, usuario),
     )
+
+
+def _ficha_solicitada(request: Request) -> int | None:
+    valor = request.path_params.get("paciente_id")
+    try:
+        return int(valor)
+    except (TypeError, ValueError):
+        return None
 
 
 def autorizar_ficha(
@@ -30,12 +42,18 @@ def autorizar_ficha(
     conexion: sqlite3.Connection = Depends(obtener_conexion),
     credenciales: HTTPBasicCredentials | None = Depends(autenticacion),
 ):
+    paciente_id = _ficha_solicitada(request)
+    operacion = "lectura" if request.method == "GET" else "escritura"
     if request.app.state.cuentas_persistentes:
         cuenta = request.state.cuenta
+        usuario = f"cuenta:{cuenta['id']}" if cuenta else None
         if cuenta and cuenta["rol"] == "psicologa":
+            request.state.usuario_clinico = usuario
             return
-        operacion = "lectura" if request.method == "GET" else "escritura"
-        registrar_acceso(conexion, "Paciente" if cuenta else None, operacion, "denegado")
+        registrar_acceso(
+            conexion, "Paciente" if cuenta else None, operacion, "denegado",
+            paciente_id, usuario,
+        )
         conexion.commit()
         raise HTTPException(403 if cuenta else 401, detail="Acceso denegado.")
     claves = {
@@ -47,11 +65,12 @@ def autorizar_ficha(
     clave, rol = claves.get(credenciales.username, (None, None)) if credenciales else (None, None)
     if clave is None or not compare_digest(clave.encode(), credenciales.password.encode()):
         rol = None
+    usuario = credenciales.username if rol else None
 
     if rol == "Psicóloga":
+        request.state.usuario_clinico = usuario
         return
-    operacion = "lectura" if request.method == "GET" else "escritura"
-    registrar_acceso(conexion, rol, operacion, "denegado")
+    registrar_acceso(conexion, rol, operacion, "denegado", paciente_id, usuario)
     conexion.commit()
     if rol is None:
         raise HTTPException(401, headers={"WWW-Authenticate": 'Basic realm="Psicologa"'})
@@ -84,12 +103,23 @@ def ficha(
         """,
         (paciente_id,),
     ).fetchall()
-    registrar_acceso(conexion, "Psicóloga", "lectura", "permitido")
+    versiones_anteriores = conexion.execute(
+        """
+        SELECT fecha_reemplazo FROM ficha_clinica_historial
+        WHERE paciente_id = ? ORDER BY id DESC
+        """,
+        (paciente_id,),
+    ).fetchall()
+    registrar_acceso(
+        conexion, "Psicóloga", "lectura", "permitido",
+        paciente_id, request.state.usuario_clinico,
+    )
     conexion.commit()
     return request.app.state.templates.TemplateResponse(
         request=request, name="ficha_clinica.html",
         context={
             "paciente": paciente, "paciente_id": paciente_id, "atenciones": atenciones,
+            "versiones_anteriores": versiones_anteriores,
             "antecedentes": antecedentes, "campos_antecedentes": CAMPOS_ANTECEDENTES,
             "antecedentes_guardados": antecedentes_guardados and antecedentes is not None,
         },
@@ -132,7 +162,10 @@ def guardar_antecedentes(
         )
         if not resultado.rowcount:
             raise HTTPException(404)
-        registrar_acceso(conexion, "Psicóloga", "escritura", "permitido")
+        registrar_acceso(
+            conexion, "Psicóloga", "escritura", "permitido",
+            paciente_id, request.state.usuario_clinico,
+        )
     return RedirectResponse(
         f"/psicologa/fichas/{paciente_id}?antecedentes_guardados=1#antecedentes",
         status_code=303,
@@ -175,7 +208,10 @@ def guardar_evolucion(
         )
         if not resultado.rowcount:
             raise HTTPException(409, detail="La atención ya tiene una evolución registrada.")
-        registrar_acceso(conexion, "Psicóloga", "escritura", "permitido")
+        registrar_acceso(
+            conexion, "Psicóloga", "escritura", "permitido",
+            paciente_id, request.state.usuario_clinico,
+        )
         conexion.commit()
     except Exception:
         conexion.rollback()

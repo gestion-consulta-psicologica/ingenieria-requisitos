@@ -15,6 +15,7 @@
     } %}
     <h1>{{ titulos[pantalla] }}</h1>
     {% if mensaje %}<p role="status">{{ mensaje }}</p>{% endif %}
+    {% if sin_correo and mensaje != aviso_sin_correo %}<p role="alert">{{ aviso_sin_correo }}</p>{% endif %}
     {% if pantalla == "registro" %}
     <p>Verifica tu correo y solicita a la psicóloga que confirme tu identidad antes de ingresar.</p>
     {% endif %}

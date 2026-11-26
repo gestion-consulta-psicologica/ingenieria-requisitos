@@ -3,9 +3,11 @@
 from argparse import ArgumentParser
 from dataclasses import replace
 from datetime import timedelta
+from email.utils import make_msgid
 from pathlib import Path
 from secrets import token_urlsafe
 from tempfile import TemporaryDirectory
+from threading import Lock
 
 import uvicorn
 
@@ -17,11 +19,46 @@ from app.servicios.confirmacion import TIPO_VISPERA, enviar_solicitud
 from app.servicios.disponibilidad import crear_bloques_por_hora
 from app.tiempo import ahora_local
 
+URL_DEMO = "http://127.0.0.1:8000"
+
+
+class ServicioCorreoDemo:
+    """Correo local de demostración: acepta cada mensaje y lo muestra en consola.
+
+    Ningún correo sale del equipo. Cumple el mismo contrato que
+    ``ServicioCorreoSMTP``, de modo que la cola registra el envío como aceptado
+    y el paciente puede responder la solicitud de confirmación (HU-03).
+    """
+
+    def __init__(self) -> None:
+        self._candado = Lock()
+
+    def configurado(self) -> bool:
+        return True
+
+    def motivo_no_configurado(self) -> str | None:
+        return None
+
+    def enviar(
+        self, destinatario: str, asunto: str, cuerpo_texto: str,
+        cuerpo_html: str | None = None,
+    ) -> str:
+        id_mensaje = make_msgid(domain="demo.local")
+        separador = "=" * 72
+        with self._candado:
+            print(
+                f"\n{separador}\n[CORREO DEMO · no enviado fuera del equipo]\n"
+                f"Para: {destinatario}\nAsunto: {asunto}\n\n{cuerpo_texto}\n{separador}\n",
+                flush=True,
+            )
+        return id_mensaje
+
 
 def main(*, bloques_por_hora: bool = False) -> None:
     configuracion = replace(
         cargar_configuracion(), smtp_host=None, smtp_remitente=None,
-        planificador_activo=True,
+        planificador_activo=True, intervalo_planificador_segundos=10,
+        url_publica=URL_DEMO,
     )
     ahora = ahora_local(configuracion.zona_horaria)
     hoy = ahora.date()
@@ -53,9 +90,10 @@ def main(*, bloques_por_hora: bool = False) -> None:
         clave = token_urlsafe(18)
         clave_paciente = token_urlsafe(18)
         app = crear_app(
-            ruta, configuracion=configuracion, clave_psicologa_demo=clave,
-            clave_paciente_demo=clave_paciente,
+            ruta, configuracion=configuracion, servicio_correo=ServicioCorreoDemo(),
+            clave_psicologa_demo=clave, clave_paciente_demo=clave_paciente,
         )
+        print("Correo de demostración: los mensajes se muestran en esta consola.", flush=True)
         print(f"Panel local /psicologa · Usuario psicologa · Clave {clave}", flush=True)
         print(f"Paciente de ejemplo · Usuario paciente · Clave {clave_paciente}", flush=True)
         uvicorn.run(app, host="127.0.0.1", port=8000)

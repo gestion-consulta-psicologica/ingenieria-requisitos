@@ -281,3 +281,32 @@ def test_correo_verificado_distinto_no_adquiere_identidad_existente(base_tempora
         assert _ingresar(paciente, PACIENTE).status_code == 403
     assert conexion.execute("SELECT paciente_id FROM cuenta WHERE id = ?", (cuenta_id,)).fetchone()[0] is None
     assert conexion.execute("SELECT correo FROM paciente WHERE id = 1").fetchone()[0] == "paciente@example.cl"
+
+
+class _SinCorreo:
+    def configurado(self):
+        return False
+
+    def motivo_no_configurado(self):
+        return "Falta configurar: SMTP_HOST."
+
+    def enviar(self, *args, **kwargs):  # pragma: no cover - no debe llamarse
+        raise AssertionError("No debe intentar enviar sin correo configurado.")
+
+
+def test_sin_correo_el_registro_avisa_y_no_crea_la_cuenta(base_temporal, conexion):
+    cliente = _cliente(_app(base_temporal, _SinCorreo()))
+    formulario = cliente.get("/cuenta/registro")
+    assert "El envío de correo no está configurado" in formulario.text
+
+    csrf = _csrf(cliente, "/cuenta/registro")
+    respuesta = cliente.post("/cuenta/registro", data={
+        "csrf": csrf, "correo": "nuevo@example.cl", "clave": "una-clave-bastante-larga",
+        "rut": "12.345.678-5", "nombre": "Paciente Nuevo",
+    })
+    assert respuesta.status_code == 503
+    assert "El envío de correo no está configurado" in respuesta.text
+    assert conexion.execute("SELECT COUNT(*) FROM cuenta").fetchone()[0] == 0
+
+    recuperar = cliente.post("/cuenta/recuperar", data={"csrf": csrf, "correo": "nuevo@example.cl"})
+    assert recuperar.status_code == 503

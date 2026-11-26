@@ -31,6 +31,7 @@
 <body>
   <header>
     <h1>Gestión de consulta psicológica</h1>
+    {% include "nav.html" %}
   </header>
 
   <main>
@@ -87,7 +88,7 @@
       </p>
       <p><strong>Número de reserva:</strong> {{ reserva.reserva_id }}</p>
       <p><strong>Ciclo de confirmación:</strong> {{ reserva.version }}</p>
-      <p><strong>Fecha de registro:</strong> {{ reserva.fecha_registro }}</p>
+      <p><strong>Fecha de registro:</strong> {{ reserva.fecha_registro|fecha_hora_local }}</p>
       <p><strong>Solicitud de confirmación programada:</strong> {{ vispera_programada }}</p>
       <p><strong>Recordatorio programado:</strong> {{ recordatorio_programado }}</p>
       <p><strong>Vencimiento sin respuesta:</strong> {{ atencion_programada }}</p>

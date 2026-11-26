@@ -1,9 +1,14 @@
 from __future__ import annotations
 
+import re
 import sqlite3
 from dataclasses import dataclass
 
 from app.servicios.reserva import buscar_paciente_por_rut, normalizar_rut
+
+# El correo es obligatorio: la solicitud de confirmación de HU-03 solo llega
+# por correo, y sin ella el paciente no podría confirmar su hora.
+FORMATO_CORREO = re.compile(r"[^\s@]+@[^\s@]+\.[^\s@]+")
 
 
 @dataclass(frozen=True)
@@ -46,8 +51,10 @@ def validar_datos(datos: DatosPaciente) -> list[str]:
         faltantes.append("nombre completo")
     if not normalizar_rut(datos.rut):
         faltantes.append("RUT")
-    if datos.telefono is None and datos.correo is None:
-        faltantes.append("un medio de contacto (teléfono o correo)")
+    if datos.correo is None:
+        faltantes.append("correo electrónico")
+    elif len(datos.correo) > 254 or not FORMATO_CORREO.fullmatch(datos.correo):
+        faltantes.append("un correo electrónico válido")
     return faltantes
 
 

@@ -1,7 +1,14 @@
+import re
 from hmac import compare_digest, digest
 
 from fastapi import HTTPException, Request, Response
 from fastapi.security import HTTPBasicCredentials
+
+
+# Los permisos del navegador en la demo duran lo mismo que una sesión con cuenta,
+# en vez de perderse al cerrar el navegador.
+DURACION_ACCESO_SEGUNDOS = 12 * 3600
+_COOKIE_ACCESO = re.compile(r"(paciente|reserva)_(\d{1,18})")
 
 
 def _firma(request: Request, nombre: str) -> str:
@@ -16,6 +23,7 @@ def _conceder_acceso(request: Request, respuesta: Response, nombre: str) -> Resp
     respuesta.set_cookie(
         nombre, _firma(request, nombre),
         httponly=True, samesite="strict", secure=request.url.scheme == "https",
+        max_age=DURACION_ACCESO_SEGUNDOS,
     )
     respuesta.headers["Cache-Control"] = "no-store"
     return respuesta
@@ -74,3 +82,19 @@ def verificar_titular(
     ):
         return
     raise HTTPException(status_code=403, detail="No tienes acceso a esta reserva.")
+
+
+def accesos_del_navegador(
+    request: Request, credenciales: HTTPBasicCredentials | None,
+) -> tuple[set[int], set[int]]:
+    """Demo: pacientes y reservas a los que este navegador tiene acceso válido."""
+    pacientes: set[int] = set()
+    reservas: set[int] = set()
+    for nombre in request.cookies:
+        coincidencia = _COOKIE_ACCESO.fullmatch(nombre)
+        if coincidencia and _tiene_permiso(request, nombre):
+            destino = pacientes if coincidencia.group(1) == "paciente" else reservas
+            destino.add(int(coincidencia.group(2)))
+    if _es_paciente(request, 1, credenciales):
+        pacientes.add(1)
+    return pacientes, reservas

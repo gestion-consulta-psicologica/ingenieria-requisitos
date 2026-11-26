@@ -48,9 +48,9 @@ Como paciente, quiero registrar mis datos personales en la plataforma, para pode
 
 **Criterios de aceptación:**
 
-- **CA1 — Registro del paciente:** Dado que el paciente ingresó un RUT que no está registrado, cuando ingresa su nombre completo, su RUT y al menos un medio de contacto (teléfono o correo) y guarda, entonces el sistema registra al paciente y confirma el registro.
+- **CA1 — Registro del paciente:** Dado que el paciente ingresó un RUT que no está registrado, cuando ingresa su nombre completo, su RUT y su correo electrónico (el teléfono es opcional) y guarda, entonces el sistema registra al paciente y confirma el registro. El correo es obligatorio porque la solicitud de confirmación de HU-03 se envía por correo (decisión del 2026-11-25).
 
-- **CA2 — Datos obligatorios:** Dado que el paciente está registrando sus datos, cuando intenta guardar sin nombre completo, RUT o medio de contacto, entonces el sistema no registra al paciente y le informa qué dato falta.
+- **CA2 — Datos obligatorios:** Dado que el paciente está registrando sus datos, cuando intenta guardar sin nombre completo, RUT o correo electrónico, o con un correo sin formato válido, entonces el sistema no registra al paciente y le informa qué dato falta.
 
 - **CA3 — RUT ya registrado:** Dado que el paciente ingresa un RUT que ya existe en el sistema, cuando intenta registrar sus datos, entonces el sistema no duplica al paciente y utiliza el registro existente.
 

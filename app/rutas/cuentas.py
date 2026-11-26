@@ -69,10 +69,27 @@ async def verificar_csrf(request: Request) -> None:
             raise HTTPException(403, detail="Formulario inválido o vencido.")
 
 
+SIN_CORREO = (
+    "El envío de correo no está configurado, así que no podemos enviarte el código. "
+    "Contacta a la consulta para crear o recuperar tu cuenta."
+)
+
+
+def _correo_disponible(request) -> bool:
+    return request.app.state.servicio_correo.configurado()
+
+
 def _vista(request, pantalla, *, mensaje="", status=200, bloque_id=None):
     return request.app.state.templates.TemplateResponse(
         request=request, name="cuenta.html",
-        context={"pantalla": pantalla, "mensaje": mensaje, "bloque_id": bloque_id},
+        context={
+            "pantalla": pantalla, "mensaje": mensaje, "bloque_id": bloque_id,
+            "sin_correo": (
+                pantalla in ("registro", "verificar", "recuperar", "restablecer")
+                and not _correo_disponible(request)
+            ),
+            "aviso_sin_correo": SIN_CORREO,
+        },
         status_code=status,
     )
 
@@ -171,6 +188,9 @@ def registrar(
     conexion: sqlite3.Connection = Depends(obtener_conexion),
 ):
     bloque = int(bloque_id) if bloque_id.isascii() and bloque_id.isdecimal() and len(bloque_id) <= 18 else None
+    if not _correo_disponible(request):
+        # Sin correo la cuenta nunca podría verificarse: no se crea.
+        return _vista(request, "registro", mensaje=SIN_CORREO, status=503, bloque_id=bloque)
     try:
         correo = cuentas.normalizar_correo(correo)
         _limitar(request, conexion, "registro", correo, maximo=4)
@@ -210,6 +230,9 @@ def recuperar(
     correo = correo.strip().lower()[:254]
     if proposito not in ("verificar", "restablecer"):
         raise HTTPException(400)
+    if not _correo_disponible(request):
+        pantalla = "verificar" if proposito == "verificar" else "recuperar"
+        return _vista(request, pantalla, mensaje=SIN_CORREO, status=503)
     _limitar(request, conexion, "codigo", correo, maximo=4)
     cuenta = conexion.execute("SELECT * FROM cuenta WHERE correo = ?", (correo,)).fetchone()
     if cuenta and ((cuenta["correo_verificado_en"] is None) == (proposito == "verificar")):

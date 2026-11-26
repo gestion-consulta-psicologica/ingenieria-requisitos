@@ -7,6 +7,7 @@
 </head>
 <body>
   <main>
+    {% include "nav.html" %}
     <p><a href="/psicologa">Volver al panel</a></p>
     <h1>Ficha clínica de {{ paciente.nombre_completo }}</h1>
     <section id="antecedentes">
@@ -24,6 +25,17 @@
         {% endfor %}
         <button type="submit">Guardar antecedentes</button>
       </form>
+      {% if versiones_anteriores %}
+      <details>
+        <summary>Historial de cambios ({{ versiones_anteriores|length }} versión{{ "es" if versiones_anteriores|length > 1 else "" }} anterior{{ "es" if versiones_anteriores|length > 1 else "" }})</summary>
+        <p>Las versiones anteriores se conservan en la base de datos. Fechas de modificación:</p>
+        <ul>
+          {% for version in versiones_anteriores %}
+          <li>{{ version.fecha_reemplazo|fecha_hora_local }}</li>
+          {% endfor %}
+        </ul>
+      </details>
+      {% endif %}
     </section>
     {% for atencion in atenciones %}
     <section id="evolucion-{{ atencion.id }}">

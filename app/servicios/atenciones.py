@@ -296,7 +296,8 @@ def registrar_comprobante(
 def _normalizar_monto(valor: int | str) -> int | None:
     if isinstance(valor, bool):
         return None
-    texto = str(valor).strip().replace(".", "").replace(" ", "")
+    # Acepta el formato chileno escrito por el paciente: 30000, 30.000, $30.000.
+    texto = str(valor).strip().removeprefix("$").replace(".", "").replace(" ", "")
     if not texto or not texto.isdigit():
         return None
     monto = int(texto)
