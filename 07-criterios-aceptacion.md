@@ -459,7 +459,65 @@ Característica: Actualización de la ficha clínica
     Y registra el intento de acceso en la bitácora sin guardar contenido clínico
 ```
 
-## HU-10 - Derivación a psiquiatra
+## HU-10 — Derivar y transferir una consulta a psiquiatría
+
+Los escenarios desarrollan CA1–CA8 de [HU-10](./04-historias-usuario.md#hu-10--derivar-y-transferir-una-consulta-a-psiquiatría).
+
+```gherkin
+Característica: Transferencia de una consulta a psiquiatría
+
+  Escenario: CA1 — La psicóloga deja la reserva sin derivar
+    Dado que un paciente autenticado registra una reserva con la psicóloga
+    Cuando la psicóloga revisa su panel y no inicia una derivación
+    Entonces la misma reserva sigue pendiente de confirmación en su agenda original
+
+  Escenario: CA2 y CA3 — Derivación a un psiquiatra disponible
+    Dado que la reserva está pendiente de confirmación
+    Y un psiquiatra activo y verificado publicó un bloque libre con el mismo horario y modalidad
+    Cuando la psicóloga elige a ese psiquiatra y registra la derivación
+    Entonces la derivación aparece como pendiente en la bandeja del destinatario
+    Y la reserva sigue en la agenda de la psicóloga mientras el destinatario no responda
+
+  Escenario: CA3 — El psiquiatra rechaza la derivación
+    Dado que el médico psiquiatra tiene una derivación vigente en su bandeja
+    Cuando la rechaza
+    Entonces el historial muestra la derivación rechazada
+    Y la reserva conserva el bloque y el responsable originales
+
+  Escenario: CA4, CA5 y CA8 — Aceptación y persistencia
+    Dado que la derivación y el bloque de destino siguen disponibles
+    Cuando el psiquiatra destinatario acepta la derivación
+    Entonces la reserva se transfiere al bloque del psiquiatra sin cambiar su identificador ni paciente
+    Y el bloque de la psicóloga vuelve a quedar libre
+    Y el sistema conserva el historial y registra los bloques y profesionales de la transferencia
+    Y la reserva queda pendiente de confirmación en un nuevo ciclo
+    Y el paciente ve el nuevo responsable tras reiniciar la aplicación
+
+  Escenario: CA6 — La reserva fue cancelada antes de la aceptación
+    Dado que la reserva se canceló con una derivación pendiente
+    Cuando el destinatario intenta aceptar
+    Entonces el sistema rechaza la transferencia y conserva la reserva cancelada
+
+  Escenario: CA2 y CA6 — El psiquiatra deja de estar disponible
+    Dado que el bloque del destinatario se ocupó o su cuenta se desactivó
+    Cuando se intenta completar la transferencia
+    Entonces la reserva conserva su bloque y el sistema impide la transferencia
+
+  Escenario: CA6 — Doble envío o doble aceptación
+    Dado que ya se creó una derivación para el ciclo de la reserva
+    Cuando se repite el envío o llegan dos aceptaciones concurrentes
+    Entonces se informa el conflicto y como máximo una transferencia queda registrada
+
+  Escenario: CA7 — Acceso fuera del rol autorizado
+    Dado que la petición se realiza como otro psiquiatra o como paciente
+    Cuando se intenta consultar o aceptar una derivación ajena
+    Entonces la petición se deniega sin devolver la derivación
+    Y el destinatario carece de acceso a la ficha clínica por el solo hecho de recibirla
+```
+
+### Escenario original de Evaluacion2
+
+El escenario original se conserva para trazabilidad. Los escenarios vigentes de arriba ubican la aceptación y transferencia antes de la confirmación del paciente.
 
 Historia: Como psicologa, quiero poder derivar a un paciente a un psiquiatra registrado en el sistema si es que el paciente necesita una atencion mas especializada.
 

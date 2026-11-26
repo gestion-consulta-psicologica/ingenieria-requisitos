@@ -85,6 +85,7 @@
         {{ reserva.fecha|fecha_dia }},
         de {{ reserva.hora_inicio }} a {{ reserva.hora_termino }}
         ({{ reserva.modalidad }}).
+        {% if reserva.nombre_psiquiatra %}<br>Médico psiquiatra: {{ reserva.nombre_psiquiatra }}.{% endif %}
       </p>
       <p><strong>Número de reserva:</strong> {{ reserva.reserva_id }}</p>
       <p><strong>Ciclo de confirmación:</strong> {{ reserva.version }}</p>
@@ -160,6 +161,7 @@
             <td>
               {% if cambio.tipo == "cancelacion" %}Cancelación
               {% elif cambio.tipo == "reagendamiento" %}Reagendamiento
+              {% elif cambio.tipo == "transferencia" %}Transferencia de {{ cambio.profesional_anterior }} a {{ cambio.profesional_nuevo }}
               {% else %}{{ cambio.tipo }}{% endif %}
             </td>
             <td>{{ cambio.estado_anterior }} → {{ cambio.estado_nuevo }}</td>

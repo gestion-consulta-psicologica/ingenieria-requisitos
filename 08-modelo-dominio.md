@@ -12,7 +12,7 @@ Archivo fuente: [`./diagramas/modelo-dominio.puml`](./diagramas/modelo-dominio.p
 |-------|------------------------------|-----------|
 | Psicologa | Profesional titular de la consulta, que ofrece horas de atención y emite las boletas de honorarios. | nombreCompleto, rut, correo |
 | Paciente | Persona que se atiende en la consulta y que reserva, confirma y paga sus horas. | nombreCompleto, rut, fechaNacimiento, direccion, escolaridad, ocupacion, telefono, correo |
-| BloqueHorario | Espacio de tiempo de un día que la psicóloga dispone para atender. Está disponible si no tiene una reserva vigente. | fecha, horaInicio, horaTermino, modalidad (presencial / online) |
+| BloqueHorario | Espacio de tiempo de un día que una psicóloga o un médico psiquiatra ofrece para atender. Está disponible si es futuro y no está ocupado. | fecha, horaInicio, horaTermino, modalidad (presencial / online) |
 | Reserva | Compromiso de un paciente de asistir a un bloque horario. | fechaRegistro, estado (pendiente de confirmación, confirmada, sin confirmar, cancelada, finalizada) |
 | SolicitudConfirmacion | Mensaje enviado al paciente para que confirme o cancele su asistencia (el día anterior y en la mañana de la atención). Solo una solicitud puede estar pendiente por reserva. | fechaEnvio, tipo (aviso de víspera / recordatorio), estado (pendiente / respondida / reemplazada / vencida), respuesta (confirma / no asistirá / sin respuesta), fechaRespuesta (solo respuesta efectiva del paciente), fechaCierre (reemplazo o vencimiento) |
 | Atencion | Sesión psicológica que se origina de una reserva confirmada. | tipoAtencion (presencial / online), monto, estado (programada, realizada, inasistencia, inasistencia justificada) |
@@ -27,7 +27,8 @@ Archivo fuente: [`./diagramas/modelo-dominio.puml`](./diagramas/modelo-dominio.p
 
 | Asociación | Clases | Multiplicidades | Justificación |
 |------------|--------|-----------------|----------------|
-| ofrece | Psicologa – BloqueHorario | 1 a 0..* | La psicóloga define su disponibilidad. Cada bloque horario pertenece a la única psicóloga de la consulta. |
+| ofrece | Psicologa – BloqueHorario | 0..1 a 0..* | La psicóloga define sus bloques. Cada bloque tiene un solo profesional. |
+| ofrece | CuentaPsiquiatra – BloqueHorario | 0..1 a 0..* | El médico psiquiatra define sus propios bloques, con disponibilidad privada. |
 | realiza | Paciente – Reserva | 1 a 0..* | Un paciente puede tener muchas reservas en el tiempo. Cada reserva es de un solo paciente. |
 | ocupa | Reserva – BloqueHorario | 0..* a 1 | Cada reserva ocupa un bloque horario. Un bloque puede acumular reservas canceladas en su historia, pero solo una reserva vigente a la vez. |
 | recibe | Reserva – SolicitudConfirmacion | 1 a 0..* | Se envía el aviso de víspera y el recordatorio de la mañana; al reemplazar el aviso por el recordatorio, la solicitud anterior queda cerrada y solo la más reciente permanece pendiente. |
@@ -87,3 +88,10 @@ Estas entidades no forman parte del lenguaje del negocio, pero sostienen la entr
 - **Cuenta de destino única:** todos los pagos se transfieren a la cuenta de la psicóloga; no se modelan cuentas por tipo de atención.
 - **Cargo por cancelación e incumplimiento:** el paciente genera un cargo de $5.000 cuando cancela una reserva, no confirma su asistencia o presenta una inasistencia sin justificación. Las cancelaciones realizadas por la psicóloga y las inasistencias justificadas no generan cargos. Los cargos por cancelación y falta de confirmación se asocian a Reserva; los cargos por inasistencia injustificada se asocian a Atencion.
 - **Sistemas externos fuera del dominio:** el servicio de correo electrónico (SMTP) y el SII no son conceptos del negocio, sino sistemas con los que el sistema se integra. Aparecen como actores en los casos de uso (09) y como participantes en los diagramas de secuencia (10). La cola de correos y los tokens son entidades de soporte técnico, no del dominio.
+
+
+## HU-10 — Agenda y transferencia a psiquiatría
+
+Una cuenta con rol `psiquiatra` tiene nombre profesional, estado activo y marcas de verificación. Cada **BloqueHorario** pertenece a una psicóloga o a una cuenta de médico psiquiatra. El bloque actual de **Reserva** determina a su responsable. El paciente y el identificador de reserva se conservan al cambiar de bloque.
+
+**Derivación** vincula una reserva, su paciente, la cuenta emisora y la cuenta receptora. Registra el ciclo y bloque de origen y, si se concreta, el bloque de destino y la fecha de aceptación. Puede quedar pendiente, rechazada, cerrada por pérdida de vigencia o aceptada. Las filas históricas de 019–020 se conservan sin cambio de responsable retroactivo. Ver [EST-05](./11-diagramas-estado.md#est-05--ciclo-de-derivación-y-transferencia).

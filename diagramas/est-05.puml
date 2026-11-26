@@ -1,0 +1,18 @@
+@startuml est-05
+title EST-05 — Ciclo de derivación y transferencia
+state "Pendiente" as Pendiente
+state "Aceptada" as Aceptada
+state "Rechazada" as Rechazada
+state "Cerrada" as Cerrada
+
+[*] --> Pendiente : psicóloga deriva la reserva vigente
+Pendiente --> Pendiente : sin respuesta o conflicto de disponibilidad
+Pendiente --> Rechazada : destinatario rechaza
+Pendiente --> Aceptada : destinatario acepta / transferir reserva
+Pendiente --> Cerrada : reserva cancelada, confirmada o ciclo distinto
+note right of Aceptada
+  Misma reserva y paciente.
+  Nuevo bloque, responsable y ciclo.
+  Reserva pendiente de confirmación.
+end note
+@enduml

@@ -180,3 +180,14 @@ Los grupos comparten pruebas. Los resultados históricos no se suman ni represen
 - **Requisito derivado RD-02:** complementa RP-17 mediante el cifrado de la información sensible almacenada en la plataforma. Se relaciona con HU-09 y CU-10.
 
 - **Correspondencia CA ↔ escenario:** cada criterio de aceptación de `04-historias-usuario.md` se desarrolla en el escenario Gherkin correspondiente de `07-criterios-aceptacion.md`. Las secciones de HU-04, HU-05A y HU-08 incluyen la correspondencia explícita; ante una diferencia, prevalece `04-historias-usuario.md`.
+
+
+## Evaluación 3 — HU-10
+
+| Requisito | Historia y criterios | Artefactos | Implementación y evidencia |
+|---|---|---|---|
+| RP-27 · Revisión y registro | HU-10 CA1–CA3 | CU-13, DSS-06 | Panel, directorio, agenda y bandeja. `test_flujo_web_desde_reserva_hasta_aceptacion_y_reinicio`, `test_respuesta_web_sin_transferencia[rechazo]`. |
+| RP-27 · Transferencia e historial | HU-10 CA4–CA5 y CA8 | Modelo de dominio, EST-05, [OpenSpec](./openspec/specs/derivacion-psiquiatria/spec.md) | `responder_derivacion`, `listar_historial`, migración 021. Flujo web con reinicio y `test_migracion_preserva_cuentas_sesiones_tokens_y_datos`. |
+| RP-27 y RD-01 · Restricciones | HU-10 CA6–CA7 | CU-13, DSS-06, EST-05 | Revalidación de destino, versión y estado, CSRF y bitácora. Casos de destino inválido, respuesta sin transferencia, acceso por rol y aceptaciones concurrentes. |
+
+[Evidencia automatizada de HU-10](./tests/test_hu10_derivaciones.py). El cierre académico histórico de esta matriz corresponde al alcance previo a HU-10.

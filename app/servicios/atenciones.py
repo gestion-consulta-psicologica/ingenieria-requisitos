@@ -76,7 +76,7 @@ def crear_atenciones_vencidas(
                    b.fecha, b.hora_inicio, b.modalidad
             FROM reserva r
             JOIN bloque_horario b ON b.id = r.bloque_horario_id
-            WHERE r.estado = ?
+            WHERE r.estado = ? AND b.psiquiatra_cuenta_id IS NULL
               AND NOT EXISTS (
                   SELECT 1 FROM atencion a WHERE a.reserva_id = r.id
               )

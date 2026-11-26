@@ -22,6 +22,21 @@ class Psicologa {
   correo : Texto
 }
 
+class CuentaPsiquiatra {
+  nombreProfesional : Texto
+  activo : Booleano
+  correoVerificadoEn : FechaHora
+  identidadVerificadaEn : FechaHora
+}
+
+class Derivacion {
+  estado : EstadoDerivacion
+  versionOrigen : Entero
+  creadaEn : FechaHora
+  aceptadaEn : FechaHora
+  rechazadaEn : FechaHora
+}
+
 class Paciente {
   nombreCompleto : Texto
   rut : Texto
@@ -103,7 +118,18 @@ class RegistroEvolucion {
 }
 
 ' --- Asociaciones ---
-Psicologa "1" -- "0..*" BloqueHorario : ofrece >
+Psicologa "0..1" -- "0..*" BloqueHorario : ofrece >
+CuentaPsiquiatra "0..1" -- "0..*" BloqueHorario : ofrece >
+note right of BloqueHorario
+  {xor} Un único profesional por bloque.
+  El bloque actual determina el responsable.
+end note
+Psicologa "1" -- "0..*" Derivacion : emite >
+CuentaPsiquiatra "1" -- "0..*" Derivacion : recibe >
+Paciente "1" -- "0..*" Derivacion : se deriva >
+Reserva "1" -- "0..*" Derivacion : conserva >
+Derivacion "0..*" --> "0..1" BloqueHorario : origen
+Derivacion "0..*" --> "0..1" BloqueHorario : destino
 Paciente "1" -- "0..*" Reserva : realiza >
 Reserva "0..*" -- "1" BloqueHorario : ocupa >
 Reserva "1" -- "0..*" SolicitudConfirmacion : recibe >

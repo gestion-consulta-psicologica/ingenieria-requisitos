@@ -1,0 +1,34 @@
+@startuml dss-06
+title DSS-06 — Derivar y transferir la reserva
+actor Paciente
+actor Psicóloga
+actor "Médico psiquiatra" as Psiquiatra
+participant Sistema
+
+Psiquiatra -> Sistema : Publicar bloque propio
+Paciente -> Sistema : Reservar bloque de la psicóloga
+Sistema --> Psicóloga : Mostrar reserva pendiente en el panel
+alt Sin derivación
+  note over Sistema : Continúa el ciclo con la psicóloga
+else Derivación solicitada
+  Psicóloga -> Sistema : Seleccionar psiquiatra con bloque equivalente
+  Sistema --> Psiquiatra : Mostrar derivación en la bandeja
+  alt Rechaza
+    Psiquiatra -> Sistema : Rechazar
+    Sistema --> Psicóloga : Mostrar rechazo en historial
+  else Acepta
+    Psiquiatra -> Sistema : Aceptar
+    group Transacción
+      Sistema -> Sistema : Validar destinatario, ciclo, estado y bloque libre
+      alt Vigente
+        Sistema -> Sistema : Actualizar bloque de la misma reserva
+        Sistema -> Sistema : Registrar transferencia e incrementar versión
+        Sistema -> Sistema : Reemplazar la solicitud anterior y encolar aviso
+      else Solicitud o destino no disponible
+        Sistema --> Psiquiatra : Conflicto sin transferencia
+      end
+    end
+    Paciente -> Sistema : Consultar el detalle de su reserva
+  end
+end
+@enduml

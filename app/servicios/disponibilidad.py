@@ -30,17 +30,20 @@ def insertar_bloque_libre(
     inicio: datetime,
     termino: datetime,
     modalidad: str,
+    *,
+    psiquiatra: bool = False,
 ) -> int:
+    columna = "psiquiatra_cuenta_id" if psiquiatra else "psicologa_id"
     fecha = inicio.date().isoformat()
     hora_inicio = inicio.time().isoformat(timespec="minutes")
     hora_termino = termino.time().isoformat(timespec="minutes")
     cursor = conexion.execute(
-        """
-        INSERT INTO bloque_horario (psicologa_id, fecha, hora_inicio, hora_termino, modalidad)
+        f"""
+        INSERT INTO bloque_horario ({columna}, fecha, hora_inicio, hora_termino, modalidad)
         SELECT ?, ?, ?, ?, ?
         WHERE NOT EXISTS (
             SELECT 1 FROM bloque_horario
-            WHERE psicologa_id = ? AND fecha = ?
+            WHERE {columna} = ? AND fecha = ?
               AND (hora_inicio = ? OR (
                   time(hora_inicio) < time(?) AND time(hora_termino) > time(?)
               ))
@@ -89,13 +92,15 @@ def consultar_bloques_reservables(
     ahora: datetime | None = None,
     zona_horaria: str = ZONA_POR_DEFECTO,
     limite: int = -1,
+    psiquiatra_id: int | None = None,
 ) -> list[dict]:
     local = (ahora or ahora_utc()).astimezone(zona(zona_horaria))
     filas = conexion.execute(
         f"""
         SELECT b.id, b.fecha, b.hora_inicio, b.hora_termino, b.modalidad
         FROM bloque_horario b
-        WHERE {condicion}
+        WHERE ({condicion})
+          AND b.psiquiatra_cuenta_id IS ?
           AND b.fecha >= ?
           AND strftime('%w', b.fecha) <> '0'
           AND time(b.hora_inicio) >= ?
@@ -111,7 +116,7 @@ def consultar_bloques_reservables(
         ORDER BY b.fecha, b.hora_inicio, b.id
         LIMIT ?
         """,
-        (*parametros, local.date().isoformat(), APERTURA.isoformat(),
+        (*parametros, psiquiatra_id, local.date().isoformat(), APERTURA.isoformat(),
          CIERRE.isoformat(), local.date().isoformat(),
          local.strftime("%H:%M:%S"), *ESTADOS_QUE_OCUPAN_BLOQUE, limite),
     )

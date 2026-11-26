@@ -1,8 +1,11 @@
 import sqlite3
 import time
 
+from app.configuracion import ConfiguracionCorreo, cargar_configuracion
 from app.db import derivaciones
+from app.servicios import cola_correo, plantillas_correo
 from app.servicios.cuentas import CuentaInvalida, hash_clave, normalizar_correo
+from app.tiempo import ahora_utc, iso_utc, programado
 
 
 class SolicitudNoEncontrada(ValueError):
@@ -52,25 +55,89 @@ def cambiar_disponibilidad(conexion: sqlite3.Connection, cuenta_id: int, activo:
             conexion.execute("DELETE FROM sesion WHERE cuenta_id = ?", (cuenta_id,))
 
 
-def crear_derivacion(conexion: sqlite3.Connection, reserva_id: int, emisora_id: int, receptor_id: int):
+def solicitud_vigente(conexion, reserva_id, emisora_id, zona_horaria, ahora):
+    reserva = derivaciones.solicitud(conexion, reserva_id, emisora_id)
+    if reserva is None or programado(reserva["fecha"], reserva["hora_inicio"], zona_horaria) <= ahora:
+        raise SolicitudNoEncontrada("Solicitud de consulta no disponible.")
+    return reserva
+
+
+def crear_derivacion(
+    conexion: sqlite3.Connection, reserva_id: int, emisora_id: int, receptor_id: int,
+    *, configuracion: ConfiguracionCorreo | None = None,
+):
+    configuracion = configuracion or cargar_configuracion()
     with conexion:
         conexion.execute("BEGIN IMMEDIATE")
-        reserva = derivaciones.solicitud(conexion, reserva_id, emisora_id)
-        if reserva is None:
-            raise SolicitudNoEncontrada("Solicitud de consulta no disponible.")
-        if not derivaciones.destino_disponible(conexion, receptor_id):
-            raise DerivacionInvalida("Selecciona un médico psiquiatra activo y registrado.")
+        reserva = solicitud_vigente(
+            conexion, reserva_id, emisora_id, configuracion.zona_horaria, ahora_utc(),
+        )
+        if not derivaciones.destinos_para_solicitud(conexion, reserva, receptor_id):
+            raise DerivacionInvalida("Selecciona un médico psiquiatra activo y registrado con un bloque libre para esta cita.")
         if not derivaciones.insertar(conexion, reserva, emisora_id, receptor_id):
-            raise DerivacionInvalida("Esta solicitud ya fue derivada a ese médico psiquiatra.")
+            raise DerivacionInvalida("Ya existe una derivación pendiente o este médico ya recibió la solicitud en este ciclo.")
 
 
-def aceptar_derivacion(conexion: sqlite3.Connection, derivacion_id: int, receptor_id: int):
+def responder_derivacion(
+    conexion: sqlite3.Connection, derivacion_id: int, receptor_id: int,
+    *, acepta: bool, configuracion: ConfiguracionCorreo | None = None,
+):
+    configuracion = configuracion or cargar_configuracion()
     with conexion:
         conexion.execute("BEGIN IMMEDIATE")
-        if not derivaciones.destino_disponible(conexion, receptor_id):
+        recibida = derivaciones.recibida(conexion, derivacion_id, receptor_id)
+        if recibida is None or not derivaciones.destino_disponible(conexion, receptor_id):
             raise DerivacionNoEncontrada("Derivación no disponible.")
-        if derivaciones.aceptar(conexion, derivacion_id, receptor_id):
+        if recibida["estado"] != "Pendiente" or recibida["version_origen"] is None:
+            raise DerivacionInvalida("Esta derivación ya no admite respuesta.")
+        ahora = ahora_utc()
+        try:
+            reserva = solicitud_vigente(
+                conexion, recibida["reserva_id"], recibida["psicologa_cuenta_id"],
+                configuracion.zona_horaria, ahora,
+            )
+        except SolicitudNoEncontrada as error:
+            raise DerivacionInvalida("La reserva ya no admite una transferencia.") from error
+        if (reserva["version"], reserva["bloque_horario_id"]) != (
+            recibida["version_origen"], recibida["bloque_origen_id"],
+        ):
+            raise DerivacionInvalida("La reserva cambió desde que se solicitó la derivación.")
+        if not acepta:
+            conexion.execute(
+                "UPDATE derivacion SET rechazada_en = ? WHERE id = ?", (iso_utc(ahora), derivacion_id),
+            )
             return
-        if derivaciones.estado_recibida(conexion, derivacion_id, receptor_id) is None:
-            raise DerivacionNoEncontrada("Derivación no disponible.")
-        raise DerivacionInvalida("Esta derivación ya fue aceptada.")
+        destinos = derivaciones.destinos_para_solicitud(conexion, reserva, receptor_id)
+        if not destinos:
+            raise DerivacionInvalida("El bloque del médico psiquiatra ya no está disponible.")
+        destino = destinos[0]
+        conexion.execute(
+            "UPDATE reserva SET bloque_horario_id = ?, version = version + 1 WHERE id = ?",
+            (destino["bloque_id"], reserva["id"]),
+        )
+        conexion.execute(
+            "UPDATE derivacion SET aceptada_en = ?, bloque_destino_id = ? WHERE id = ?",
+            (iso_utc(ahora), destino["bloque_id"], derivacion_id),
+        )
+        solicitudes = conexion.execute(
+            """
+            UPDATE solicitud_confirmacion SET estado = 'reemplazada', fecha_cierre = ?
+            WHERE reserva_id = ? AND estado = 'pendiente'
+            RETURNING id
+            """,
+            (iso_utc(ahora), reserva["id"]),
+        ).fetchall()
+        for solicitud in solicitudes:
+            cola_correo.cancelar_pendientes_de_solicitud(
+                conexion, solicitud["id"], ahora, motivo="La reserva fue transferida a psiquiatría.",
+            )
+        correo = plantillas_correo.aviso_transferencia(
+            reserva["id"], reserva["fecha"], reserva["hora_inicio"],
+        )
+        cola_correo.encolar(
+            conexion, clave=f"aviso_transferencia:{derivacion_id}",
+            tipo=cola_correo.TIPO_AVISO_RESERVA, asunto=correo.asunto,
+            cuerpo_texto=correo.texto, cuerpo_html=correo.html,
+            destinatario=reserva["paciente_correo"], reserva_id=reserva["id"],
+            solicitud_id=None, creado_en=ahora, max_intentos=configuracion.max_intentos,
+        )

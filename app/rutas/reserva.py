@@ -281,7 +281,7 @@ def mostrar_formulario(
     conexion: sqlite3.Connection = Depends(obtener_conexion),
 ):
     bloque = obtener_bloque(conexion, bloque_id)
-    if bloque is None:
+    if bloque is None or bloque["psiquiatra_cuenta_id"] is not None:
         raise HTTPException(status_code=404, detail="Bloque horario no encontrado")
     if request.app.state.cuentas_persistentes and request.state.cuenta:
         paciente_id = request.state.cuenta["paciente_id"]
@@ -316,7 +316,7 @@ def reservar(
         ) from error
     except BloqueNoDisponible:
         bloque = obtener_bloque(conexion, bloque_id)
-        if bloque is None:
+        if bloque is None or bloque["psiquiatra_cuenta_id"] is not None:
             raise HTTPException(
                 status_code=404, detail="Bloque horario no encontrado"
             )

@@ -45,6 +45,11 @@ def autorizar_ficha(
 ):
     paciente_id = _ficha_solicitada(request)
     operacion = "lectura" if request.method == "GET" else "escritura"
+    if paciente_id is not None and (
+        not 1 <= paciente_id <= 2**63 - 1
+        or conexion.execute("SELECT 1 FROM paciente WHERE id = ?", (paciente_id,)).fetchone() is None
+    ):
+        paciente_id = None
     if request.app.state.cuentas_persistentes:
         cuenta = request.state.cuenta
         usuario = f"cuenta:{cuenta['id']}" if cuenta else None

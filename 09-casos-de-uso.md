@@ -5,15 +5,18 @@
 |-------|----------------------------------|-------------|
 | Paciente | Humano | Persona que consulta la disponibilidad, reserva, confirma, cancela y reagenda sus horas de atención. |
 | Administrador (Psicóloga) | Humano | Profesional que administra horarios, reservas, pacientes, atenciones, asistencia, pagos y comprobantes, y a quien corresponden la emisión de boletas y la gestión clínica. |
+| Médico psiquiatra | Humano | Profesional registrado que publica su propia disponibilidad y responde derivaciones recibidas. |
 | Servicio de correo electrónico (SMTP) | Sistema externo | Servicio que entrega al paciente los avisos de reserva, las solicitudes de confirmación, los recordatorios y los avisos de cargo por correo electrónico. En pruebas se reemplaza por un servidor SMTP falso local. |
 | SII | Sistema externo | Servicio de Impuestos Internos, que recibe y registra las boletas de honorarios electrónicas emitidas por la psicóloga. |
 
 ## Diagrama de casos de uso
-![Casos de uso de Evaluacion2](./diagramas/casosdeusonuevo.drawio.png)
 
-Paciente y Administrador (Psicóloga) son los roles del flujo previo a HU-10. SMTP y SII son sistemas externos.
+Paciente, Psicóloga y Médico psiquiatra son roles funcionales. SMTP y SII son sistemas externos.
+![Casos de uso original de Evaluacion2](./diagramas/casosdeusonuevo.drawio.png)
 
-![Casos de uso del flujo previo](./diagramas/casos-de-uso.png)
+El diagrama siguiente detalla CU-13 según la implementación validada.
+
+![Casos de uso con CU-13](./diagramas/casos-de-uso.png)
 
 Archivo fuente: [`./diagramas/casos-de-uso.puml`](./diagramas/casos-de-uso.puml)
 
@@ -32,6 +35,7 @@ Archivo fuente: [`./diagramas/casos-de-uso.puml`](./diagramas/casos-de-uso.puml)
 | CU-10 | Actualizar ficha clínica | Psicóloga | [HU-09](./04-historias-usuario.md#hu-09--actualizar-ficha-clínica) |
 | CU-11 | Registrar datos del paciente | Paciente | [HU-02A](./04-historias-usuario.md#hu-02a--registrar-datos-del-paciente) |
 | CU-12 | Registrar comprobante de pago | Paciente | [HU-05A](./04-historias-usuario.md#hu-05a--registrar-la-atención-y-el-comprobante-de-pago) |
+| CU-13 | Derivar y transferir una consulta | Psicóloga y médico psiquiatra | [HU-10](./04-historias-usuario.md#hu-10--derivar-y-transferir-una-consulta-a-psiquiatría) |
 
 ## Relaciones entre casos de uso
 | Relación | Casos de uso | Justificación |
@@ -41,3 +45,12 @@ Archivo fuente: [`./diagramas/casos-de-uso.puml`](./diagramas/casos-de-uso.puml)
 | extend | CU-11 Registrar datos del paciente → CU-02 Reservar hora | Cuando el paciente reserva y su RUT no está registrado, se ejecuta opcionalmente el registro de sus datos; al finalizar, se retoma la reserva del bloque seleccionado. |
 
 **CU-03 y CU-04 se mantienen separados.** CU-03 cubre ambas respuestas del paciente a la solicitud de confirmación: mantener la hora o informar que no asistirá, lo que cancela la reserva y libera el bloque. CU-04 cubre la cancelación que el paciente inicia por sí sola desde la gestión de su reserva, sin depender de una solicitud de confirmación. Por eso no existe una relación `extend` entre ambos.
+
+
+## CU-13 — Derivar y transferir una consulta
+
+- **Actores:** psicóloga responsable y médico psiquiatra registrado. El paciente consulta su reserva y responde a su nuevo ciclo de confirmación.
+- **Precondiciones:** modo operativo, sesión autorizada, reserva futura pendiente de confirmación y bloque equivalente libre en la agenda del destinatario.
+- **Flujo:** el paciente registra la reserva, la psicóloga la revisa y envía la derivación. El psiquiatra la acepta desde su bandeja. Se revalidan ambos bloques y la versión, se transfiere la reserva y se registra el cambio.
+- **Alternativas:** ausencia de derivación o rechazo mantienen la reserva con la psicóloga. Cancelación, cambio de ciclo, ocupación o inactivación impiden la transferencia.
+- **Origen:** RP-27, HU-10 CA1–CA8 y [DSS-06](./10-diagramas-secuencia.md#dss-06--derivar-y-transferir-la-reserva).

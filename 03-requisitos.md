@@ -33,6 +33,8 @@
 | RP-26 | El sistema deberá registrar un cargo de $5.000, asociado al paciente y a la reserva, cuando el paciente confirme la cancelación de una hora reservada. Las cancelaciones realizadas por la psicóloga no generan cargos. | Funcional | Registrar cargo por cancelación de reserva |
 
 
+| RP-27 | La psicóloga deberá poder derivar una reserva pendiente a un médico psiquiatra registrado y disponible. Al aceptarla, el sistema transfiere la misma reserva a su agenda, conserva su historial e inicia un nuevo ciclo de confirmación. | Funcional | Revisar y derivar solicitud de consulta |
+
 ## Requisitos de proyecto
 
 | ID | Requisito |

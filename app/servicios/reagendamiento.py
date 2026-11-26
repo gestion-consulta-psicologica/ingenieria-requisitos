@@ -7,7 +7,7 @@ from app.configuracion import ConfiguracionCorreo, cargar_configuracion
 from app.servicios import cola_correo, plantillas_correo
 from app.servicios.disponibilidad import consultar_bloques_reservables
 from app.servicios.notificaciones import MOTIVO_CANCELACION, registrar_cargo_con_aviso
-from app.tiempo import ZONA_POR_DEFECTO, ahora_utc, programado, zona
+from app.tiempo import ZONA_POR_DEFECTO, ahora_utc, desde_iso_utc, programado, zona
 
 ESTADO_CONFIRMADA = "Confirmada"
 ESTADO_CANCELADA = "Cancelada"
@@ -42,7 +42,7 @@ def _contexto(conexion: sqlite3.Connection, reserva_id: int) -> dict:
                r.fecha_registro, r.estado, r.version,
                p.nombre_completo AS paciente_nombre, p.rut AS paciente_rut,
                p.correo AS paciente_correo, p.telefono AS paciente_telefono,
-               b.fecha, b.hora_inicio, b.hora_termino, b.modalidad
+               b.fecha, b.hora_inicio, b.hora_termino, b.modalidad, b.psiquiatra_cuenta_id
         FROM reserva r
         JOIN paciente p ON p.id = r.paciente_id
         JOIN bloque_horario b ON b.id = r.bloque_horario_id
@@ -74,6 +74,7 @@ def _contexto(conexion: sqlite3.Connection, reserva_id: int) -> dict:
             "hora_inicio": fila["hora_inicio"],
             "hora_termino": fila["hora_termino"],
             "modalidad": fila["modalidad"],
+            "psiquiatra_cuenta_id": fila["psiquiatra_cuenta_id"],
         },
     }
 
@@ -124,6 +125,7 @@ def obtener_alternativas(
         ),
         ahora=ahora,
         zona_horaria=zona_horaria,
+        psiquiatra_id=contexto["bloque"]["psiquiatra_cuenta_id"],
     )
 
 
@@ -147,7 +149,30 @@ def listar_historial(
         """,
         (reserva_id,),
     ).fetchall()
-    return [dict(fila) for fila in filas]
+    transferencias = conexion.execute(
+        """
+        SELECT 'transferencia' AS tipo, d.aceptada_en AS fecha,
+               'Pendiente de confirmación' AS estado_anterior,
+               'Pendiente de confirmación' AS estado_nuevo,
+               d.version_origen AS version_anterior, d.version_origen + 1 AS version_nueva,
+               ba.fecha AS anterior_fecha, ba.hora_inicio AS anterior_hora_inicio,
+               ba.hora_termino AS anterior_hora_termino, bn.fecha AS nuevo_fecha,
+               bn.hora_inicio AS nuevo_hora_inicio, bn.hora_termino AS nuevo_hora_termino,
+               p.nombre_completo AS profesional_anterior, c.nombre_psiquiatra AS profesional_nuevo
+        FROM derivacion d
+        JOIN bloque_horario ba ON ba.id = d.bloque_origen_id
+        JOIN bloque_horario bn ON bn.id = d.bloque_destino_id
+        JOIN psicologa p ON p.id = ba.psicologa_id
+        JOIN cuenta c ON c.id = d.psiquiatra_cuenta_id
+        WHERE d.reserva_id = ?
+        ORDER BY d.id
+        """,
+        (reserva_id,),
+    ).fetchall()
+    return sorted(
+        (dict(fila) for fila in (*filas, *transferencias)),
+        key=lambda fila: desde_iso_utc(fila["fecha"]),
+    )
 
 
 def cancelar_reserva(
@@ -211,7 +236,9 @@ def cancelar_reserva(
                 fecha_local,
             ),
         )
-        if not por_psicologa:
+        if por_psicologa and contexto["bloque"]["psiquiatra_cuenta_id"] is not None:
+            raise EstadoReservaInvalido("La reserva ya fue transferida a psiquiatría.")
+        if not por_psicologa and contexto["bloque"]["psiquiatra_cuenta_id"] is None:
             registrar_cargo_con_aviso(
                 conexion, contexto, MOTIVO_CANCELACION, configuracion, ahora,
             )
@@ -271,6 +298,7 @@ def reagendar_reserva(
             conexion, "b.id = ? AND b.fecha BETWEEN ? AND ?",
             (nuevo_bloque_id, inicio.isoformat(), fin.isoformat()),
             ahora=ahora, zona_horaria=configuracion.zona_horaria,
+            psiquiatra_id=contexto["bloque"]["psiquiatra_cuenta_id"],
         ):
             raise BloqueNoDisponible(
                 "El bloque seleccionado ya no está disponible."

@@ -17,6 +17,7 @@ Archivo fuente: [`./diagramas/est-01.puml`](./diagramas/est-01.puml)
 | (inicial) | paciente confirma el bloque horario seleccionado | bloque disponible y datos del paciente registrados | registrar reserva, ocupar bloque y encolar el aviso de reserva por correo | Pendiente de confirmación |
 | Pendiente de confirmación | llega la víspera de la atención | — | crear la solicitud de confirmación pendiente, sus tokens y encolar el correo | Pendiente de confirmación (transición interna) |
 | Pendiente de confirmación | llega la mañana de la atención | sin respuesta | reemplazar la solicitud pendiente anterior, cancelar su correo y encolar el recordatorio | Pendiente de confirmación (transición interna) |
+| Pendiente de confirmación | el psiquiatra acepta una derivación | destinatario vigente, ciclo actual y bloque equivalente libre | cambiar bloque y responsable, registrar transferencia y reiniciar el ciclo | Pendiente de confirmación (transferencia) |
 | Pendiente de confirmación | paciente confirma asistencia | existe una única solicitud pendiente y es la más reciente; token válido si viene del correo | consumir el token, registrar respuesta y fecha de respuesta; marcar la solicitud como respondida | Confirmada |
 | Pendiente de confirmación | paciente informa que no asistirá | existe una única solicitud pendiente y es la más reciente; token válido si viene del correo | consumir el token, registrar respuesta y fecha de respuesta; marcar la solicitud como respondida; registrar cargo de $5.000 asociado al paciente y a la reserva; liberar bloque y encolar aviso del cargo | Cancelada |
 | Pendiente de confirmación | llega la hora de la atención | sin respuesta y existe una solicitud pendiente | marcar la solicitud como vencida con respuesta «sin respuesta» y registrar fecha de cierre; generar el cargo de $5.000 y encolar su aviso solo si SMTP aceptó una solicitud del ciclo vigente antes de esa hora | Sin confirmar |
@@ -24,7 +25,7 @@ Archivo fuente: [`./diagramas/est-01.puml`](./diagramas/est-01.puml)
 | Pendiente de confirmación | psicóloga cancela la hora | cancelación realizada por la psicóloga | liberar bloque y conservar historial; no generar cargo | Cancelada |
 | Confirmada | psicóloga cancela la hora | cancelación realizada por la psicóloga | liberar bloque y conservar historial; no generar cargo | Cancelada |
 | Confirmada | paciente reagenda | nuevo bloque disponible | liberar bloque anterior, ocupar nuevo bloque, registrar historial e iniciar nuevo ciclo de confirmación; no generar cargo | Pendiente de confirmación |
-| Confirmada | llega la hora de la atención | — | originar atención y pago; registrar el cierre de la reserva | Finalizada |
+| Confirmada | llega la hora de la atención | reserva de psicología | originar atención y pago; registrar el cierre de la reserva | Finalizada |
 | Cancelada | — | — | — | (final) |
 | Sin confirmar | — | — | — | (final) |
 | Finalizada | — | — | — | (final) |
@@ -39,6 +40,8 @@ El plazo de respuesta termina al inicio del bloque. El servidor rechaza las resp
 **Disponibilidad del bloque:** además de la vigencia, el inicio debe ser futuro y el bloque completo debe quedar entre las 09:00 y las 19:00 de lunes a sábado en la zona horaria configurada. Un bloque cuya reserva se finalizó al llegar la hora ya no se puede reservar.
 
 **Regla de cargos:** cuando el paciente confirma la cancelación de una reserva, se genera un cargo de $5.000 asociado al paciente y a la reserva, independientemente de la anticipación o del motivo de la cancelación. La cancelación realizada por la psicóloga no genera cargos. La falta de confirmación hasta la hora de atención genera un cargo de $5.000 únicamente si SMTP aceptó antes una solicitud de confirmación del ciclo vigente.
+
+Estas reglas de cargos, atención y pago corresponden a psicología. La reserva transferida conserva el ciclo de confirmación, con gestión clínica y financiera de psiquiatría pendiente de especificación.
 
 **Reagendamiento:** al pasar de Confirmada a Pendiente de confirmación se conserva el bloque anterior en el historial de cambios y se inicia un nuevo ciclo de solicitudes; las solicitudes del ciclo anterior permanecen como registro histórico y no admiten nuevas respuestas. El reagendamiento no genera un cargo.
 
@@ -142,3 +145,13 @@ Archivo fuente: [`./diagramas/est-04.puml`](./diagramas/est-04.puml)
 - **Inasistencia justificada:** cuando la psicóloga registra una justificación válida, la atención pasa a Inasistencia justificada y no genera cargo.
 - **Cancelación por parte de la psicóloga:** no genera cargos para el paciente.
 - **Pago:** el registro de asistencia no modifica automáticamente el estado del pago. El pago conserva su propio ciclo de vida definido en EST-02.
+
+
+## EST-05 — Ciclo de derivación y transferencia
+
+- Caso de uso: [CU-13](./09-casos-de-uso.md#cu-13--derivar-y-transferir-una-consulta).
+- Fuente: [est-05.puml](./diagramas/est-05.puml).
+
+![EST-05](./diagramas/est-05.png)
+
+La aceptación mantiene la **Reserva** pendiente de confirmación y cambia únicamente el bloque, el responsable y el ciclo. Al rechazarse, la derivación queda en el historial y la reserva sigue su ciclo original. Si la reserva se cancela, se confirma o cambia de ciclo antes de aceptar, la derivación pendiente se muestra cerrada. Una oferta vencida se rechaza al intentar responderla.

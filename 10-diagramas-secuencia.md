@@ -80,3 +80,13 @@ Variantes representadas:
 - **alt — la atención tiene comprobantes:** el sistema muestra el nombre y el RUT del paciente, el monto de la atención, el monto pagado y el estado del pago, junto con cada comprobante (monto, fecha de transferencia y cuenta de destino).
 - **alt — la atención no tiene comprobante:** el sistema informa la ausencia de comprobante y muestra la atención en el listado de atenciones con pago pendiente.
 - **Continuación:** el panel de demostración ofrece «Registrar estado de pago» cuando hay comprobantes que se pueden verificar. La consulta conserva el estado. Las transiciones de EST-02 ocurren al guardar la verificación en HU-06.
+
+
+## DSS-06 — Derivar y transferir la reserva
+
+- Caso de uso: [CU-13](./09-casos-de-uso.md#cu-13--derivar-y-transferir-una-consulta).
+- Fuente: [dss-06.puml](./diagramas/dss-06.puml).
+
+![DSS-06](./diagramas/dss-06.png)
+
+Al aceptar se revalidan la versión y la disponibilidad dentro de la transacción. El nuevo ciclo de confirmación utiliza el mismo identificador de reserva.

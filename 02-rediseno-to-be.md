@@ -54,6 +54,15 @@
 ![Proceso TO-BE](./diagramas/TO-BE.png)
 
 Archivo fuente: [`./diagramas/TO-BE.bpmn`](./diagramas/TO-BE.bpmn)
+
+### Extensión TO-BE para HU-10
+
+La revisión se abre en cuanto el sistema registra la reserva original. Su confirmación sigue su curso mientras espera una decisión. En una aceptación vigente, el sistema transfiere la reserva, libera el bloque original y reinicia el ciclo de confirmación. El flujo complementario amplía el BPMN de la entrega en ese punto.
+
+![Flujo TO-BE de transferencia a psiquiatría](./diagramas/to-be-hu-10.png)
+
+[Fuente PlantUML de HU-10](./diagramas/to-be-hu-10.puml) · [Secuencia DSS-06](./10-diagramas-secuencia.md#dss-06--derivar-y-transferir-la-reserva)
+
 ## Actividades que cambian del AS-IS al TO-BE
 
 | Actividad en el AS-IS | Actividad en el TO-BE | Qué cambia |
@@ -64,6 +73,7 @@ Archivo fuente: [`./diagramas/TO-BE.bpmn`](./diagramas/TO-BE.bpmn)
 | Seleccionar horario | Seleccionar horario disponible | El paciente mantiene la selección del horario, pero ahora la realiza directamente dentro de la plataforma. |
 | Entrega de datos del paciente por WhatsApp | Registrar datos del paciente | Los datos del paciente nuevo dejan de entregarse por WhatsApp para que la secretaria los registre y pasan a registrarse directamente en la plataforma, habilitando la reserva en línea. |
 | Registrar hora en Excel | Registrar reserva automáticamente | El registro manual de la reserva en Excel es reemplazado por el registro automático dentro del sistema. |
+| — (nuevo en Evaluación 3) | Revisar y derivar solicitud de consulta | La psicóloga puede derivar una reserva pendiente. Si un médico psiquiatra disponible acepta, se transfiere la reserva original. El flujo de Evaluación 3 se detalla en CU-13 y DSS-06. |
 | Confirmar asistencia por WhatsApp | Enviar solicitud de confirmación automática por correo | La confirmación deja de gestionarse manualmente mediante WhatsApp y pasa a ser enviada automáticamente por el sistema a través de correo electrónico, con enlaces seguros de un solo uso. |
 | Responder confirmación | Confirmar o cancelar hora en plataforma | El paciente puede confirmar o cancelar su hora directamente desde la plataforma. |
 | Solicitar cambio o cancelación | Solicitar reagendamiento o cancelación en plataforma | El paciente puede gestionar el cambio o cancelación de una hora desde la plataforma sin depender del contacto manual con la secretaria o psicóloga. |

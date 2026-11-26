@@ -80,6 +80,16 @@ def aviso_reserva(paciente: dict, bloque: dict, reserva: dict) -> Correo:
     return Correo(asunto=asunto, texto=texto, html=_html(cuerpo))
 
 
+def aviso_transferencia(reserva_id: int, fecha: str, hora: str) -> Correo:
+    asunto = f"Cambio de profesional de la reserva {reserva_id}"
+    texto = (
+        f"Tu reserva {reserva_id} para el {_fecha_larga(fecha)} a las {hora} "
+        "cambió de profesional, mantiene el horario y queda pendiente de confirmación. "
+        "Consulta el detalle en la plataforma."
+    )
+    return Correo(asunto, texto, _html(f"<p>{html.escape(texto)}</p>"))
+
+
 def aviso_reagendamiento(
     paciente: dict, bloque_anterior: dict, bloque_nuevo: dict, reserva: dict
 ) -> Correo:

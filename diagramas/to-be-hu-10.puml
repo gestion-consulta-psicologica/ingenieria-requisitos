@@ -1,0 +1,43 @@
+@startuml to-be-hu-10
+title TO-BE — Revisión y transferencia de la reserva (HU-10)
+
+|Paciente|
+start
+:Solicitar un bloque de la psicóloga;
+|Sistema|
+:Registrar la reserva pendiente de confirmación;
+:Mostrar la solicitud en el panel;
+|Psicóloga|
+:Revisar la solicitud;
+if (¿Deriva la consulta?) then (Sí)
+  :Elegir un psiquiatra registrado y activo
+con bloque equivalente libre;
+  |Sistema|
+  :Registrar y mostrar la derivación en la bandeja;
+  |Médico psiquiatra|
+  if (¿Acepta mientras la reserva sigue pendiente?) then (Sí)
+    |Sistema|
+    if (¿Ciclo vigente y bloque de destino libre?) then (Sí)
+      :Transferir la misma reserva en una transacción;
+      :Liberar bloque original y registrar el cambio;
+      :Iniciar nuevo ciclo y encolar aviso al paciente;
+      |Paciente|
+      :Consultar la reserva original
+con el nuevo profesional;
+      stop
+    else (No)
+      |Sistema|
+      :Informar el conflicto y conservar
+la reserva en su estado actual;
+      stop
+    endif
+  else (Rechaza o no responde)
+    |Sistema|
+    :Registrar el rechazo si se recibió;
+  endif
+endif
+|Sistema|
+:Conservar la agenda original y continuar
+el ciclo de confirmación correspondiente;
+stop
+@enduml

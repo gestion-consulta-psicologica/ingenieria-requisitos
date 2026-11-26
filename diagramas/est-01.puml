@@ -16,6 +16,7 @@ state "Finalizada" as FIN
 
 PEN : llega la víspera de la atención / crear solicitud pendiente, tokens y encolar correo
 PEN : llega la mañana de la atención [sin respuesta] / reemplazar solicitud anterior, cancelar su correo y encolar recordatorio
+PEN : psiquiatra acepta [derivación y bloque vigentes] / transferir la misma reserva e iniciar otro ciclo
 
 note right of PEN
   Solo una SolicitudConfirmacion pendiente
@@ -42,7 +43,7 @@ CON --> CAN : psicóloga cancela la hora\n/ liberar bloque y conservar historial
 
 CON -up-> PEN : paciente reagenda\n[nuevo bloque disponible]\n/ liberar bloque anterior, ocupar nuevo bloque\n/ registrar historial e iniciar nuevo ciclo de confirmación\n/ no generar cargo
 
-CON --> FIN : llega la hora de la atención\n/ originar atención y pago\n/ registrar el cierre de la reserva
+CON --> FIN : llega la hora de la atención\n[reserva de psicología]\n/ originar atención y pago\n/ registrar el cierre de la reserva
 
 note right of CAN
   Reglas de cancelación:

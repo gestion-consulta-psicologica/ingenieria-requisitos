@@ -125,10 +125,12 @@ def obtener_reserva(
         SELECT r.id AS reserva_id, r.fecha_registro, r.estado, r.version,
                p.nombre_completo AS paciente_nombre, p.rut AS paciente_rut,
                p.telefono AS paciente_telefono, p.correo AS paciente_correo,
-               b.fecha, b.hora_inicio, b.hora_termino, b.modalidad
+               b.fecha, b.hora_inicio, b.hora_termino, b.modalidad,
+               psi.nombre_psiquiatra
         FROM reserva r
         JOIN paciente p ON p.id = r.paciente_id
         JOIN bloque_horario b ON b.id = r.bloque_horario_id
+        LEFT JOIN cuenta psi ON psi.id = b.psiquiatra_cuenta_id
         WHERE r.id = ?
         """,
         (reserva_id,),

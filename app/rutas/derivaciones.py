@@ -1,4 +1,5 @@
 import sqlite3
+from datetime import date, datetime, time
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Path, Request
@@ -10,6 +11,8 @@ from app.rutas.disponibilidad import obtener_conexion
 from app.rutas.psicologa import autenticar_psicologa
 from app.servicios import derivaciones as servicio
 from app.servicios.cuentas import CuentaInvalida
+from app.servicios.disponibilidad import DURACION_ATENCION, horario_dentro_de_jornada, insertar_bloque_libre
+from app.tiempo import programado
 
 router = APIRouter(dependencies=[Depends(modo_operativo)])
 protegida = [Depends(autenticar_psicologa)]
@@ -26,9 +29,10 @@ def autenticar_psiquiatra(request: Request):
     return cuenta["id"]
 
 
-def vista(request, **contexto):
+def vista(request, *, status_code=200, **contexto):
     return request.app.state.templates.TemplateResponse(
         request=request, name="derivaciones.html", context=contexto,
+        status_code=status_code,
     )
 
 
@@ -42,12 +46,21 @@ def historial(request: Request, conexion: sqlite3.Connection = Depends(obtener_c
 
 @router.get(PANEL + "/nueva/{reserva_id}", response_class=HTMLResponse, dependencies=protegida)
 def formulario(reserva_id: IdRuta, request: Request, conexion: sqlite3.Connection = Depends(obtener_conexion)):
-    solicitud = derivaciones.solicitud(conexion, reserva_id, request.state.cuenta["id"])
-    if solicitud is None:
-        raise HTTPException(404, detail="Solicitud de consulta no disponible.")
+    return _formulario(request, conexion, reserva_id)
+
+
+def _formulario(request, conexion, reserva_id, error=None):
+    try:
+        solicitud = servicio.solicitud_vigente(
+            conexion, reserva_id, request.state.cuenta["id"],
+            request.app.state.configuracion_correo.zona_horaria, servicio.ahora_utc(),
+        )
+    except servicio.SolicitudNoEncontrada as exc:
+        raise HTTPException(404, detail=str(exc)) from exc
     return vista(
         request, solicitud=solicitud,
-        profesionales=derivaciones.psiquiatras(conexion, solo_disponibles=True),
+        profesionales=derivaciones.destinos_para_solicitud(conexion, solicitud),
+        error=error, status_code=409 if error else 200,
     )
 
 
@@ -57,11 +70,14 @@ def crear(
     conexion: sqlite3.Connection = Depends(obtener_conexion),
 ):
     try:
-        servicio.crear_derivacion(conexion, reserva_id, request.state.cuenta["id"], psiquiatra_id)
+        servicio.crear_derivacion(
+            conexion, reserva_id, request.state.cuenta["id"], psiquiatra_id,
+            configuracion=request.app.state.configuracion_correo,
+        )
     except servicio.SolicitudNoEncontrada as error:
         raise HTTPException(404, detail=str(error)) from error
     except servicio.DerivacionInvalida as error:
-        raise HTTPException(409, detail=str(error)) from error
+        return _formulario(request, conexion, reserva_id, error=str(error))
     return RedirectResponse(PANEL, status_code=303)
 
 
@@ -96,18 +112,56 @@ def recibidas(
     request: Request, cuenta_id: int = Depends(autenticar_psiquiatra),
     conexion: sqlite3.Connection = Depends(obtener_conexion),
 ):
-    return vista(request, recibidas=True, registros=derivaciones.historial(conexion, cuenta_id, recibidas=True))
+    return _bandeja(request, conexion, cuenta_id)
+
+
+def _bandeja(request, conexion, cuenta_id, *, error=None, status_code=200):
+    return vista(
+        request, recibidas=True, registros=derivaciones.historial(conexion, cuenta_id, recibidas=True),
+        agenda=derivaciones.bloques_de_psiquiatra(conexion, cuenta_id),
+        error=error, status_code=status_code,
+    )
+
+
+@router.post(BANDEJA + "/horarios")
+def agregar_horario(
+    request: Request, fecha: Annotated[date, Form()], inicio: Annotated[time, Form()],
+    modalidad: Annotated[str, Form()], cuenta_id: int = Depends(autenticar_psiquiatra),
+    conexion: sqlite3.Connection = Depends(obtener_conexion),
+):
+    comienzo = datetime.combine(fecha, inicio)
+    termino = comienzo + DURACION_ATENCION
+    zona = request.app.state.configuracion_correo.zona_horaria
+    if (
+        inicio.tzinfo or inicio.second or inicio.microsecond or termino.date() != fecha
+        or not horario_dentro_de_jornada(fecha, inicio, termino.time())
+        or modalidad not in ("presencial", "online")
+        or programado(fecha, inicio.isoformat(), zona) <= servicio.ahora_utc()
+    ):
+        return _bandeja(request, conexion, cuenta_id, error="Ingresa un bloque futuro dentro de la jornada.", status_code=400)
+    with conexion:
+        conexion.execute("BEGIN IMMEDIATE")
+        if not derivaciones.destino_disponible(conexion, cuenta_id):
+            raise HTTPException(403)
+        creado = insertar_bloque_libre(conexion, cuenta_id, comienzo, termino, modalidad, psiquiatra=True)
+    if not creado:
+        return _bandeja(request, conexion, cuenta_id, error="El bloque se superpone con otro de tu agenda.", status_code=409)
+    return RedirectResponse(BANDEJA + "#agenda", status_code=303)
 
 
 @router.post(BANDEJA + "/{derivacion_id}/aceptar")
+@router.post(BANDEJA + "/{derivacion_id}/rechazar")
 def aceptar(
-    derivacion_id: IdRuta, cuenta_id: int = Depends(autenticar_psiquiatra),
+    derivacion_id: IdRuta, request: Request, cuenta_id: int = Depends(autenticar_psiquiatra),
     conexion: sqlite3.Connection = Depends(obtener_conexion),
 ):
     try:
-        servicio.aceptar_derivacion(conexion, derivacion_id, cuenta_id)
+        servicio.responder_derivacion(
+            conexion, derivacion_id, cuenta_id, acepta=request.url.path.endswith("/aceptar"),
+            configuracion=request.app.state.configuracion_correo,
+        )
     except servicio.DerivacionNoEncontrada as error:
         raise HTTPException(404, detail=str(error)) from error
     except servicio.DerivacionInvalida as error:
-        raise HTTPException(409, detail=str(error)) from error
+        return _bandeja(request, conexion, cuenta_id, error=str(error), status_code=409)
     return RedirectResponse(BANDEJA, status_code=303)

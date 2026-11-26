@@ -217,7 +217,24 @@ Como psicóloga, quiero actualizar la ficha clínica del paciente en una platafo
 
 **Verificación de HU-09 en demostración.** CA1–CA3 cubren la consulta y edición de antecedentes de anamnesis y el registro de evoluciones de atenciones realizadas, conservando los registros anteriores. CA4 usa un paciente autenticado sin permiso clínico y verifica la denegación de consulta y modificación y su bitácora sin contenido clínico. Quedan pendientes las cuentas persistentes y el cifrado para datos reales.
 
-## HU-10 - derivación a psiquiatra
+## HU-10 — Derivar y transferir una consulta a psiquiatría
+
+**Como** psicóloga, **quiero** derivar una solicitud de consulta pendiente a un médico psiquiatra registrado y disponible, **para** que, si la acepta, asuma la reserva original.
+
+- **CA1 — Revisión.** Una reserva recién registrada aparece pendiente de confirmación en el panel de la psicóloga. Si ella no deriva o el destinatario aún no responde, la reserva sigue bajo su responsabilidad y conserva el flujo de confirmación.
+- **CA2 — Destino elegible.** La psicóloga puede seleccionar únicamente psiquiatras con cuenta activa y verificada y un bloque propio, futuro y libre para la misma fecha, horas y modalidad. Una sola derivación puede estar pendiente por ciclo de reserva.
+- **CA3 — Recepción y rechazo.** El destinatario ve la derivación en su bandeja y puede rechazarla. El rechazo queda en el historial y conserva responsable, bloque y estado de la reserva.
+- **CA4 — Aceptación.** Si la solicitud y el bloque siguen vigentes, el destinatario transfiere en una transacción la misma reserva a su bloque. Se conservan el ID, el paciente, la fecha de registro y el historial. El bloque original se libera y la reserva queda pendiente de confirmación con psiquiatría.
+- **CA5 — Seguimiento.** La transferencia registra responsables y bloques anterior y nuevo, conserva el historial previo y abre un nuevo ciclo de confirmación. La versión anterior deja de admitir respuestas. El paciente ve al nuevo responsable en el detalle de su reserva.
+- **CA6 — Conflictos.** Se rechazan transferencias sobre reservas canceladas, confirmadas, vencidas o ya cambiadas, y cuando el bloque está ocupado o el destinatario inactivo. Los intentos simultáneos no duplican la reserva ni la transferencia. La interfaz conserva el formulario ante duplicados o destinos desactualizados.
+- **CA7 — Permisos.** Solo la psicóloga responsable solicita la derivación y solo un psiquiatra puede publicar en su propia agenda. Únicamente el destinatario consulta y responde su derivación. Un paciente consulta el resultado desde su propia reserva. Las fichas clínicas requieren permiso clínico y la bitácora registra intentos denegados incluso si el paciente solicitado no existe.
+- **CA8 — Persistencia.** Reiniciar conserva la reserva, la asignación vigente, las derivaciones y el historial. Las derivaciones anteriores a la migración 021 conservan sus datos históricos y se muestran como históricas.
+
+**Alcance.** La agenda psiquiátrica es privada. La confirmación usa el ciclo de reserva existente. La liquidación, asistencia clínica y emisión de boletas de psiquiatría quedan pendientes de reglas propias.
+
+### Historia y criterios originales de Evaluacion2
+
+Se conserva el texto original como antecedente. CA1–CA8 de la sección anterior especifican la decisión aprobada. La revisión se realiza en el panel y la transferencia ocurre cuando el psiquiatra acepta.
 
 Como psicologo, quiero poder derivar a un paciente a un psiquiatra registrado en el sistema si es que el paciente necesita una atencion mas especializada.
 

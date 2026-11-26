@@ -61,7 +61,7 @@ def _contexto(conexion: sqlite3.Connection, reserva_id: int) -> dict:
                p.rut AS paciente_rut,
                p.telefono AS paciente_telefono,
                p.correo AS paciente_correo,
-               b.fecha, b.hora_inicio, b.hora_termino, b.modalidad
+               b.fecha, b.hora_inicio, b.hora_termino, b.modalidad, b.psiquiatra_cuenta_id
         FROM reserva r
         JOIN paciente p ON p.id = r.paciente_id
         JOIN bloque_horario b ON b.id = r.bloque_horario_id
@@ -93,6 +93,7 @@ def _contexto(conexion: sqlite3.Connection, reserva_id: int) -> dict:
             "hora_inicio": fila["hora_inicio"],
             "hora_termino": fila["hora_termino"],
             "modalidad": fila["modalidad"],
+            "psiquiatra_cuenta_id": fila["psiquiatra_cuenta_id"],
         },
     }
 
@@ -275,7 +276,8 @@ def enviar_solicitud(
                 reserva_id, version, fecha_envio, tipo, estado,
                 respuesta, fecha_respuesta, fecha_cierre
             )
-            VALUES (?, ?, ?, ?, ?, NULL, NULL, NULL)
+            SELECT ?, ?, ?, ?, ?, NULL, NULL, NULL
+            WHERE EXISTS (SELECT 1 FROM reserva WHERE id = ? AND estado = ? AND version = ?)
             """,
             (
                 reserva_id,
@@ -283,8 +285,11 @@ def enviar_solicitud(
                 fecha_envio,
                 tipo,
                 ESTADO_SOLICITUD_PENDIENTE,
+                reserva_id, ESTADO_PENDIENTE, version,
             ),
         )
+        if cursor.rowcount != 1:
+            raise EstadoReservaInvalido("La reserva cambió durante el envío de la solicitud.")
         solicitud_id = cursor.lastrowid
 
         tokens_creados = tokens.crear_tokens(
@@ -416,7 +421,7 @@ def _registrar_respuesta(
                 "La solicitud pendiente cambió antes de registrar la respuesta."
             )
 
-        if respuesta == RESPUESTA_NO_ASISTIRA:
+        if respuesta == RESPUESTA_NO_ASISTIRA and bloque["psiquiatra_cuenta_id"] is None:
             registrar_cargo_con_aviso(
                 conexion, contexto, MOTIVO_CANCELACION,
                 configuracion, ahora,
@@ -564,7 +569,7 @@ def marcar_hora_sin_respuesta(
             """,
             (reserva_id, version, cola_correo.ESTADO_ENVIADO, iso_utc(inicio)),
         ).fetchone()
-        if enviado is not None:
+        if enviado is not None and contexto["bloque"]["psiquiatra_cuenta_id"] is None:
             cargo, correo_encolado = registrar_cargo_con_aviso(
                 conexion, contexto, MOTIVO_SIN_CONFIRMAR, configuracion, ahora,
             )

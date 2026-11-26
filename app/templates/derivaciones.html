@@ -24,6 +24,7 @@
     </nav>
   </header>
   <main>
+    {% if error %}<p role="alert">{{ error }}</p>{% endif %}
     {% if solicitud %}
     <section>
       <h2>Reserva {{ solicitud.id }} · {{ solicitud.nombre_completo }}</h2>
@@ -42,7 +43,7 @@
         <button type="submit">Registrar derivación</button>
       </form>
       {% else %}
-      <p>No hay médicos psiquiatras activos. Puedes gestionarlos en el <a href="/psicologa/derivaciones#psiquiatras">directorio</a>.</p>
+      <p>No hay médicos psiquiatras registrados y activos con un bloque libre para este horario y modalidad. Consulta el <a href="/psicologa/derivaciones#psiquiatras">directorio</a>.</p>
       {% endif %}
     </section>
     {% else %}
@@ -56,10 +57,12 @@
           {% else %}· Psiquiatra: {{ registro.psiquiatra }} · <a href="/reservas/{{ registro.reserva_id }}">Reserva {{ registro.reserva_id }}</a>
           {% endif %}
           <div>Creada: {{ registro.creada_en|fecha_hora_local }}{% if registro.aceptada_en %} · Aceptada: {{ registro.aceptada_en|fecha_hora_local }}{% endif %}</div>
+          {% if registro.fecha %}<div>{{ registro.fecha|fecha_larga }} · {{ registro.hora_inicio }} · {{ registro.modalidad }}</div>{% endif %}
           {% if recibidas and registro.estado == "Pendiente" %}
           <form method="post" action="/psiquiatra/derivaciones/{{ registro.id }}/aceptar">
             <input type="hidden" name="csrf" value="{{ request.state.csrf }}">
-            <button type="submit">Aceptar derivación</button>
+            <button type="submit">Aceptar y transferir reserva</button>
+            <button type="submit" formaction="/psiquiatra/derivaciones/{{ registro.id }}/rechazar">Rechazar derivación</button>
           </form>
           {% endif %}
         </li>
@@ -68,7 +71,31 @@
         {% endfor %}
       </ul>
     </section>
-    {% if not recibidas %}
+    {% if recibidas %}
+    <section id="agenda">
+      <h2>Mi agenda</h2>
+      <form method="post" action="/psiquiatra/derivaciones/horarios">
+        <input type="hidden" name="csrf" value="{{ request.state.csrf }}">
+        <label>Fecha <input type="date" name="fecha" required></label>
+        <label>Inicio del bloque de 50 minutos <input type="time" name="inicio" required></label>
+        <label>Modalidad
+          <select name="modalidad">
+            <option value="presencial">Presencial</option>
+            <option value="online">En línea</option>
+          </select>
+        </label>
+        <button type="submit">Agregar bloque</button>
+      </form>
+      <ul>
+        {% for bloque in agenda %}
+        <li>{{ bloque.fecha|fecha_larga }} · {{ bloque.hora_inicio }} a {{ bloque.hora_termino }} · {{ bloque.modalidad }}
+          {% if bloque.reserva_id %}· Reserva {{ bloque.reserva_id }} · {{ bloque.paciente }} · {{ bloque.estado }}
+          {% else %}· Libre{% endif %}
+        </li>
+        {% else %}<li>Sin bloques registrados.</li>{% endfor %}
+      </ul>
+    </section>
+    {% else %}
     <section id="psiquiatras">
       <h2>Médicos psiquiatras registrados</h2>
       <ul>

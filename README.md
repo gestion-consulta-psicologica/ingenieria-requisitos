@@ -15,7 +15,7 @@ El prototipo implementa las siguientes historias de usuario:
 - **HU-08 — Registrar asistencia:** la psicóloga registra asistencia o inasistencia. Se registra el cargo aprobado en caso de inasistencia injustificada.
 - **HU-09 — Actualizar ficha clínica:** la psicóloga consulta y guarda antecedentes y evoluciones sintéticas. Los intentos de acceso sin permiso quedan en bitácora.
 
-**Cierre académico:** 53 de 57 criterios verificados en demostración. Los cuatro criterios de HU-07 se conservan como pendientes de integración externa. Consulta el [estado de las 11 historias, la matriz por criterio y el historial de pruebas](./12-trazabilidad.md#cierre-académico-por-historia).
+**Cierre académico anterior a Evaluación 3:** 53 de 57 criterios verificados en demostración. Los cuatro criterios de HU-07 se conservan como pendientes de integración externa. HU-10 se documenta en el [recorrido operativo](#demostrar-hu-10--transferencia-a-psiquiatría) y en la [matriz de trazabilidad](./12-trazabilidad.md#evaluación-3--hu-10).
 
 ## Requisitos
 
@@ -569,3 +569,23 @@ usar datos clínicos o personales reales.
 - **HU-07.** Acordar con la psicóloga el sistema tributario y canal de emisión, quién autoriza y opera la emisión, los datos obligatorios y la configuración por ambiente. Obtener acceso autorizado a un entorno de prueba, definir la custodia de credenciales y validar emisión, asociación del folio devuelto por el proveedor, errores, reintentos y conciliación antes de habilitarlo. La validación de pagos y comprobantes se conserva en su alcance actual.
 - **Operación con datos reales.** Implementar cifrado en reposo con gestión de claves y acordar respaldo, restauración, supervisión y manejo seguro de datos clínicos. Validar el despliegue HTTPS y la entrega SMTP en el entorno elegido.
 - **Operación de correo.** Validar con la psicóloga la configuración SMTP, el remitente, la URL pública, las horas de notificación y el procedimiento de revisión de incidentes. La demostración local y las pruebas usan datos sintéticos.
+
+
+## Demostrar HU-10 · Transferencia a psiquiatría
+
+Usa el arranque operativo HTTPS descrito en este README, con una base aislada, una clave persistente de cifrado y cuentas persistentes. `python -m app.demo` usa autenticación básica y devuelve 404 para las rutas de HU-10, aunque aparecen en OpenAPI. Para alta autónoma de pacientes y entrega de enlaces de confirmación, configura SMTP según el arranque operativo.
+
+Usa tres perfiles o sesiones separadas para la psicóloga, el paciente y el psiquiatra.
+
+1. Como psicóloga, crea un bloque futuro. En **Derivaciones**, registra al médico psiquiatra después de verificar su identidad y correo.
+2. Como psiquiatra, abre **Mi agenda** y publica un bloque con la misma fecha, inicio y modalidad. Los bloques duran 50 minutos.
+3. Como paciente, reserva el horario publicado por la psicóloga. Anota el identificador que aparece en `/reservas/{id}`.
+4. Como psicóloga, abre el panel y verifica que la reserva está pendiente. Elige **Derivar consulta** y selecciona al médico.
+5. Como psiquiatra, abre **Derivaciones recibidas** y elige **Aceptar y transferir reserva**. Comprueba que la cita aparece en **Mi agenda**.
+6. Como paciente, abre el mismo identificador desde **Mis reservas**. Comprueba que la cita mantiene fecha y hora, sigue pendiente y muestra al psiquiatra. En la disponibilidad pública, el bloque original de la psicóloga vuelve a ofrecerse mientras siga libre y sea futuro.
+7. Con planificador y SMTP configurados, comprueba que el aviso de cambio y la siguiente solicitud corresponden a la misma reserva. Si existía una solicitud del ciclo previo, comprueba que se muestra como reemplazada y que su enlace anterior ya no permite responder.
+8. En **Historial de cambios**, comprueba el profesional anterior, el nuevo y el cambio de ciclo. Reinicia contra la misma base aislada y verifica que la reserva y su historial se mantienen.
+
+Para comprobar el rechazo, usa otra reserva y elige **Rechazar derivación**. La reserva sigue con la psicóloga.
+
+Al arrancar se aplican la 019 (cuentas de psiquiatra y derivaciones), la 020 (rol en la bitácora) y la 021 (agenda psiquiátrica y transferencias). La agenda psiquiátrica no se publica para reservas directas. La atención, asistencia y facturación psiquiátricas requieren reglas propias antes de incorporarse.
