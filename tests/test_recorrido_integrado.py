@@ -360,7 +360,10 @@ def test_psicologa_registra_asistencia_sin_cambiar_el_pago(
 
     atencion = conexion.execute("SELECT estado, justificacion_inasistencia FROM atencion WHERE id = 1").fetchone()
     assert atencion["estado"] == estado
-    assert atencion["justificacion_inasistencia"] == (justificacion or None)
+    # RD-02: la justificación puede contener datos de salud y se guarda cifrada.
+    assert app.state.cifrador.descifrar(atencion["justificacion_inasistencia"]) == (justificacion or None)
+    if justificacion:
+        assert atencion["justificacion_inasistencia"].startswith("enc:v1:")
     pacientes = conexion.execute(
         """
         SELECT a.id, p.rut, a.estado FROM atencion a
@@ -542,3 +545,38 @@ def test_mis_reservas_en_demo_lista_lo_del_navegador_y_navega_desde_todas_las_pa
         detalle = navegador.get(ruta_reserva_nueva)
         for enlace in ('href="/disponibilidad"', 'href="/mis-reservas"', 'href="/psicologa"'):
             assert enlace in detalle.text
+
+
+def _config_smtp_local(puerto, **cambios):
+    return replace(
+        cargar_configuracion(), smtp_host="127.0.0.1", smtp_puerto=puerto,
+        smtp_seguridad="ninguna", smtp_remitente="consulta@example.cl", **cambios,
+    )
+
+
+def test_probar_correo_informa_exito_y_fallo_de_credenciales(capsys):
+    from app.probar_correo import probar
+
+    smtp = ServidorSMTPFalso(usuario="cuenta@example.cl", clave="correcta", requerir_auth=True)
+    try:
+        ok = probar("destino@example.cl", _config_smtp_local(
+            smtp.puerto, smtp_usuario="cuenta@example.cl", smtp_clave="correcta"))
+        assert ok == 0 and len(smtp.mensajes) == 1
+        assert "Correo aceptado por el servidor SMTP" in capsys.readouterr().out
+
+        mala = probar("destino@example.cl", _config_smtp_local(
+            smtp.puerto, smtp_usuario="cuenta@example.cl", smtp_clave="incorrecta"))
+        assert mala == 3 and len(smtp.mensajes) == 1
+    finally:
+        smtp.cerrar()
+
+    sin_config = probar("destino@example.cl", replace(cargar_configuracion(), smtp_host=None))
+    assert sin_config == 2
+    assert "Correo no configurado" in capsys.readouterr().err
+
+
+def test_demo_con_correo_real_exige_smtp_configurado(monkeypatch):
+    monkeypatch.delenv("SMTP_HOST", raising=False)
+    monkeypatch.setattr(demo.uvicorn, "run", lambda *a, **k: pytest.fail("no debe arrancar"))
+    with pytest.raises(SystemExit, match="requiere SMTP configurado"):
+        demo.main(correo_real=True)

@@ -76,6 +76,8 @@ class Cargo {
   monto : Monto
   motivo : MotivoCargo
   fecha : Fecha
+  estado : EstadoPago
+  montoPagado : Monto
 }
 
 class Boleta {
@@ -111,6 +113,7 @@ Reserva "1" -- "0..1" Atencion : origina >
 Reserva "0..1" -- "0..1" Cargo : genera >
 Atencion "0..1" -- "0..1" Cargo : genera >
 Paciente "1" -- "0..*" Cargo : adeuda >
+Cargo "1" -- "0..*" ComprobanteTransferencia : se paga con >
 
 ' Restricción: cada Cargo tiene exactamente un origen.
 note right of Cargo

@@ -4,6 +4,7 @@
   <a href="/disponibilidad"{% if request.url.path == "/disponibilidad" %} aria-current="page"{% endif %}>Disponibilidad</a>
   {% if not request.app.state.cuentas_persistentes %}
   <a href="/mis-reservas"{% if request.url.path == "/mis-reservas" %} aria-current="page"{% endif %}>Mis reservas</a>
+  <a href="/cargos"{% if request.url.path == "/cargos" %} aria-current="page"{% endif %}>Mis cargos</a>
   {% if request.app.state.clave_psicologa_demo %}
   <a href="/psicologa">Psicóloga</a>
   {% endif %}

@@ -22,4 +22,4 @@
 
 - [x] 5.1 Regla del pago ante inasistencia decidida por el estudiante (2026-11-25): se mantiene el cobro completo.
 - [x] 5.2 Confirmación del estudiante de la ficha `.cin324/historias/HU-08.md`.
-- [ ] 5.3 Sincronizar la especificación en `openspec/specs/` y archivar el cambio.
+- [x] 5.3 Sincronizar la especificación en `openspec/specs/` y archivar el cambio (2026-11-26).

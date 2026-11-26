@@ -7,6 +7,7 @@ from fastapi.security import HTTPBasicCredentials
 
 from app.rutas.disponibilidad import obtener_conexion
 from app.rutas.psicologa import autenticacion, verificar_formulario_psicologa
+from app.servicios.cifrado import ClaveCifradoInvalida
 
 router = APIRouter(prefix="/psicologa/fichas")
 CAMPOS_ANTECEDENTES = (
@@ -103,6 +104,23 @@ def ficha(
         """,
         (paciente_id,),
     ).fetchall()
+    cifrador = request.app.state.cifrador
+    try:
+        if antecedentes is not None:
+            antecedentes = {
+                "fecha_apertura": antecedentes["fecha_apertura"],
+                **{clave: cifrador.descifrar(antecedentes[clave]) for clave, _ in CAMPOS_ANTECEDENTES},
+            }
+        atenciones = [
+            {
+                "id": fila["id"], "fecha": fila["fecha"],
+                "observaciones": cifrador.descifrar(fila["observaciones"]),
+                "pruebas_aplicadas": cifrador.descifrar(fila["pruebas_aplicadas"]),
+            }
+            for fila in atenciones
+        ]
+    except ClaveCifradoInvalida as error:
+        raise HTTPException(500, detail=str(error)) from error
     versiones_anteriores = conexion.execute(
         """
         SELECT fecha_reemplazo FROM ficha_clinica_historial
@@ -143,7 +161,38 @@ def guardar_antecedentes(
         motivo_consulta.strip(), antecedentes_salud_mental.strip(),
         diagnosticos.strip(), medicamentos.strip(), datos_adulto_responsable.strip(),
     )
-    with conexion:
+    cifrador = request.app.state.cifrador
+    campos = [clave for clave, _ in CAMPOS_ANTECEDENTES]
+    conexion.execute("BEGIN IMMEDIATE")
+    try:
+        actual = conexion.execute(
+            f"SELECT {', '.join(campos)} FROM ficha_clinica WHERE paciente_id = ?",
+            (paciente_id,),
+        ).fetchone()
+        try:
+            anteriores = tuple(cifrador.descifrar(actual[c]) for c in campos) if actual else None
+        except ClaveCifradoInvalida as error:
+            raise HTTPException(500, detail=str(error)) from error
+        if anteriores == valores:
+            # Guardado sin cambios: no se crea una versión nueva ni se reescribe.
+            registrar_acceso(
+                conexion, "Psicóloga", "escritura", "permitido",
+                paciente_id, request.state.usuario_clinico,
+            )
+            conexion.commit()
+            return RedirectResponse(
+                f"/psicologa/fichas/{paciente_id}?antecedentes_guardados=1#antecedentes",
+                status_code=303,
+            )
+        if anteriores is not None and any(anteriores):
+            # Se conserva la versión anterior (cifrada) antes de reemplazarla.
+            conexion.execute(
+                f"""
+                INSERT INTO ficha_clinica_historial (paciente_id, {', '.join(campos)})
+                VALUES (?, {', '.join('?' for _ in campos)})
+                """,
+                (paciente_id, *(cifrador.cifrar(v) for v in anteriores)),
+            )
         resultado = conexion.execute(
             """
             INSERT INTO ficha_clinica (
@@ -158,7 +207,7 @@ def guardar_antecedentes(
                 medicamentos = excluded.medicamentos,
                 datos_adulto_responsable = excluded.datos_adulto_responsable
             """,
-            (*valores, paciente_id),
+            (*(cifrador.cifrar(v) for v in valores), paciente_id),
         )
         if not resultado.rowcount:
             raise HTTPException(404)
@@ -166,6 +215,10 @@ def guardar_antecedentes(
             conexion, "Psicóloga", "escritura", "permitido",
             paciente_id, request.state.usuario_clinico,
         )
+        conexion.commit()
+    except Exception:
+        conexion.rollback()
+        raise
     return RedirectResponse(
         f"/psicologa/fichas/{paciente_id}?antecedentes_guardados=1#antecedentes",
         status_code=303,
@@ -204,7 +257,11 @@ def guardar_evolucion(
                 (atencion_id, paciente_id, observaciones, pruebas_aplicadas)
             VALUES (?, ?, ?, ?) ON CONFLICT (atencion_id) DO NOTHING
             """,
-            (atencion_id, paciente_id, observaciones, pruebas_aplicadas.strip()),
+            (
+                atencion_id, paciente_id,
+                request.app.state.cifrador.cifrar(observaciones),
+                request.app.state.cifrador.cifrar(pruebas_aplicadas.strip()),
+            ),
         )
         if not resultado.rowcount:
             raise HTTPException(409, detail="La atención ya tiene una evolución registrada.")

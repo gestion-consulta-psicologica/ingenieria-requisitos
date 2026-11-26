@@ -16,7 +16,7 @@
 | RP-10 | HU-04 | CU-05 | DSS-04 | EST-01 | Reserva, BloqueHorario |
 | RP-11 | HU-04 | CU-05 | DSS-04 | EST-01 | Reserva, SolicitudConfirmacion |
 | RP-12 | HU-05 | CU-06 | DSS-05 | EST-02 | Pago, ComprobanteTransferencia, Atencion |
-| RP-13 | HU-06 | CU-07 | — | EST-02 | Pago, ComprobanteTransferencia |
+| RP-13 | HU-06 | CU-07, CU-12 | — | EST-02 | Pago, Cargo, ComprobanteTransferencia |
 | RP-14 | HU-07 | CU-08 | DSS-02 | EST-03 | Boleta, Pago, Atencion, Psicologa, Paciente |
 | RP-15 | HU-08 | CU-09 | — | EST-04 | Atencion, Paciente |
 | RP-16 | HU-09 | CU-10 | — | — | FichaClinica, RegistroEvolucion, Atencion |
@@ -147,7 +147,7 @@ Los grupos comparten pruebas. Los resultados históricos no se suman ni represen
 
 ## Observaciones
 
-- **HU-09 / CU-10:** RP-16 corresponde a CA1–CA3 y a la consulta y guardado de evoluciones en `app/rutas/clinica.py`. RP-17 y RD-01 se verifican en alcance de demostración mediante CA4 en `tests/test_hu09_ficha_clinica.py`: un paciente autenticado recibe 403 en lectura y escritura y ambas denegaciones quedan registradas sin contenido clínico. RD-02 (cifrado de datos en reposo) sigue pendiente.
+- **HU-09 / CU-10:** RP-16 corresponde a CA1–CA3 y a la consulta y guardado de evoluciones en `app/rutas/clinica.py`. RP-17 y RD-01 se verifican en alcance de demostración mediante CA4 en `tests/test_hu09_ficha_clinica.py`: un paciente autenticado recibe 403 en lectura y escritura y ambas denegaciones quedan registradas sin contenido clínico. RD-02 (cifrado de datos en reposo) se implementó el 2026-11-25 en `app/servicios/cifrado.py` y se verifica en `tests/test_hu09_ficha_clinica.py` (datos cifrados en SQLite, cifrado de datos antiguos al arrancar y rechazo de una clave distinta).
 
 - **RP-07 a RP-11 (cancelación y reagendamiento):** se representan en DSS-04 y en las transiciones de EST-01. El reagendamiento conserva el bloque anterior en el historial de cambios y reinicia el ciclo de solicitudes de confirmación sobre la misma reserva; la cancelación libera el bloque sin crear un nuevo ciclo.
 

@@ -209,7 +209,10 @@ def guardar_asistencia(
 ):
     verificar_formulario_psicologa(request, csrf)
     try:
-        registrar_asistencia(conexion, atencion_id, estado, justificacion)
+        registrar_asistencia(
+            conexion, atencion_id, estado, justificacion,
+            cifrador=request.app.state.cifrador,
+        )
     except AtencionNoEncontrada as error:
         raise HTTPException(status_code=404, detail=str(error)) from error
     except AsistenciaInvalida as error:

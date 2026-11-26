@@ -93,12 +93,16 @@ class ServicioCorreoSMTP:
 
         config = self.configuracion
         mensaje = self._mensaje(destinatario, asunto, cuerpo_texto, cuerpo_html)
+        # Nombre para el saludo EHLO. Sin él, smtplib llama a socket.getfqdn(),
+        # que en equipos con DNS lento agrega varios segundos a cada correo.
+        nombre_local = (config.smtp_remitente or "").rpartition("@")[2] or "localhost"
         cliente: smtplib.SMTP | None = None
         try:
             if config.smtp_seguridad == "ssl":
                 cliente = smtplib.SMTP_SSL(
                     config.smtp_host,
                     config.smtp_puerto,
+                    local_hostname=nombre_local,
                     timeout=config.smtp_timeout,
                     context=ssl.create_default_context(),
                 )
@@ -106,6 +110,7 @@ class ServicioCorreoSMTP:
                 cliente = smtplib.SMTP(
                     config.smtp_host,
                     config.smtp_puerto,
+                    local_hostname=nombre_local,
                     timeout=config.smtp_timeout,
                 )
                 cliente.ehlo()
