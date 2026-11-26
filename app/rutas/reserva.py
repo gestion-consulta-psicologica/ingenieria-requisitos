@@ -9,7 +9,9 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.security import HTTPBasicCredentials
 
 from app.db.conexion import conectar
-from app.rutas.acceso_reserva import conceder_acceso_reserva, es_psicologa, verificar_paciente, verificar_titular
+from app.rutas.acceso_reserva import (
+    accesos_del_navegador, conceder_acceso_reserva, es_psicologa, verificar_paciente, verificar_titular,
+)
 from app.rutas.psicologa import autenticacion
 from app.servicios import cola_correo, tokens
 from app.servicios.atenciones import obtener_atencion_de_reserva
@@ -165,6 +167,7 @@ def _obtener_detalle(
         ),
         "puede_gestionar": (
             reserva["estado"] == "Confirmada"
+            and ahora_utc() < inicio
             and not reserva_tiene_atencion(conexion, reserva_id)
         ),
         "atencion_pago": obtener_atencion_de_reserva(conexion, reserva_id),
@@ -333,6 +336,35 @@ def reservar(
     reserva_id = resultado["reserva"]["id"]
     return conceder_acceso_reserva(
         request, RedirectResponse(f"/reservas/{reserva_id}", status_code=303), reserva_id,
+    )
+
+
+@router.get("/mis-reservas", response_class=HTMLResponse)
+def mis_reservas_demo(
+    request: Request,
+    conexion: sqlite3.Connection = Depends(obtener_conexion),
+    credenciales: HTTPBasicCredentials | None = Depends(autenticacion),
+):
+    if request.app.state.cuentas_persistentes:
+        return RedirectResponse("/cuenta/reservas", status_code=303)
+    pacientes, reservas_ids = accesos_del_navegador(request, credenciales)
+    reservas = []
+    if pacientes or reservas_ids:
+        marcas_p = ", ".join("?" for _ in pacientes) or "NULL"
+        marcas_r = ", ".join("?" for _ in reservas_ids) or "NULL"
+        reservas = conexion.execute(
+            f"""
+            SELECT r.id, r.estado, b.fecha, b.hora_inicio
+            FROM reserva r JOIN bloque_horario b ON b.id = r.bloque_horario_id
+            WHERE r.paciente_id IN ({marcas_p}) OR r.id IN ({marcas_r})
+            ORDER BY b.fecha DESC, b.hora_inicio DESC
+            """,
+            (*pacientes, *reservas_ids),
+        ).fetchall()
+    return request.app.state.templates.TemplateResponse(
+        request=request, name="mis_reservas.html",
+        context={"reservas": reservas, "modo_demo": True},
+        headers={"Cache-Control": "no-store"},
     )
 
 

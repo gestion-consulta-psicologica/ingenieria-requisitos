@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cargo — Gestión de consulta psicológica</title>
+  {% include "estilos_pago.html" %}
+</head>
+<body>
+  <header>
+    <h1>Gestión de consulta psicológica</h1>
+    {% include "nav.html" %}
+  </header>
+  <main>
+    <h2>{% if vista == "psicologa" %}Revisar el pago del cargo{% else %}Pagar cargo{% endif %}</h2>
+
+    {% if registrado %}<div class="aviso" role="status"><p>El comprobante quedó registrado. La psicóloga lo revisará para dar el cargo por pagado.</p></div>{% endif %}
+    {% if actualizado %}<div class="aviso" role="status"><p>El estado del cargo quedó registrado.</p></div>{% endif %}
+    {% if error %}<div class="error"><p>{{ error }}</p></div>{% endif %}
+
+    <section>
+      <h3>Cargo</h3>
+      <p><strong>Paciente:</strong> {{ cargo.paciente_nombre }}{% if vista == "psicologa" %} · {{ cargo.paciente_rut }}{% endif %}</p>
+      <p><strong>Motivo:</strong> {{ cargo.motivo_texto }}</p>
+      {% if cargo.bloque_fecha %}<p><strong>Hora asociada:</strong> {{ cargo.bloque_fecha|fecha_dia }}, {{ cargo.bloque_hora_inicio }}</p>{% endif %}
+      <p><strong>Monto:</strong> {{ cargo.monto|clp }}</p>
+      <p><strong>Monto pagado:</strong> {{ cargo.monto_pagado|clp }}</p>
+      <p><strong>Estado:</strong> {{ cargo.estado }}</p>
+      {% if cargo.admite_pago and cargo.monto_pagado %}<p><strong>Diferencia pendiente:</strong> {{ cargo.saldo|clp }}</p>{% endif %}
+      {% if cargo.reserva_origen %}<p><a href="/reservas/{{ cargo.reserva_origen }}">Ver reserva asociada</a></p>{% endif %}
+    </section>
+
+    {% if vista == "paciente" and cargo.admite_pago %}
+    <section>
+      <h3>Datos de la transferencia</h3>
+      <p class="detalle">Transfiere el monto y registra el comprobante. Puedes agregar más de uno si pagas en partes.</p>
+      <form method="post" action="/cargos/{{ cargo.id }}/comprobante">
+        <input type="hidden" name="csrf" value="{{ request.state.csrf }}">
+        <label for="monto">Monto transferido (CLP)</label>
+        <input id="monto" name="monto" type="text" inputmode="numeric" value="{{ valores.monto }}" required>
+        {% if errores.monto %}<p class="error-campo">{{ errores.monto }}</p>{% endif %}
+        <label for="fecha_transferencia">Fecha de la transferencia</label>
+        <input id="fecha_transferencia" name="fecha_transferencia" type="date" value="{{ valores.fecha_transferencia }}" required>
+        {% if errores.fecha_transferencia %}<p class="error-campo">{{ errores.fecha_transferencia }}</p>{% endif %}
+        <label for="cuenta_destino">Cuenta de destino</label>
+        <input id="cuenta_destino" name="cuenta_destino" type="text" value="{{ valores.cuenta_destino }}" required>
+        {% if errores.cuenta_destino %}<p class="error-campo">{{ errores.cuenta_destino }}</p>{% endif %}
+        <button type="submit">Registrar comprobante</button>
+      </form>
+    </section>
+    {% endif %}
+
+    <section>
+      <h3>Comprobantes</h3>
+      {% if cargo.comprobantes %}
+      <table>
+        <thead><tr><th>Monto</th><th>Fecha de transferencia</th><th>Cuenta de destino</th><th>Verificación</th></tr></thead>
+        <tbody>
+          {% for comprobante in cargo.comprobantes %}
+          <tr>
+            <td>{{ comprobante.monto|clp }}</td>
+            <td>{{ comprobante.fecha_transferencia }}</td>
+            <td>{{ comprobante.cuenta_destino }}</td>
+            <td>
+              {% if comprobante.verificado %}Verificado
+              {% elif vista == "psicologa" and cargo.admite_pago %}
+              <label><input type="checkbox" name="comprobantes" value="{{ comprobante.id }}" form="verificar-cargo"> Verificar comprobante {{ comprobante.id }}</label>
+              {% else %}Por revisar{% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p class="detalle">El cargo no tiene comprobantes registrados.</p>
+      {% endif %}
+    </section>
+
+    {% if vista == "psicologa" and cargo.admite_pago and cargo.comprobantes %}
+    <section>
+      <h3>Registrar estado del cargo</h3>
+      <form id="verificar-cargo" method="post" action="/psicologa/cargos/{{ cargo.id }}/estado">
+        <input type="hidden" name="csrf" value="{{ request.state.csrf }}">
+        <p>Selecciona los comprobantes revisados y el estado que corresponde al monto comprobado.</p>
+        <label>Estado del cargo
+          <select name="estado" required>
+            <option value="">Seleccionar estado</option>
+            <option value="Pago incompleto">Pago incompleto</option>
+            <option value="Pagado">Pagado</option>
+          </select>
+        </label>
+        <button type="submit">Registrar estado</button>
+      </form>
+    </section>
+    {% endif %}
+
+    <p>{% if vista == "psicologa" %}<a href="/psicologa/cargos">Volver a cargos por cobrar</a>{% else %}<a href="/cargos">Volver a mis cargos</a>{% endif %}</p>
+  </main>
+</body>
+</html>

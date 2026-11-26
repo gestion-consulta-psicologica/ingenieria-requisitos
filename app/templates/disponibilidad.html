@@ -24,13 +24,7 @@
 <body>
   <header>
     <h1>Gestión de consulta psicológica</h1>
-    <nav aria-label="Navegación principal">
-      <a href="/disponibilidad" aria-current="page">Paciente</a>
-      {% if request.app.state.clave_psicologa_demo %}
-      <a href="/psicologa">Psicóloga</a>
-      {% endif %}
-      {% include "cuenta_nav.html" %}
-    </nav>
+    {% include "nav.html" %}
   </header>
 
   <main>

@@ -7,6 +7,9 @@ from app.tiempo import ZONA_POR_DEFECTO, ahora_utc, zona
 
 # Regla de vigencia de EST-01, confirmada en la ficha de HU-01.
 ESTADOS_VIGENTES = ("Pendiente de confirmación", "Confirmada")
+# Un bloque cuya reserva se finalizó ya se consumió y no vuelve a ofrecerse
+# (11-diagramas-estado.md), aunque Finalizada no sea un estado vigente.
+ESTADOS_QUE_OCUPAN_BLOQUE = (*ESTADOS_VIGENTES, "Finalizada")
 APERTURA = time(9)
 CIERRE = time(19)
 DURACION_ATENCION = timedelta(minutes=50)
@@ -103,14 +106,14 @@ def consultar_bloques_reservables(
               SELECT 1
               FROM reserva r
               WHERE r.bloque_horario_id = b.id
-                AND r.estado IN ({_marcadores(len(ESTADOS_VIGENTES))})
+                AND r.estado IN ({_marcadores(len(ESTADOS_QUE_OCUPAN_BLOQUE))})
           )
         ORDER BY b.fecha, b.hora_inicio, b.id
         LIMIT ?
         """,
         (*parametros, local.date().isoformat(), APERTURA.isoformat(),
          CIERRE.isoformat(), local.date().isoformat(),
-         local.strftime("%H:%M:%S"), *ESTADOS_VIGENTES, limite),
+         local.strftime("%H:%M:%S"), *ESTADOS_QUE_OCUPAN_BLOQUE, limite),
     )
     return [dict(fila) for fila in filas]
 

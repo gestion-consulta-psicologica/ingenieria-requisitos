@@ -18,7 +18,7 @@ Archivo fuente: [`./diagramas/modelo-dominio.puml`](./diagramas/modelo-dominio.p
 | Atencion | Sesión psicológica que se origina de una reserva confirmada. | tipoAtencion (presencial / online), monto, estado (programada, realizada, inasistencia, inasistencia justificada) |
 | Pago | Obligación de pago de una atención y su situación. | montoAtencion, montoPagado, estado (pendiente, pagado, pago incompleto) |
 | ComprobanteTransferencia | Respaldo de la transferencia que hace el paciente para pagar una atención. | monto, fechaTransferencia, cuentaDestino (cuenta de la psicóloga) |
-| Cargo | Cobro de $5.000 generado cuando el paciente cancela una reserva, no confirma su asistencia o presenta una inasistencia sin justificación. | monto, motivo (cancelación / sin confirmar / inasistencia), fecha |
+| Cargo | Cobro de $5.000 generado cuando el paciente cancela una reserva, no confirma su asistencia o presenta una inasistencia sin justificación. | monto, motivo (cancelación / sin confirmar / inasistencia), fecha, estado (Pendiente / Pago incompleto / Pagado), montoPagado |
 | Boleta | Boleta de honorarios electrónica que respalda el cobro de una atención pagada. | numeroFolio, fechaEmision, monto, estado (en preparación, pendiente de emisión, emitida) |
 | FichaClinica | Registro clínico del paciente con sus antecedentes (anamnesis). | fechaApertura, motivoConsulta, antecedentesSaludMental, diagnosticos, medicamentos, datosAdultoResponsable |
 | RegistroEvolucion | Anotación clínica de la psicóloga sobre una atención realizada. | fecha, observaciones, pruebasAplicadas |
@@ -35,6 +35,7 @@ Archivo fuente: [`./diagramas/modelo-dominio.puml`](./diagramas/modelo-dominio.p
 | genera | Reserva – Cargo | 1 a 0..1 | Una reserva genera un cargo de $5.000 cuando el paciente cancela o no confirma su asistencia. La cancelación realizada por la psicóloga no genera cargos. |
 | genera | Atencion – Cargo | 1 a 0..1 | Una atención genera un cargo de $5.000 cuando la psicóloga registra una inasistencia sin justificación. La inasistencia justificada no genera cargos. |
 | adeuda | Paciente – Cargo | 1 a 0..* | Todos los cargos quedan asociados al paciente responsable de la reserva o atención. |
+| se paga con | Cargo – ComprobanteTransferencia | 1 a 0..* | El paciente paga un cargo con uno o más comprobantes de transferencia, que la psicóloga verifica (HU-06). |
 | se paga con | Atencion – Pago | 1 a 1 | Toda atención origina un pago en estado pendiente; no existe atención sin pago. |
 | se respalda con | Pago – ComprobanteTransferencia | 1 a 0..* | El paciente envía uno o más comprobantes; con varios se completa un pago incompleto. |
 | se documenta con | Atencion – Boleta | 1 a 0..1 | Solo se emite boleta cuando la atención está pagada. |

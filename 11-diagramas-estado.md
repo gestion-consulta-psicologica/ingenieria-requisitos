@@ -87,6 +87,8 @@ Archivo fuente: [`./diagramas/est-02.puml`](./diagramas/est-02.puml)
 | Pago incompleto | psicóloga verifica nuevo comprobante | total comprobado < monto de la atención | actualizar diferencia pendiente | Pago incompleto (transición interna) |
 | Pagado | — | — | — | (final) |
 
+**Cargo (HU-06):** un Cargo de $5.000 sigue el mismo ciclo de vida que el Pago: nace en **Pendiente**; cuando la psicóloga verifica comprobantes pasa a **Pagado** si el total comprobado iguala $5.000 o a **Pago incompleto** si es menor (transición interna hasta completarlo); **Pagado** es final.
+
 **Nota:** la emisión de la boleta se modela en EST-03 y no cambia el estado del Pago. Un pago puede quedar Pagado aunque la boleta siga pendiente de emisión.
 
 ## EST-03 — Ciclo de vida de Boleta

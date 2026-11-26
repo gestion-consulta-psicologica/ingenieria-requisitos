@@ -1,6 +1,6 @@
 # HU-02A — Registrar datos del paciente
 
-**Estado:** lista para especificar  ·  **Confirmada por el estudiante:** 2026-11-17 (consistencia revisada el 2026-11-17)
+**Estado:** implementada  ·  **Confirmada por el estudiante:** 2026-11-17 (consistencia revisada el 2026-11-17; correo obligatorio decidido el 2026-11-25)
 **Fuente de la historia:** historia derivada, agregada a `04-historias-usuario.md` durante la validación de HU-02 · **Gherkin:** `07-criterios-aceptacion.md`
 
 ## Historia
@@ -17,7 +17,7 @@ Como paciente, quiero registrar mis datos personales en la plataforma, para pode
 ## Entidades del modelo de dominio
 | Entidad | Operación en esta historia | Atributos usados | Asociaciones y multiplicidades |
 |---------|----------------------------|------------------|--------------------------------|
-| **Paciente** | Crea si el RUT no existe; reutiliza si ya existe | Obligatorios: nombreCompleto, rut y al menos uno de telefono o correo. Opcionales: fechaNacimiento, direccion, escolaridad, ocupacion | Paciente `1 – 0..*` Reserva; Paciente `1 – 0..1` FichaClinica |
+| **Paciente** | Crea si el RUT no existe; reutiliza si ya existe | Obligatorios: nombreCompleto, rut y correo. Opcionales: telefono, fechaNacimiento, direccion, escolaridad, ocupacion | Paciente `1 – 0..*` Reserva; Paciente `1 – 0..1` FichaClinica |
 
 El RUT identifica al Paciente y es único en el sistema. Los demás datos personales del modelo quedan opcionales en esta historia.
 
@@ -27,7 +27,7 @@ No aplica: la clase Paciente no tiene diagrama de estado.
 ## Flujo de interacción
 1. El Paciente, dentro del flujo de reserva de HU-02, ingresa su RUT.
 2. El sistema verifica que el RUT no esté registrado.
-3. El sistema muestra el formulario de registro: nombre completo, RUT y medio de contacto (teléfono o correo).
+3. El sistema muestra el formulario de registro: nombre completo, RUT, correo electrónico (obligatorio) y teléfono (opcional).
 4. El Paciente completa los datos y guarda.
 5. El sistema valida los datos obligatorios y que el RUT no exista ya.
 6. Si todo es válido, el sistema registra al Paciente y confirma el registro.
@@ -50,14 +50,14 @@ Característica: Registro de datos del paciente
 
   Escenario: Un paciente nuevo se registra desde la reserva
     Dado que el paciente ingresó un RUT que no está registrado
-    Cuando ingresa su nombre completo, su RUT y un medio de contacto
+    Cuando ingresa su nombre completo, su RUT y su correo electrónico
     Y guarda sus datos
     Entonces el sistema registra al paciente
     Y retoma la reserva del bloque horario seleccionado
 
   Escenario: El paciente no completa los datos obligatorios
     Dado que el paciente está registrando sus datos
-    Cuando intenta guardar sin nombre completo, RUT o medio de contacto
+    Cuando intenta guardar sin nombre completo, RUT o correo electrónico
     Entonces el sistema no registra al paciente
     Y le informa qué dato falta
 
@@ -70,11 +70,12 @@ Característica: Registro de datos del paciente
 
 ## Decisiones tomadas en la validación
 - **Historia derivada:** se creó durante la validación de HU-02 (2026-11-17) porque el modelo de dominio exige un Paciente registrado para reservar y HU-02 no debe crearlo. Confirmado por el estudiante.
-- **Datos obligatorios:** nombreCompleto, rut y al menos uno de teléfono o correo. El resto de los atributos del Paciente queda opcional. Confirmado el 2026-11-17.
+- **Datos obligatorios:** nombreCompleto, rut y correo. El teléfono y el resto de los atributos del Paciente quedan opcionales. Confirmado el 2026-11-17; el correo pasó a ser obligatorio el 2026-11-25 (ver decisión siguiente).
 - **Secuencia de implementación:** primero HU-02 y después HU-02A. Al estar HU-02 ya construida, HU-02A implementa la página `/pacientes/registro` y el retorno a la reserva del bloque seleccionado. Confirmado el 2026-11-17.
 - **Requisito y trazabilidad:** se agregó RP-21 a `03-requisitos.md` y su fila en `12-trazabilidad.md` (RP-21 → HU-02A → CU-11 → Paciente).
 - **Retomar la reserva:** al registrarse correctamente, se redirige a `/reservar/<bloque_id>?rut=<rut>` con el RUT precargado; el paciente confirma la reserva y HU-02 la registra. Confirmado el 2026-11-17.
-- **Medio de contacto:** la base de datos debe permitir `correo` vacío (migración `002`) porque el paciente puede registrarse solo con teléfono; la aplicación exige al menos uno de teléfono o correo. Confirmado el 2026-11-17.
+- **Medio de contacto:** originalmente se aceptaba registrarse solo con teléfono (migración `002` dejó `correo` opcional en la base). Confirmado el 2026-11-17.
+- **Correo obligatorio (decidido por el estudiante el 2026-11-25):** la solicitud de confirmación de HU-03 solo llega por correo y la respuesta exige que ese correo se haya enviado; un paciente sin correo nunca podría confirmar su hora. Desde ahora la aplicación exige un correo con formato válido. La columna `correo` sigue admitiendo nulos para conservar los pacientes antiguos; no se crea migración.
 - **RUT:** se normaliza (sin puntos ni guion, K mayúscula) y se exige único; no se valida dígito verificador. Confirmado el 2026-11-17.
 - **Diagramas:** CU-11 se agregó a `diagramas/casos-de-uso.puml` y la actividad «Registrar datos del paciente» a `diagramas/TO-BE.bpmn` el 2026-11-17. El `TO-BE.png` debe re-exportarse desde el editor BPMN.
 

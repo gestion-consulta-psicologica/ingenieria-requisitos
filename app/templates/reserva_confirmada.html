@@ -31,6 +31,7 @@
 <body>
   <header>
     <h1>Gestión de consulta psicológica</h1>
+    {% include "nav.html" %}
   </header>
 
   <main>
@@ -87,7 +88,7 @@
       </p>
       <p><strong>Número de reserva:</strong> {{ reserva.reserva_id }}</p>
       <p><strong>Ciclo de confirmación:</strong> {{ reserva.version }}</p>
-      <p><strong>Fecha de registro:</strong> {{ reserva.fecha_registro }}</p>
+      <p><strong>Fecha de registro:</strong> {{ reserva.fecha_registro|fecha_hora_local }}</p>
       <p><strong>Solicitud de confirmación programada:</strong> {{ vispera_programada }}</p>
       <p><strong>Recordatorio programado:</strong> {{ recordatorio_programado }}</p>
       <p><strong>Vencimiento sin respuesta:</strong> {{ atencion_programada }}</p>
@@ -293,6 +294,10 @@
       <p><strong>Monto:</strong> ${{ cargo_monto }}</p>
       <p><strong>Motivo:</strong> {{ cargo.motivo }}</p>
       <p><strong>Fecha:</strong> {{ cargo.fecha }}</p>
+      <p><strong>Estado del cargo:</strong> {{ cargo.estado }}</p>
+      {% if not request.state.lectura_admin %}
+      <p><a href="/cargos/{{ cargo.id }}"><button type="button">{% if cargo.estado == "Pagado" %}Ver pago del cargo{% else %}Pagar cargo{% endif %}</button></a></p>
+      {% endif %}
     </section>
     {% endif %}
 

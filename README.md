@@ -11,7 +11,7 @@ El prototipo implementa las siguientes historias de usuario:
 - **HU-04 — Reagendar o cancelar una hora:** el paciente cancela una reserva confirmada o la cambia por un bloque libre de los próximos 14 días, con historial de cambios y un nuevo ciclo de confirmación.
 - **HU-05 — Comprobar el pago:** la psicóloga consulta la información del pago de una atención, sus comprobantes y las atenciones con pago pendiente, sin modificar el estado.
 - **HU-05A — Registrar la atención y el comprobante de pago:** la reserva confirmada origina automáticamente la atención y su pago, y el paciente registra uno o más comprobantes de transferencia.
-- **HU-06 — Registrar el estado del pago:** la psicóloga verifica comprobantes y selecciona un estado compatible con el monto comprobado.
+- **HU-06 — Registrar el estado del pago:** la psicóloga verifica comprobantes y selecciona un estado compatible con el monto comprobado. También verifica el pago de los cargos de $5.000, que el paciente paga desde **Mis cargos** con un comprobante de transferencia.
 - **HU-08 — Registrar asistencia:** la psicóloga registra asistencia o inasistencia. Se registra el cargo aprobado en caso de inasistencia injustificada.
 - **HU-09 — Actualizar ficha clínica:** la psicóloga consulta y guarda antecedentes y evoluciones sintéticas. Los intentos de acceso sin permiso quedan en bitácora.
 
@@ -55,13 +55,20 @@ Para reproducir solo el recorrido integrado y la ficha clínica, con el servidor
 Para una demostración local, ejecuta `python -m app.demo` y abre
 `http://127.0.0.1:8000`. El arranque crea una base sintética temporal con
 bloques futuros, imprime la clave de la psicóloga en la consola y deshabilita
-el SMTP externo. La base temporal se elimina al cerrar normalmente el servidor.
+el SMTP externo. En su lugar usa un **correo de demostración**: cada correo
+(aviso de reserva, solicitud de confirmación, recordatorio, aviso de cargo) se
+imprime en la consola con sus enlaces y queda registrado como enviado, sin salir
+del equipo. El planificador corre cada 10 segundos. La base temporal se elimina
+al cerrar normalmente el servidor.
 El usuario `paciente` de la consola corresponde al RUT de ejemplo **22.222.222-2**. Un alta nueva concede acceso en el navegador donde se completó el registro. Para una reserva existente también se puede recuperar el acceso al responder mediante un enlace seguro válido. Los permisos del navegador son temporales y se invalidan al reiniciar la aplicación.
 El enlace **Psicóloga** abre el panel para consultar reservas, atenciones y
 pagos, agregar bloques a la agenda del paciente, cancelar reservas confirmadas
 sin cargo, verificar comprobantes y registrar asistencia. La reserva pendiente
-de ejemplo muestra el estado de la cola. Las acciones de respuesta requieren
-un envío aceptado por SMTP; el recorrido automatizado usa SMTP local.
+de ejemplo muestra el estado de la cola. Las acciones **Confirmar asistencia** y
+**No asistiré** aparecen cuando el correo de la solicitud fue entregado; en la
+demo eso ocurre en el siguiente ciclo del planificador. La solicitud se genera
+la víspera de la atención (09:00 por defecto), así que para probar HU-03 a HU-05A
+de inmediato conviene reservar un bloque de mañana.
 
 La jornada reservable es de lunes a sábado de 09:00 a 19:00. El bloque completo
 debe quedar dentro de ese horario y su inicio debe ser futuro.
@@ -83,7 +90,7 @@ $env:CONSULTA_DB = Join-Path $PWD 'data/ejemplo-aislado.db'
 python -m app.db.seed
 ```
 
-El comando aplica las migraciones `001` a `014` a la base seleccionada y carga
+El comando aplica las migraciones `001` a `016` a la base seleccionada y carga
 datos de ejemplo de forma idempotente. El seed usa fechas fijas para
 reproducir casos de prueba con reloj controlado:
 
@@ -102,15 +109,39 @@ reproducir casos de prueba con reloj controlado:
 
 Ejecutar el seed varias veces no duplica los datos.
 
-Las migraciones se aplican automáticamente al arrancar la aplicación o el seed. La migración `002` deja `correo` opcional para que un paciente pueda registrarse solo con teléfono. La migración `003` agrega `solicitud_confirmacion` y `cargo`; la `004` agrega `estado`, `fecha_cierre` y el índice único de solicitud pendiente; la `005` agrega `correo_pendiente` y `token_confirmacion`; la `006` agrega `reserva.version`, reconstruye las solicitudes con unicidad por `(reserva_id, version, tipo)` y crea `reserva_historial` para HU-04; la `007` agrega `atencion`, `pago` y `comprobante_transferencia` para HU-05; la `008` reconstruye `reserva` para permitir el estado `Finalizada` cuando la reserva confirmada origina su atención y su pago.
+Las migraciones se aplican automáticamente al arrancar la aplicación o el seed. La migración `002` dejó `correo` opcional en la base (se conservan pacientes antiguos sin correo); desde el 2026-11-25 la aplicación exige el correo al registrarse. La migración `003` agrega `solicitud_confirmacion` y `cargo`; la `004` agrega `estado`, `fecha_cierre` y el índice único de solicitud pendiente; la `005` agrega `correo_pendiente` y `token_confirmacion`; la `006` agrega `reserva.version`, reconstruye las solicitudes con unicidad por `(reserva_id, version, tipo)` y crea `reserva_historial` para HU-04; la `007` agrega `atencion`, `pago` y `comprobante_transferencia` para HU-05; la `008` reconstruye `reserva` para permitir el estado `Finalizada` cuando la reserva confirmada origina su atención y su pago.
 
 La `007` no modifica las tablas de reservas, pacientes o bloques; la `008` solo amplía los estados permitidos de `reserva`.
 
-La migración `009` admite el cargo por cancelación; la `010` registra qué comprobantes verificó la psicóloga y la `011` permite asociar el cargo por inasistencia a una atención y guardar su justificación. Para empezar de cero, elige una ruta nueva con `CONSULTA_DB` o usa `python -m app.demo`.
+La `015` agrega el usuario y la ficha a la bitácora clínica y el historial de antecedentes; la `016` restringe la modalidad del bloque a `presencial` u `online`. La migración `009` admite el cargo por cancelación; la `010` registra qué comprobantes verificó la psicóloga y la `011` permite asociar el cargo por inasistencia a una atención y guardar su justificación. Para empezar de cero, elige una ruta nueva con `CONSULTA_DB` o usa `python -m app.demo`.
 
 ## Configuración del correo electrónico
 
-El envío real usa SMTP. Configura las variables en la terminal antes de iniciar la aplicación; **no guardes credenciales en el repositorio**:
+El envío real usa SMTP. Configura las variables en la terminal antes de iniciar la aplicación; **no guardes credenciales en el repositorio**.
+
+### Con Gmail (Linux / Omarchy)
+
+1. Activa la verificación en 2 pasos de la cuenta de Google y crea una **contraseña de aplicación** en <https://myaccount.google.com/apppasswords> (16 caracteres). No uses tu contraseña normal.
+2. Copia la plantilla **fuera del repositorio** y complétala:
+
+   ```bash
+   mkdir -p ~/.config/consulta
+   cp configuracion/gmail.env.example ~/.config/consulta/correo.env
+   chmod 600 ~/.config/consulta/correo.env
+   nano ~/.config/consulta/correo.env
+   ```
+
+3. Carga las variables y prueba el envío (no toca la base de datos):
+
+   ```bash
+   set -a; source ~/.config/consulta/correo.env; set +a
+   python -m app.probar_correo tu-correo@gmail.com
+   ```
+
+   Si falla, el comando indica la causa probable (contraseña de aplicación, servidor/puerto o remitente).
+4. Para recorrer la demo con correos reales: `python -m app.demo --correo-real`. Usa solo direcciones tuyas o de prueba como pacientes.
+
+### Con otro proveedor (Windows / PowerShell)
 
 ```powershell
 $env:SMTP_HOST = "smtp.example.com"
@@ -128,9 +159,27 @@ Variables y consideraciones:
 - `CORREO_URL_PUBLICA` debe ser una URL accesible desde el dispositivo del paciente, porque se usa para armar los enlaces de confirmación.
 - `PLANIFICADOR_ACTIVO=0` desactiva el planificador para pruebas manuales controladas.
 - `MONTO_ATENCION_CLP` define el monto de las atenciones nuevas y usa **30000** por defecto. La creación automática de la atención y su pago depende de que el planificador esté activo.
-- `CONFIRMACION_HORA_VISPERA` (por defecto `09:00`) y `CONFIRMACION_HORA_RECORDATORIO` (por defecto `08:00`) son configurables; **aún no están confirmadas por el cliente**.
+- `CONFIRMACION_HORA_VISPERA` (por defecto `09:00`) y `CONFIRMACION_HORA_RECORDATORIO` (por defecto `08:00`) son las horas confirmadas por la psicóloga el 2026-11-25; siguen configurables.
 - La zona horaria por defecto es `America/Santiago`.
 - Si el correo no está configurado, la aplicación funciona, pero los correos quedan en la cola como pendientes con el motivo y **nunca se marca un envío como exitoso**.
+
+## Cifrado de la ficha clínica (RD-02)
+
+Los antecedentes, las evoluciones, su historial y la justificación de inasistencias se guardan **cifrados** en SQLite (Fernet: AES con autenticación, librería `cryptography`). La clave se lee de `CONSULTA_CLAVE_CIFRADO` y **nunca se guarda junto a la base**.
+
+```bash
+python -m app.servicios.cifrado            # imprime una clave nueva
+mkdir -p ~/.config/consulta
+nano ~/.config/consulta/clave.env          # pega la línea CONSULTA_CLAVE_CIFRADO=...
+chmod 600 ~/.config/consulta/clave.env
+set -a; source ~/.config/consulta/clave.env; set +a
+```
+
+- El modo con cuentas (`app.asgi`) **no arranca sin la clave**.
+- La demo usa una clave temporal, porque su base también es temporal.
+- Si la base tenía datos clínicos en texto plano, se cifran automáticamente al arrancar con la clave.
+- Si se usa otra clave sobre datos ya cifrados, la aplicación se niega a arrancar en vez de mezclar claves.
+- **Si pierdes la clave, la información clínica no se puede recuperar.** Respáldala por separado de la base de datos.
 
 ## Arranque con cuentas persistentes
 
@@ -237,12 +286,12 @@ El aviso de reserva se envía por **correo electrónico real** mediante SMTP. Si
 
 1. Con una base recién sembrada, abre <http://localhost:8000/reservar/4> (martes 24 de noviembre a las 10:00, modalidad online) e intenta reservar con el RUT **99.999.999-9**.
    - Debes llegar a `/pacientes/registro?bloque_id=4` con el formulario de registro.
-2. Completa **nombre completo** y **RUT**, deja el **teléfono** con un valor y el **correo** vacío; pulsa **Guardar datos**.
+2. Completa **nombre completo**, **RUT** y **correo** (el teléfono es opcional); pulsa **Guardar datos**.
    - Debes volver a `/reservar/4?rut=999999999` con el RUT precargado.
-   - En la base, el paciente queda con `correo` nulo; se permite registrarse solo con teléfono.
+   - Si dejas el correo vacío o con un formato inválido, el registro se rechaza e informa el dato faltante: el correo es obligatorio porque la confirmación de HU-03 llega por correo.
 3. Pulsa **Confirmar reserva**.
    - La reserva queda en estado **Pendiente de confirmación**.
-4. Para probar los datos obligatorios, abre <http://localhost:8000/pacientes/registro> y guarda sin nombre o sin teléfono ni correo.
+4. Para probar los datos obligatorios, abre <http://localhost:8000/pacientes/registro> y guarda sin nombre o sin correo.
    - Debes ver **«Falta completar: …»** y el paciente no se registra.
 5. Para probar el RUT ya registrado, abre `/pacientes/registro` y usa el RUT **22.222.222-2** con otro nombre; puedes dejar teléfono y correo vacíos.
    - Debes volver a la confirmación del paciente existente (o a la reserva, si venías con un bloque).
