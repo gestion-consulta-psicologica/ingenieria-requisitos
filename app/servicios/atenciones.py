@@ -1,10 +1,14 @@
 from __future__ import annotations
 
+import logging
 import sqlite3
 from datetime import date, datetime
 
 from app.configuracion import monto_atencion_clp
+from app.servicios.notificaciones import MONTO_CARGO
 from app.tiempo import ZONA_POR_DEFECTO, ahora_utc, programado
+
+logger = logging.getLogger(__name__)
 
 ESTADO_RESERVA_CONFIRMADA = "Confirmada"
 ESTADO_RESERVA_FINALIZADA = "Finalizada"
@@ -31,6 +35,10 @@ class PagoYaPagado(Exception):
 
 class EstadoPagoNoPermiteRegistro(Exception):
     """El estado actual del pago no admite nuevos comprobantes."""
+
+
+class AsistenciaInvalida(ValueError):
+    """La atención no admite el resultado de asistencia solicitado."""
 
 
 class DatosComprobanteInvalidos(ValueError):
@@ -64,7 +72,8 @@ def crear_atenciones_vencidas(
     filas = list(
         conexion.execute(
             """
-            SELECT r.id AS reserva_id, b.fecha, b.hora_inicio, b.modalidad
+            SELECT r.id AS reserva_id, r.version, r.bloque_horario_id,
+                   b.fecha, b.hora_inicio, b.modalidad
             FROM reserva r
             JOIN bloque_horario b ON b.id = r.bloque_horario_id
             WHERE r.estado = ?
@@ -82,7 +91,33 @@ def crear_atenciones_vencidas(
         inicio = programado(fila["fecha"], fila["hora_inicio"], zona_horaria)
         if ahora < inicio:
             continue
+        conexion.execute("BEGIN IMMEDIATE")
         try:
+            transicion = conexion.execute(
+                """
+                UPDATE reserva
+                SET estado = ?
+                WHERE id = ? AND estado = ? AND version = ?
+                  AND bloque_horario_id = ?
+                  AND NOT EXISTS (
+                      SELECT 1 FROM atencion a WHERE a.reserva_id = reserva.id
+                  )
+                  AND EXISTS (
+                      SELECT 1 FROM bloque_horario b
+                      WHERE b.id = reserva.bloque_horario_id
+                        AND b.fecha = ? AND b.hora_inicio = ? AND b.modalidad = ?
+                  )
+                """,
+                (
+                    ESTADO_RESERVA_FINALIZADA, fila["reserva_id"],
+                    ESTADO_RESERVA_CONFIRMADA, fila["version"],
+                    fila["bloque_horario_id"], fila["fecha"],
+                    fila["hora_inicio"], fila["modalidad"],
+                ),
+            )
+            if transicion.rowcount != 1:
+                conexion.rollback()
+                continue
             cursor = conexion.execute(
                 """
                 INSERT INTO atencion (
@@ -102,18 +137,14 @@ def crear_atenciones_vencidas(
                 """,
                 (atencion_id, monto, ESTADO_PAGO_PENDIENTE),
             )
-            conexion.execute(
-                """
-                UPDATE reserva
-                SET estado = ?
-                WHERE id = ? AND estado = ?
-                """,
-                (ESTADO_RESERVA_FINALIZADA, fila["reserva_id"], ESTADO_RESERVA_CONFIRMADA),
-            )
             conexion.commit()
         except sqlite3.IntegrityError:
             conexion.rollback()
+            logger.exception("No se pudo originar la atención de la reserva %s.", fila["reserva_id"])
             continue
+        except Exception:
+            conexion.rollback()
+            raise
         creadas.append(atencion_id)
     return creadas
 
@@ -139,6 +170,55 @@ def obtener_atencion_de_reserva(
         "pago_id": fila["pago_id"],
         "pago_estado": fila["pago_estado"],
     }
+
+
+def registrar_asistencia(
+    conexion: sqlite3.Connection, atencion_id: int, estado: str, justificacion: str,
+    *, cifrador=None,
+) -> None:
+    justificacion = justificacion.strip()
+    if estado not in ("realizada", "inasistencia", "inasistencia justificada"):
+        raise AsistenciaInvalida("Selecciona un resultado de asistencia válido.")
+    if estado == "inasistencia justificada" and not justificacion:
+        raise AsistenciaInvalida("Ingresa la justificación de la inasistencia.")
+
+    conexion.execute("BEGIN IMMEDIATE")
+    try:
+        atencion = conexion.execute(
+            """
+            SELECT a.estado, r.paciente_id, b.fecha
+            FROM atencion a
+            JOIN reserva r ON r.id = a.reserva_id
+            JOIN bloque_horario b ON b.id = r.bloque_horario_id
+            WHERE a.id = ?
+            """,
+            (atencion_id,),
+        ).fetchone()
+        if atencion is None:
+            raise AtencionNoEncontrada("No se encontró la atención.")
+        if atencion["estado"] != "programada":
+            raise AsistenciaInvalida("La atención ya tiene un resultado registrado.")
+        conexion.execute(
+            "UPDATE atencion SET estado = ?, justificacion_inasistencia = ? WHERE id = ?",
+            (
+                estado,
+                (cifrador.cifrar(justificacion) if cifrador else justificacion)
+                if estado == "inasistencia justificada" else None,
+                atencion_id,
+            ),
+        )
+        if estado == "inasistencia":
+            conexion.execute(
+                """
+                INSERT INTO cargo (paciente_id, atencion_id, monto, motivo, fecha)
+                VALUES (?, ?, ?, 'inasistencia', ?)
+                """,
+                (atencion["paciente_id"], atencion_id, MONTO_CARGO, atencion["fecha"]),
+            )
+        conexion.commit()
+    except Exception:
+        conexion.rollback()
+        raise
 
 
 def registrar_comprobante(
@@ -194,15 +274,21 @@ def registrar_comprobante(
         INSERT INTO comprobante_transferencia (
             pago_id, monto, fecha_transferencia, cuenta_destino
         )
-        VALUES (?, ?, ?, ?)
+        SELECT id, ?, ?, ? FROM pago
+        WHERE id = ? AND estado IN (?, ?)
         """,
         (
-            fila["pago_id"],
             monto_normalizado,
             fecha_normalizada.isoformat(),
             cuenta_normalizada,
+            fila["pago_id"],
+            ESTADO_PAGO_PENDIENTE,
+            ESTADO_PAGO_INCOMPLETO,
         ),
     )
+    if cursor.rowcount != 1:
+        conexion.rollback()
+        raise EstadoPagoNoPermiteRegistro("El estado del pago cambió antes de registrar el comprobante.")
     conexion.commit()
     return {
         "id": int(cursor.lastrowid),
@@ -216,7 +302,8 @@ def registrar_comprobante(
 def _normalizar_monto(valor: int | str) -> int | None:
     if isinstance(valor, bool):
         return None
-    texto = str(valor).strip().replace(".", "").replace(" ", "")
+    # Acepta el formato chileno escrito por el paciente: 30000, 30.000, $30.000.
+    texto = str(valor).strip().removeprefix("$").replace(".", "").replace(" ", "")
     if not texto or not texto.isdigit():
         return None
     monto = int(texto)

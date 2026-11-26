@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="es">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Mis reservas</title></head>
+<body>
+  <main>
+    {% include "nav.html" %}
+    <h1>Mis reservas</h1>
+    {% if modo_demo %}
+    <p>Demo: se muestran las reservas hechas o registradas desde este navegador en las últimas 12 horas.</p>
+    {% endif %}
+    <p><a href="/disponibilidad">Consultar disponibilidad</a></p>
+    <ul>
+      {% for reserva in reservas %}
+      <li><a href="/reservas/{{ reserva.id }}">{{ reserva.fecha|fecha_larga }} a las {{ reserva.hora_inicio }}</a> · {{ reserva.estado }}</li>
+      {% else %}
+      <li>No tienes reservas{% if modo_demo %} en este navegador{% endif %}.</li>
+      {% endfor %}
+    </ul>
+  </main>
+</body>
+</html>

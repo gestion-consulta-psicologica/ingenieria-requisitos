@@ -19,7 +19,7 @@ Archivo fuente: [`./diagramas/est-01.puml`](./diagramas/est-01.puml)
 | Pendiente de confirmación | llega la mañana de la atención | sin respuesta | reemplazar la solicitud pendiente anterior, cancelar su correo y encolar el recordatorio | Pendiente de confirmación (transición interna) |
 | Pendiente de confirmación | paciente confirma asistencia | existe una única solicitud pendiente y es la más reciente; token válido si viene del correo | consumir el token, registrar respuesta y fecha de respuesta; marcar la solicitud como respondida | Confirmada |
 | Pendiente de confirmación | paciente informa que no asistirá | existe una única solicitud pendiente y es la más reciente; token válido si viene del correo | consumir el token, registrar respuesta y fecha de respuesta; marcar la solicitud como respondida; registrar cargo de $5.000 asociado al paciente y a la reserva; liberar bloque y encolar aviso del cargo | Cancelada |
-| Pendiente de confirmación | llega la hora de la atención | sin respuesta y existe una solicitud pendiente | marcar la solicitud como vencida con respuesta «sin respuesta»; registrar fecha de cierre; generar cargo de $5.000 asociado al paciente y a la reserva; encolar aviso del cargo | Sin confirmar |
+| Pendiente de confirmación | llega la hora de la atención | sin respuesta y existe una solicitud pendiente | marcar la solicitud como vencida con respuesta «sin respuesta» y registrar fecha de cierre; generar el cargo de $5.000 y encolar su aviso solo si SMTP aceptó una solicitud del ciclo vigente antes de esa hora | Sin confirmar |
 | Confirmada | paciente confirma la cancelación | cancelación solicitada y confirmada por el paciente | registrar cargo de $5.000 asociado al paciente y a la reserva; liberar bloque y encolar aviso del cargo | Cancelada |
 | Pendiente de confirmación | psicóloga cancela la hora | cancelación realizada por la psicóloga | liberar bloque y conservar historial; no generar cargo | Cancelada |
 | Confirmada | psicóloga cancela la hora | cancelación realizada por la psicóloga | liberar bloque y conservar historial; no generar cargo | Cancelada |
@@ -32,9 +32,13 @@ Archivo fuente: [`./diagramas/est-01.puml`](./diagramas/est-01.puml)
 
 **Guarda de respuesta:** si no existe una solicitud enviada y pendiente de respuesta, o la solicitud más reciente no está en estado pendiente, el sistema rechaza la operación con HTTP 409 y no modifica la reserva, las solicitudes ni el cargo.
 
+El plazo de respuesta termina al inicio del bloque. El servidor rechaza las respuestas desde ese instante aunque el planificador todavía no haya procesado el vencimiento.
+
 **Regla de vigencia:** una reserva se considera vigente mientras esté en estado Pendiente de confirmación o Confirmada. Las reservas Canceladas, Sin confirmar o Finalizadas no bloquean el bloque horario. Una reserva Finalizada no admite reagendamiento ni cancelación.
 
-**Regla de cargos:** cuando el paciente confirma la cancelación de una reserva, se genera un cargo de $5.000 asociado al paciente y a la reserva, independientemente de la anticipación o del motivo de la cancelación. La cancelación realizada por la psicóloga no genera cargos. La falta de confirmación hasta la hora de atención también genera un cargo de $5.000.
+**Disponibilidad del bloque:** además de la vigencia, el inicio debe ser futuro y el bloque completo debe quedar entre las 09:00 y las 19:00 de lunes a sábado en la zona horaria configurada. Un bloque cuya reserva se finalizó al llegar la hora ya no se puede reservar.
+
+**Regla de cargos:** cuando el paciente confirma la cancelación de una reserva, se genera un cargo de $5.000 asociado al paciente y a la reserva, independientemente de la anticipación o del motivo de la cancelación. La cancelación realizada por la psicóloga no genera cargos. La falta de confirmación hasta la hora de atención genera un cargo de $5.000 únicamente si SMTP aceptó antes una solicitud de confirmación del ciclo vigente.
 
 **Reagendamiento:** al pasar de Confirmada a Pendiente de confirmación se conserva el bloque anterior en el historial de cambios y se inicia un nuevo ciclo de solicitudes; las solicitudes del ciclo anterior permanecen como registro histórico y no admiten nuevas respuestas. El reagendamiento no genera un cargo.
 
@@ -83,9 +87,13 @@ Archivo fuente: [`./diagramas/est-02.puml`](./diagramas/est-02.puml)
 | Pago incompleto | psicóloga verifica nuevo comprobante | total comprobado < monto de la atención | actualizar diferencia pendiente | Pago incompleto (transición interna) |
 | Pagado | — | — | — | (final) |
 
+**Cargo (HU-06):** un Cargo de $5.000 sigue el mismo ciclo de vida que el Pago: nace en **Pendiente**; cuando la psicóloga verifica comprobantes pasa a **Pagado** si el total comprobado iguala $5.000 o a **Pago incompleto** si es menor (transición interna hasta completarlo); **Pagado** es final.
+
 **Nota:** la emisión de la boleta se modela en EST-03 y no cambia el estado del Pago. Un pago puede quedar Pagado aunque la boleta siga pendiente de emisión.
 
 ## EST-03 — Ciclo de vida de Boleta
+
+Modelo previsto para HU-07, pendiente de integración externa por alcance.
 
 - Clase del dominio: [Boleta](./08-modelo-dominio.md)
 - Diagramas de secuencia relacionados: [DSS-02](./10-diagramas-secuencia.md)

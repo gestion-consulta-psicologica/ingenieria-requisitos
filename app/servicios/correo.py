@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import smtplib
+import ssl
 import socket
 from email.message import EmailMessage
 from email.utils import formatdate, make_msgid
@@ -92,23 +93,29 @@ class ServicioCorreoSMTP:
 
         config = self.configuracion
         mensaje = self._mensaje(destinatario, asunto, cuerpo_texto, cuerpo_html)
+        # Nombre para el saludo EHLO. Sin él, smtplib llama a socket.getfqdn(),
+        # que en equipos con DNS lento agrega varios segundos a cada correo.
+        nombre_local = (config.smtp_remitente or "").rpartition("@")[2] or "localhost"
         cliente: smtplib.SMTP | None = None
         try:
             if config.smtp_seguridad == "ssl":
                 cliente = smtplib.SMTP_SSL(
                     config.smtp_host,
                     config.smtp_puerto,
+                    local_hostname=nombre_local,
                     timeout=config.smtp_timeout,
+                    context=ssl.create_default_context(),
                 )
             else:
                 cliente = smtplib.SMTP(
                     config.smtp_host,
                     config.smtp_puerto,
+                    local_hostname=nombre_local,
                     timeout=config.smtp_timeout,
                 )
                 cliente.ehlo()
                 if config.smtp_seguridad == "starttls":
-                    cliente.starttls()
+                    cliente.starttls(context=ssl.create_default_context())
                     cliente.ehlo()
 
             if config.smtp_usuario and config.smtp_clave:

@@ -167,10 +167,15 @@ def solicitud_confirmacion(
 def aviso_cargo(paciente: dict, reserva: dict, cargo: dict, bloque: dict) -> Correo:
     fecha = _fecha_larga(bloque["fecha"])
     asunto = f"Cargo por reserva de hora del {fecha}"
+    explicacion = (
+        "Se registró la cancelación de tu reserva."
+        if cargo["motivo"] == "cancelación"
+        else "No se recibió la confirmación de asistencia antes de la hora de la "
+        "atención, por lo que la reserva quedó sin confirmar."
+    )
     texto = (
         f"Hola {paciente['nombre_completo']}:\n\n"
-        "No se recibió la confirmación de asistencia antes de la hora de la "
-        "atención, por lo que la reserva quedó sin confirmar.\n"
+        f"{explicacion}\n"
         f"Fecha de la atención: {fecha}\n"
         f"Hora: {bloque['hora_inicio']} a {bloque['hora_termino']}\n"
         f"Número de reserva: {reserva['id']}\n"
@@ -182,8 +187,7 @@ def aviso_cargo(paciente: dict, reserva: dict, cargo: dict, bloque: dict) -> Cor
     cuerpo = (
         "<h2>Cargo por reserva de hora</h2>"
         f"<p>Hola {html.escape(paciente['nombre_completo'])}:</p>"
-        "<p>No se recibió la confirmación de asistencia antes de la hora de la "
-        "atención, por lo que la reserva quedó sin confirmar.</p>"
+        f"<p>{html.escape(explicacion)}</p>"
         f"<p><strong>Fecha de la atención:</strong> {fecha}<br>"
         f"<strong>Hora:</strong> {bloque['hora_inicio']} a {bloque['hora_termino']}<br>"
         f"<strong>Número de reserva:</strong> {reserva['id']}<br>"

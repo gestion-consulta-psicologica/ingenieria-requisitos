@@ -17,7 +17,7 @@
 | RP-10 | El sistema deberá permitir al paciente seleccionar un nuevo horario disponible. | Funcional | Seleccionar nuevo horario disponible |
 | RP-11 | El sistema deberá actualizar automáticamente la reserva con el nuevo horario seleccionado. | Funcional | Actualizar reserva automáticamente |
 | RP-12 | El sistema deberá permitir a la psicóloga consultar la información necesaria para comprobar el pago asociado a una atención. | Funcional | Comprobar pago con apoyo del sistema |
-| RP-13 | El sistema deberá permitir registrar el estado de pago asociado al paciente y a la atención correspondiente. | Funcional | Registrar estado de pago en sistema |
+| RP-13 | El sistema deberá permitir registrar el estado de pago asociado al paciente y a la atención correspondiente, y también el de los cargos de $5.000 a partir de los comprobantes que registre el paciente. | Funcional | Registrar estado de pago en sistema |
 | RP-14 | El sistema deberá apoyar la emisión de la boleta asociada a una atención pagada. | Funcional | Emitir boleta con apoyo del sistema |
 | RP-15 | El sistema deberá permitir registrar la asistencia del paciente a la atención psicológica. | Funcional | Registrar asistencia en sistema |
 | RP-16 | El sistema deberá permitir actualizar la ficha clínica del paciente dentro de la plataforma centralizada. | Funcional | Actualizar ficha clínica en sistema centralizado |
@@ -26,7 +26,7 @@
 | RP-19 | El sistema deberá responder las consultas de disponibilidad de horarios en un tiempo máximo de 2 segundos, permitiendo una interacción rápida para los usuarios. | No funcional | Consultar disponibilidad en plataforma |
 | RP-20 | El sistema deberá permitir que al menos el 90% de los usuarios complete las tareas principales de gestión de horas sin asistencia externa. | No funcional | Seleccionar horario disponible |
 | RP-21 | El sistema deberá permitir al paciente registrar sus datos personales (nombre completo, RUT y medio de contacto) cuando aún no esté registrado. | Funcional | Registrar datos del paciente |
-| RP-22 | El sistema deberá registrar un cargo de $5.000, asociado al paciente y a la reserva, cuando el paciente no responda la solicitud de confirmación hasta la hora de la atención. | Funcional | Registrar cargo por falta de confirmación |
+| RP-22 | El sistema deberá registrar un cargo de $5.000, asociado al paciente y a la reserva, si el paciente no responde hasta la hora de la atención y SMTP aceptó al menos una solicitud de confirmación del ciclo vigente antes de esa hora. | Funcional | Registrar cargo por falta de confirmación |
 | RP-23 | El sistema deberá permitir al paciente registrar el comprobante de transferencia asociado al pago de su atención. | Funcional | Realizar pago |
 | RP-24 | El sistema deberá registrar un cargo de $5.000 por inasistencia sin justificación, asociado a la atención y al paciente, cuando la psicóloga registre la inasistencia; la inasistencia justificada no genera cargo. | Funcional | Registrar asistencia en sistema |
 | RP-25 | El sistema deberá originar automáticamente la atención y el pago pendiente cuando llegue la hora de una reserva confirmada, y dejar la reserva en estado finalizada. | Funcional | Originar atención y pago automáticamente |

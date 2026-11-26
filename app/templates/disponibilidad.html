@@ -24,16 +24,11 @@
 <body>
   <header>
     <h1>Gestión de consulta psicológica</h1>
-    <label for="rol">Rol de demostración:</label>
-    <select id="rol" name="rol">
-      <option value="Paciente" selected>Paciente</option>
-    </select>
+    {% include "nav.html" %}
   </header>
 
   <main>
     <h2>Consultar disponibilidad</h2>
-    <p>Selector de demostración: no hay autenticación real.</p>
-
     <form method="get" action="/disponibilidad">
       <div>
         <label for="semana">Semana que contiene la fecha:</label>
@@ -63,7 +58,9 @@
       <div class="aviso">
         <p><strong>No hay horas disponibles para esa semana.</strong></p>
         {% if proximo_bloque %}
-          <p>La fecha del próximo bloque horario disponible es {{ proximo_bloque|fecha_larga }}.</p>
+          <p>La fecha del próximo bloque horario disponible es
+            <a href="/disponibilidad?semana={{ proximo_bloque.isoformat() }}">{{ proximo_bloque|fecha_larga }}</a>.
+          </p>
         {% else %}
           <p>No hay próximos bloques horarios disponibles.</p>
         {% endif %}

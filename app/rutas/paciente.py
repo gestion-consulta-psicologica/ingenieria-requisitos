@@ -4,6 +4,10 @@ import sqlite3
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.security import HTTPBasicCredentials
+
+from app.rutas.acceso_reserva import conceder_acceso_paciente, verificar_paciente
+from app.rutas.psicologa import autenticacion
 
 from app.db.conexion import conectar
 from app.servicios.paciente import DatosPacienteInvalidos, registrar_paciente
@@ -61,6 +65,9 @@ def mostrar_registro(
     request: Request,
     bloque_id: int | None = None,
 ):
+    if request.app.state.cuentas_persistentes:
+        destino = f"/cuenta/registro?bloque_id={bloque_id}" if bloque_id else "/cuenta/registro"
+        return RedirectResponse(destino, status_code=303)
     return _render_formulario(request, bloque_id=bloque_id)
 
 
@@ -73,8 +80,11 @@ def registrar(
     correo: str = Form(default=""),
     bloque_id: str = Form(default=""),
     conexion: sqlite3.Connection = Depends(obtener_conexion),
+    credenciales: HTTPBasicCredentials | None = Depends(autenticacion),
 ):
     bloque = _leer_bloque_id(bloque_id)
+    if request.app.state.cuentas_persistentes:
+        return mostrar_registro(request, bloque)
     try:
         resultado = registrar_paciente(
             conexion, nombre_completo, rut, telefono, correo
@@ -92,12 +102,16 @@ def registrar(
         )
 
     paciente = resultado["paciente"]
+    if not resultado["creado"]:
+        verificar_paciente(request, paciente["id"], credenciales)
     if bloque is not None and obtener_bloque(conexion, bloque) is not None:
-        return RedirectResponse(
-            url=f"/reservar/{bloque}?rut={normalizar_rut(paciente['rut'])}",
-            status_code=303,
-        )
-    return RedirectResponse(url=f"/pacientes/{paciente['id']}", status_code=303)
+        destino = f"/reservar/{bloque}?rut={normalizar_rut(paciente['rut'])}"
+    else:
+        destino = f"/pacientes/{paciente['id']}"
+    respuesta = RedirectResponse(destino, status_code=303)
+    if resultado["creado"]:
+        return conceder_acceso_paciente(request, respuesta, paciente["id"])
+    return respuesta
 
 
 @router.get("/pacientes/{paciente_id}", response_class=HTMLResponse)
@@ -105,14 +119,17 @@ def mostrar_registro_confirmado(
     paciente_id: int,
     request: Request,
     conexion: sqlite3.Connection = Depends(obtener_conexion),
+    credenciales: HTTPBasicCredentials | None = Depends(autenticacion),
 ):
     paciente = conexion.execute(
         "SELECT * FROM paciente WHERE id = ?", (paciente_id,)
     ).fetchone()
     if paciente is None:
         raise HTTPException(status_code=404, detail="Paciente no encontrado")
+    verificar_paciente(request, paciente_id, credenciales)
     return request.app.state.templates.TemplateResponse(
         request=request,
         name="registro_confirmado.html",
         context={"paciente": paciente},
+        headers={"Cache-Control": "no-store"},
     )

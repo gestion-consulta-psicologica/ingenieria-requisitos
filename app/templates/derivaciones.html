@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% if solicitud %}Derivar consulta{% elif recibidas %}Derivaciones recibidas{% else %}Derivaciones{% endif %}</title>
+  <style>
+    body { margin: 0; font-family: system-ui, sans-serif; color: #172554; background: #f8fafc; }
+    header { background: #0f766e; color: white; padding: 1rem 1.5rem; }
+    header a { color: white; margin-right: 1rem; }
+    header form, li form { display: inline-block; }
+    main { max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
+    section { background: white; border: 1px solid #e2e8f0; border-radius: .5rem; padding: 1rem; margin-bottom: 1rem; }
+    label { display: grid; gap: .25rem; margin-bottom: .6rem; max-width: 26rem; }
+    input, select, button { font: inherit; padding: .4rem; max-width: 100%; }
+    li { margin-block: .6rem; overflow-wrap: anywhere; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>{% if solicitud %}Derivar consulta{% elif recibidas %}Derivaciones recibidas{% else %}Derivaciones{% endif %}</h1>
+    <nav aria-label="Navegación principal">
+      {% include "cuenta_nav.html" %}
+    </nav>
+  </header>
+  <main>
+    {% if solicitud %}
+    <section>
+      <h2>Reserva {{ solicitud.id }} · {{ solicitud.nombre_completo }}</h2>
+      <p>{{ solicitud.fecha|fecha_dia }} · {{ solicitud.hora_inicio }}</p>
+      {% if profesionales %}
+      <form method="post" action="/psicologa/derivaciones/nueva/{{ solicitud.id }}">
+        <input type="hidden" name="csrf" value="{{ request.state.csrf }}">
+        <label>Médico psiquiatra destinatario
+          <select name="psiquiatra_id" required>
+            <option value="">Seleccionar</option>
+            {% for profesional in profesionales %}
+            <option value="{{ profesional.id }}">{{ profesional.nombre_psiquiatra }} · {{ profesional.correo }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <button type="submit">Registrar derivación</button>
+      </form>
+      {% else %}
+      <p>No hay médicos psiquiatras activos. Puedes gestionarlos en el <a href="/psicologa/derivaciones#psiquiatras">directorio</a>.</p>
+      {% endif %}
+    </section>
+    {% else %}
+    <section>
+      <h2>Historial de derivaciones</h2>
+      <ul>
+        {% for registro in registros %}
+        <li>
+          <strong>{{ registro.paciente }}</strong> · {{ registro.estado }}
+          {% if recibidas %}· Psicóloga: {{ registro.psicologa }}
+          {% else %}· Psiquiatra: {{ registro.psiquiatra }} · <a href="/reservas/{{ registro.reserva_id }}">Reserva {{ registro.reserva_id }}</a>
+          {% endif %}
+          <div>Creada: {{ registro.creada_en|fecha_hora_local }}{% if registro.aceptada_en %} · Aceptada: {{ registro.aceptada_en|fecha_hora_local }}{% endif %}</div>
+          {% if recibidas and registro.estado == "Pendiente" %}
+          <form method="post" action="/psiquiatra/derivaciones/{{ registro.id }}/aceptar">
+            <input type="hidden" name="csrf" value="{{ request.state.csrf }}">
+            <button type="submit">Aceptar derivación</button>
+          </form>
+          {% endif %}
+        </li>
+        {% else %}
+        <li>Sin derivaciones registradas.</li>
+        {% endfor %}
+      </ul>
+    </section>
+    {% if not recibidas %}
+    <section id="psiquiatras">
+      <h2>Médicos psiquiatras registrados</h2>
+      <ul>
+        {% for profesional in profesionales %}
+        <li>
+          {{ profesional.nombre_psiquiatra }} · {{ profesional.correo }} · {{ "Activo" if profesional.activo else "Inactivo" }}
+          <form method="post" action="/psicologa/derivaciones/psiquiatras/{{ profesional.id }}/disponibilidad">
+            <input type="hidden" name="csrf" value="{{ request.state.csrf }}">
+            <button name="activo" value="{{ 'false' if profesional.activo else 'true' }}">{{ "Desactivar" if profesional.activo else "Activar" }}</button>
+          </form>
+        </li>
+        {% else %}
+        <li>Sin médicos psiquiatras registrados.</li>
+        {% endfor %}
+      </ul>
+      <h3>Registrar médico psiquiatra</h3>
+      <p>Confirma la identidad profesional y la titularidad del correo antes de crear la cuenta. Entrega la contraseña por un canal seguro.</p>
+      <form method="post" action="/psicologa/derivaciones/psiquiatras">
+        <input type="hidden" name="csrf" value="{{ request.state.csrf }}">
+        <label>Nombre completo <input name="nombre" required maxlength="200"></label>
+        <label>Correo profesional <input name="correo" type="email" required maxlength="254"></label>
+        <label>Contraseña <input name="clave" type="password" autocomplete="new-password" required minlength="15" maxlength="128"></label>
+        <button type="submit">Registrar psiquiatra verificado</button>
+      </form>
+    </section>
+    {% endif %}
+    {% endif %}
+  </main>
+</body>
+</html>

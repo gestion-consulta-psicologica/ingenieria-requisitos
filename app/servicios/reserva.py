@@ -2,9 +2,13 @@ from __future__ import annotations
 
 import re
 import sqlite3
+from collections.abc import Callable
 from datetime import datetime
 
-from app.servicios.disponibilidad import ESTADOS_VIGENTES
+from app.configuracion import ConfiguracionCorreo, cargar_configuracion
+from app.servicios.disponibilidad import consultar_bloques_reservables
+from app.servicios.notificaciones import encolar_aviso_reserva
+from app.tiempo import ZONA_POR_DEFECTO, ahora_utc, zona
 
 ESTADO_PENDIENTE = "Pendiente de confirmación"
 
@@ -22,7 +26,8 @@ class BloqueNoDisponible(Exception):
 
 
 def normalizar_rut(rut: str) -> str:
-    return re.sub(r"[^0-9Kk]", "", rut).upper()
+    normalizado = re.sub(r"[.\- ]", "", rut).upper()
+    return normalizado if re.fullmatch(r"[0-9]+[0-9K]", normalizado) else ""
 
 
 def buscar_paciente_por_rut(
@@ -51,35 +56,35 @@ def obtener_bloque(
     ).fetchone()
 
 
-def bloque_esta_disponible(conexion: sqlite3.Connection, bloque_id: int) -> bool:
-    marcadores = ", ".join("?" for _ in ESTADOS_VIGENTES)
-    fila = conexion.execute(
-        f"""
-        SELECT 1
-        FROM reserva
-        WHERE bloque_horario_id = ?
-          AND estado IN ({marcadores})
-        """,
-        (bloque_id, *ESTADOS_VIGENTES),
-    ).fetchone()
-    return fila is None
+def bloque_esta_disponible(
+    conexion: sqlite3.Connection, bloque_id: int, *,
+    ahora: datetime | None = None, zona_horaria: str = ZONA_POR_DEFECTO,
+) -> bool:
+    return bool(consultar_bloques_reservables(
+        conexion, "b.id = ?", (bloque_id,), ahora=ahora, zona_horaria=zona_horaria,
+    ))
 
 
 def registrar_reserva(
-    conexion: sqlite3.Connection, bloque_id: int, rut: str
+    conexion: sqlite3.Connection, bloque_id: int, rut: str, *,
+    ahora: datetime | None = None, configuracion: ConfiguracionCorreo | None = None,
+    autorizar_paciente: Callable[[int], None] | None = None,
 ) -> dict:
-    paciente = buscar_paciente_por_rut(conexion, rut)
-    if paciente is None:
-        raise PacienteNoRegistrado()
-
-    bloque = obtener_bloque(conexion, bloque_id)
-    if bloque is None:
-        raise BloqueNoEncontrado()
-
-    if not bloque_esta_disponible(conexion, bloque_id):
-        raise BloqueNoDisponible()
-
+    configuracion = configuracion or cargar_configuracion()
+    conexion.execute("BEGIN IMMEDIATE")
     try:
+        bloque = obtener_bloque(conexion, bloque_id)
+        if bloque is None:
+            raise BloqueNoEncontrado()
+        if not bloque_esta_disponible(
+            conexion, bloque_id, ahora=ahora, zona_horaria=configuracion.zona_horaria,
+        ):
+            raise BloqueNoDisponible()
+        paciente = buscar_paciente_por_rut(conexion, rut)
+        if paciente is None:
+            raise PacienteNoRegistrado()
+        if autorizar_paciente is not None:
+            autorizar_paciente(paciente["id"])
         cursor = conexion.execute(
             """
             INSERT INTO reserva (
@@ -90,18 +95,25 @@ def registrar_reserva(
             (
                 paciente["id"],
                 bloque_id,
-                datetime.now().isoformat(timespec="seconds"),
+                # Hora local con desfase, como fecha_respuesta y el historial.
+                (ahora or ahora_utc()).astimezone(
+                    zona(configuracion.zona_horaria)
+                ).isoformat(timespec="seconds"),
                 ESTADO_PENDIENTE,
             ),
         )
+        reserva = conexion.execute(
+            "SELECT * FROM reserva WHERE id = ?", (cursor.lastrowid,)
+        ).fetchone()
+        encolar_aviso_reserva(
+            conexion, dict(paciente), dict(bloque), dict(reserva),
+            configuracion, ahora=ahora, confirmar_transaccion=False,
+        )
         conexion.commit()
-    except sqlite3.IntegrityError as error:
+    except Exception:
         conexion.rollback()
-        raise BloqueNoDisponible() from error
+        raise
 
-    reserva = conexion.execute(
-        "SELECT * FROM reserva WHERE id = ?", (cursor.lastrowid,)
-    ).fetchone()
     return {"reserva": reserva, "paciente": paciente, "bloque": bloque}
 
 

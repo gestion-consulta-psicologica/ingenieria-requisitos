@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% if vista == "psicologa" %}Cargos por cobrar{% else %}Mis cargos{% endif %} — Gestión de consulta psicológica</title>
+  {% include "estilos_pago.html" %}
+</head>
+<body>
+  <header>
+    <h1>Gestión de consulta psicológica</h1>
+    {% include "nav.html" %}
+  </header>
+  <main>
+    {% if vista == "psicologa" %}
+    <h2>Cargos por cobrar</h2>
+    <p class="detalle">Cargos de $5.000 en estado Pendiente o Pago incompleto. <a href="/psicologa">Volver al panel</a></p>
+    {% else %}
+    <h2>Mis cargos</h2>
+    <p class="detalle">Cargos de $5.000 por cancelar una hora, no confirmarla o no asistir sin justificación. Para pagarlos, transfiere y registra el comprobante.</p>
+    {% endif %}
+    {% if cargos %}
+    <table>
+      <thead>
+        <tr>
+          {% if vista == "psicologa" %}<th>Paciente</th>{% endif %}
+          <th>Motivo</th><th>Hora asociada</th><th>Monto</th><th>Pagado</th><th>Estado</th><th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for cargo in cargos %}
+        <tr>
+          {% if vista == "psicologa" %}<td>{{ cargo.paciente_nombre }}<br><span class="detalle">{{ cargo.paciente_rut }}</span></td>{% endif %}
+          <td>{{ cargo.motivo_texto }}</td>
+          <td>{% if cargo.bloque_fecha %}{{ cargo.bloque_fecha|fecha_dia }}, {{ cargo.bloque_hora_inicio }}{% else %}—{% endif %}</td>
+          <td>{{ cargo.monto|clp }}</td>
+          <td>{{ cargo.monto_pagado|clp }}</td>
+          <td>{{ cargo.estado }}</td>
+          <td>
+            {% if vista == "psicologa" %}
+            <a href="/psicologa/cargos/{{ cargo.id }}">Revisar</a>
+            {% else %}
+            <a href="/cargos/{{ cargo.id }}">{% if cargo.admite_pago %}Pagar{% else %}Ver{% endif %}</a>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p>{% if vista == "psicologa" %}No hay cargos por cobrar.{% else %}No tienes cargos{% if not request.app.state.cuentas_persistentes %} asociados a este navegador{% endif %}.{% endif %}</p>
+    {% endif %}
+  </main>
+</body>
+</html>

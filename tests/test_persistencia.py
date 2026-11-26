@@ -28,6 +28,8 @@ CODIGO_ESCRITURA = textwrap.dedent(
     import sys
 
     from app.db.conexion import conectar
+    from app.servicios.cola_correo import marcar_enviado
+    from app.tiempo import programado
     from app.servicios.confirmacion import (
         RESPUESTA_CONFIRMA,
         TIPO_RECORDATORIO,
@@ -41,10 +43,14 @@ CODIGO_ESCRITURA = textwrap.dedent(
     conexion = conectar()
     try:
         enviar_solicitud(conexion, 1, TIPO_VISPERA)
-        enviar_solicitud(conexion, 1, TIPO_RECORDATORIO)
-        respuesta = registrar_respuesta(conexion, 1, RESPUESTA_CONFIRMA)
+        recordatorio = enviar_solicitud(conexion, 1, TIPO_RECORDATORIO)
+        marcar_enviado(conexion, recordatorio["correo"]["id"], "smtp-prueba", programado("2026-11-10", "08:00"))
+        respuesta = registrar_respuesta(
+            conexion, 1, RESPUESTA_CONFIRMA, ahora=programado("2026-11-10", "09:00")
+        )
         enviar_solicitud(conexion, reserva_id, TIPO_VISPERA)
-        enviar_solicitud(conexion, reserva_id, TIPO_RECORDATORIO)
+        recordatorio = enviar_solicitud(conexion, reserva_id, TIPO_RECORDATORIO)
+        marcar_enviado(conexion, recordatorio["correo"]["id"], "smtp-prueba", programado("2026-11-24", "08:00"))
         marcar_hora_sin_respuesta(conexion, reserva_id)
     finally:
         conexion.close()

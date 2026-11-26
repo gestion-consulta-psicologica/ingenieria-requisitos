@@ -3,7 +3,7 @@ from __future__ import annotations
 import sqlite3
 
 import pytest
-from fastapi.testclient import TestClient
+from tests.acceso_demo import cliente_con_reservas
 
 from app.configuracion import cargar_configuracion, monto_atencion_clp
 from app.db.conexion import conectar
@@ -47,7 +47,10 @@ def _sembrar(base_temporal) -> None:
 
 
 def _cliente(base_temporal):
-    return TestClient(crear_app(base_temporal, planificador_activo=False))
+    app = crear_app(
+        base_temporal, planificador_activo=False, clave_psicologa_demo="clave-prueba",
+    )
+    return cliente_con_reservas(app, 1, 2, 3, 4)
 
 
 def test_monto_atencion_clp_usa_30000_por_defecto(monkeypatch):
@@ -195,6 +198,53 @@ def test_planificador_crea_la_atencion_una_sola_vez_en_dos_ciclos(base_temporal)
     assert primero["atenciones_creadas"] == 1
     assert segundo["atenciones_creadas"] == 0
     assert atenciones == 1
+
+
+def test_reserva_finalizada_por_planificador_rechaza_gestion_http(base_temporal, conexion):
+    _sembrar(base_temporal)
+    planificador = PlanificadorCorreos(
+        str(base_temporal), CorreoFalso(), cargar_configuracion(),
+    )
+    ciclo = planificador.ejecutar_ciclo(programado("2026-11-17", "10:00"))
+    assert ciclo["atenciones_creadas"] == 1
+
+    with _cliente(base_temporal) as cliente:
+        assert "Finalizada" in cliente.get("/reservas/2").text
+        assert cliente.get("/reservas/2/reagendar").status_code == 409
+        assert cliente.post("/reservas/2/reagendar", data={"bloque_id": 4}).status_code == 409
+        assert cliente.post("/reservas/2/cancelar").status_code == 409
+
+    fila = conexion.execute(
+        "SELECT bloque_horario_id, estado, version FROM reserva WHERE id = 2"
+    ).fetchone()
+    assert tuple(fila) == (3, "Finalizada", 1)
+    assert obtener_atencion_de_reserva(conexion, 2)["pago_estado"] == "Pendiente"
+    assert conexion.execute("SELECT 1 FROM reserva_historial WHERE reserva_id = 2").fetchone() is None
+    assert conexion.execute("SELECT 1 FROM cargo WHERE reserva_id = 2").fetchone() is None
+
+
+def test_planificador_no_origina_atencion_si_la_reserva_cambio(base_temporal):
+    _sembrar(base_temporal)
+    conexion = conectar(base_temporal)
+    otra_conexion = conectar(base_temporal)
+
+    def cancelar_antes_de_escribir(sql):
+        if sql == "BEGIN IMMEDIATE":
+            otra_conexion.execute("UPDATE reserva SET estado = 'Cancelada' WHERE id = 2")
+            otra_conexion.commit()
+
+    try:
+        conexion.set_trace_callback(cancelar_antes_de_escribir)
+        creadas = crear_atenciones_vencidas(
+            conexion, programado("2026-11-17", "10:00"),
+        )
+
+        assert creadas == []
+        assert obtener_atencion_de_reserva(conexion, 2) is None
+        assert conexion.execute("SELECT estado FROM reserva WHERE id = 2").fetchone()[0] == "Cancelada"
+    finally:
+        conexion.close()
+        otra_conexion.close()
 
 
 def test_obtener_atencion_de_reserva_entrega_pago_y_estado(base_temporal):
@@ -402,6 +452,8 @@ def test_ruta_registra_comprobante_y_redirige_con_confirmacion(base_temporal):
     _sembrar(base_temporal)
 
     with _cliente(base_temporal) as cliente:
+        reserva = cliente.get("/reservas/4")
+        assert 'href="/pagos/2/comprobante"' in reserva.text
         respuesta = cliente.post(
             "/pagos/2/comprobante",
             data={
@@ -414,12 +466,20 @@ def test_ruta_registra_comprobante_y_redirige_con_confirmacion(base_temporal):
         confirmacion = cliente.get(
             "/pagos/2/comprobante?registrado=1"
         )
+        inicio = cliente.get("/")
+        credenciales = ("psicologa", "clave-prueba")
+        bandeja = cliente.get("/pagos", auth=credenciales)
+        revision = cliente.get("/pagos/2", auth=credenciales)
 
     assert respuesta.status_code == 303
     assert respuesta.headers["location"] == "/pagos/2/comprobante?registrado=1"
     assert confirmacion.status_code == 200
     assert "El comprobante quedó registrado" in confirmacion.text
     assert "Cuenta corriente 123" in confirmacion.text
+    assert 'href="/psicologa"' in inicio.text
+    assert 'href="/pagos/2"' in bandeja.text
+    assert "Cuenta corriente 123" in revision.text
+    assert 'href="/reservas/4"' in revision.text
 
 
 def test_ruta_rechaza_datos_invalidos_sin_registrar(base_temporal):
@@ -517,3 +577,53 @@ def test_detalle_de_reserva_muestra_enlace_solo_si_el_pago_lo_permite(base_tempo
         con_pago_pagado = cliente.get("/reservas/3")
 
     assert "Registrar comprobante de pago" not in con_pago_pagado.text
+
+
+@pytest.mark.parametrize("escrito", ["30000", "30.000", "$30.000", "$ 30.000"])
+def test_monto_del_comprobante_acepta_formato_chileno(base_temporal, escrito):
+    _sembrar(base_temporal)
+    conexion = conectar(base_temporal)
+    try:
+        comprobante = registrar_comprobante(
+            conexion, 2, escrito, "2026-11-10", "Cuenta destino"
+        )
+    finally:
+        conexion.close()
+
+    assert comprobante["monto"] == 30000
+
+
+@pytest.mark.parametrize("escrito", ["30,000", "$", "treinta mil", "-30000"])
+def test_monto_del_comprobante_rechaza_formatos_ambiguos(base_temporal, escrito):
+    _sembrar(base_temporal)
+    conexion = conectar(base_temporal)
+    try:
+        with pytest.raises(DatosComprobanteInvalidos) as error:
+            registrar_comprobante(conexion, 2, escrito, "2026-11-10", "Cuenta destino")
+    finally:
+        conexion.close()
+
+    assert set(error.value.errores) == {"monto"}
+
+
+@pytest.mark.parametrize("modalidad", ["Presencial", "remota", ""])
+def test_bloque_con_modalidad_invalida_se_rechaza_en_la_base(conexion, modalidad):
+    conexion.execute(
+        "INSERT INTO psicologa (id, nombre_completo, rut, correo) VALUES (1, 'A', '1-9', 'a@a.cl')"
+    )
+    with pytest.raises(sqlite3.IntegrityError, match="modalidad inválida"):
+        conexion.execute(
+            """
+            INSERT INTO bloque_horario (psicologa_id, fecha, hora_inicio, hora_termino, modalidad)
+            VALUES (1, '2026-11-12', '10:00', '10:50', ?)
+            """,
+            (modalidad,),
+        )
+    conexion.execute(
+        """
+        INSERT INTO bloque_horario (id, psicologa_id, fecha, hora_inicio, hora_termino, modalidad)
+        VALUES (50, 1, '2026-11-12', '10:00', '10:50', 'online')
+        """
+    )
+    with pytest.raises(sqlite3.IntegrityError, match="modalidad inválida"):
+        conexion.execute("UPDATE bloque_horario SET modalidad = ? WHERE id = 50", (modalidad,))

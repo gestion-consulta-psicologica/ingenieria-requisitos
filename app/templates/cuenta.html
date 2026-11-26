@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cuenta de la consulta</title>
+</head>
+<body>
+  <main>
+    <p><a href="/disponibilidad">Volver a disponibilidad</a></p>
+    {% set titulos = {
+      "ingresar": "Ingresar", "registro": "Crear cuenta de paciente",
+      "verificar": "Verificar correo", "recuperar": "Recuperar acceso",
+      "restablecer": "Restablecer contraseña"
+    } %}
+    <h1>{{ titulos[pantalla] }}</h1>
+    {% if mensaje %}<p role="status">{{ mensaje }}</p>{% endif %}
+    {% if sin_correo and mensaje != aviso_sin_correo %}<p role="alert">{{ aviso_sin_correo }}</p>{% endif %}
+    {% if pantalla == "registro" %}
+    <p>Verifica tu correo y solicita a la psicóloga que confirme tu identidad antes de ingresar.</p>
+    {% endif %}
+    <form method="post" action="/cuenta/{{ pantalla }}">
+      <input type="hidden" name="csrf" value="{{ request.state.csrf }}">
+      {% if bloque_id %}<input type="hidden" name="bloque_id" value="{{ bloque_id }}">{% endif %}
+      {% if pantalla in ("ingresar", "registro", "recuperar") %}
+      <p><label>Correo <input name="correo" type="email" required autocomplete="username" maxlength="254"></label></p>
+      {% endif %}
+      {% if pantalla == "registro" %}
+      <p><label>Nombre completo <input name="nombre" required autocomplete="name" maxlength="200"></label></p>
+      <p><label>RUT <input name="rut" required maxlength="30"></label></p>
+      <p><label>Teléfono <input name="telefono" type="tel" autocomplete="tel" maxlength="40"></label></p>
+      {% endif %}
+      {% if pantalla in ("verificar", "restablecer") %}
+      <p><label>Código <input name="codigo" required autocomplete="one-time-code" maxlength="128"></label></p>
+      {% endif %}
+      {% if pantalla in ("ingresar", "registro", "restablecer") %}
+      <p><label>Contraseña <input name="clave" type="password" required maxlength="128"
+        {% if pantalla == "ingresar" %}autocomplete="current-password"{% else %}autocomplete="new-password" minlength="15"{% endif %}
+      ></label></p>
+      {% if pantalla != "ingresar" %}<p>Usa al menos 15 caracteres.</p>{% endif %}
+      {% endif %}
+      <button type="submit">{{ titulos[pantalla] }}</button>
+    </form>
+    {% if pantalla == "verificar" %}
+    <form method="post" action="/cuenta/recuperar">
+      <input type="hidden" name="csrf" value="{{ request.state.csrf }}">
+      <input type="hidden" name="proposito" value="verificar">
+      <p><label>Correo <input name="correo" type="email" required maxlength="254"></label></p>
+      <button type="submit">Reenviar código de verificación</button>
+    </form>
+    {% endif %}
+    <nav aria-label="Opciones de cuenta">
+      <p><a href="/cuenta/ingresar{% if bloque_id %}?bloque_id={{ bloque_id }}{% endif %}">Ingresar</a></p>
+      <p><a href="/cuenta/registro{% if bloque_id %}?bloque_id={{ bloque_id }}{% endif %}">Crear cuenta</a></p>
+      <p><a href="/cuenta/verificar">Verificar correo</a></p>
+      <p><a href="/cuenta/recuperar">Recuperar acceso</a></p>
+    </nav>
+  </main>
+</body>
+</html>

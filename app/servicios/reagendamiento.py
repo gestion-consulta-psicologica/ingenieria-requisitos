@@ -5,8 +5,9 @@ from datetime import date, datetime, timedelta
 
 from app.configuracion import ConfiguracionCorreo, cargar_configuracion
 from app.servicios import cola_correo, plantillas_correo
-from app.servicios.disponibilidad import ESTADOS_VIGENTES
-from app.tiempo import ahora_local, ahora_utc, zona
+from app.servicios.disponibilidad import consultar_bloques_reservables
+from app.servicios.notificaciones import MOTIVO_CANCELACION, registrar_cargo_con_aviso
+from app.tiempo import ZONA_POR_DEFECTO, ahora_utc, programado, zona
 
 ESTADO_CONFIRMADA = "Confirmada"
 ESTADO_CANCELADA = "Cancelada"
@@ -77,7 +78,14 @@ def _contexto(conexion: sqlite3.Connection, reserva_id: int) -> dict:
     }
 
 
-def _tiene_atencion(conexion: sqlite3.Connection, reserva_id: int) -> bool:
+def atencion_ya_comenzo(
+    bloque: dict, ahora: datetime, zona_horaria: str = ZONA_POR_DEFECTO,
+) -> bool:
+    """Desde el inicio del bloque la reserva ya no se gestiona: sigue HU-05A/HU-08."""
+    return ahora >= programado(bloque["fecha"], bloque["hora_inicio"], zona_horaria)
+
+
+def reserva_tiene_atencion(conexion: sqlite3.Connection, reserva_id: int) -> bool:
     fila = conexion.execute(
         "SELECT 1 FROM atencion WHERE reserva_id = ? LIMIT 1",
         (reserva_id,),
@@ -94,53 +102,29 @@ def _obtener_bloque(conexion: sqlite3.Connection, bloque_id: int) -> dict:
     return dict(fila)
 
 
-def _bloque_disponible(conexion: sqlite3.Connection, bloque_id: int) -> bool:
-    marcadores = ", ".join("?" for _ in ESTADOS_VIGENTES)
-    fila = conexion.execute(
-        f"""
-        SELECT 1
-        FROM reserva
-        WHERE bloque_horario_id = ?
-          AND estado IN ({marcadores})
-        """,
-        (bloque_id, *ESTADOS_VIGENTES),
-    ).fetchone()
-    return fila is None
-
-
 def obtener_alternativas(
     conexion: sqlite3.Connection,
     reserva_id: int,
     *,
     desde: date | None = None,
     dias: int = DIAS_ALTERNATIVAS,
+    ahora: datetime | None = None,
+    zona_horaria: str = ZONA_POR_DEFECTO,
 ) -> list[dict]:
     contexto = _contexto(conexion, reserva_id)
-    inicio = desde or ahora_local().date()
+    ahora = ahora or ahora_utc()
+    inicio = desde or ahora.astimezone(zona(zona_horaria)).date()
     fin = inicio + timedelta(days=dias - 1)
-    marcadores = ", ".join("?" for _ in ESTADOS_VIGENTES)
-    filas = conexion.execute(
-        f"""
-        SELECT b.id, b.fecha, b.hora_inicio, b.hora_termino, b.modalidad
-        FROM bloque_horario b
-        WHERE b.fecha BETWEEN ? AND ?
-          AND b.id <> ?
-          AND NOT EXISTS (
-              SELECT 1
-              FROM reserva r
-              WHERE r.bloque_horario_id = b.id
-                AND r.estado IN ({marcadores})
-          )
-        ORDER BY b.fecha, b.hora_inicio
-        """,
+    return consultar_bloques_reservables(
+        conexion, "b.fecha BETWEEN ? AND ? AND b.id <> ?",
         (
             inicio.isoformat(),
             fin.isoformat(),
             contexto["bloque"]["id"],
-            *ESTADOS_VIGENTES,
         ),
-    ).fetchall()
-    return [dict(fila) for fila in filas]
+        ahora=ahora,
+        zona_horaria=zona_horaria,
+    )
 
 
 def listar_historial(
@@ -167,10 +151,16 @@ def listar_historial(
 
 
 def cancelar_reserva(
-    conexion: sqlite3.Connection, reserva_id: int, *, ahora: datetime | None = None
+    conexion: sqlite3.Connection, reserva_id: int, *,
+    ahora: datetime | None = None,
+    configuracion: ConfiguracionCorreo | None = None,
+    por_psicologa: bool = False,
 ) -> dict:
+    configuracion = configuracion or cargar_configuracion()
     ahora = ahora or ahora_utc()
-    fecha_local = ahora.astimezone(zona()).isoformat(timespec="seconds")
+    fecha_local = ahora.astimezone(zona(configuracion.zona_horaria)).isoformat(
+        timespec="seconds"
+    )
 
     conexion.execute("BEGIN IMMEDIATE")
     try:
@@ -179,9 +169,13 @@ def cancelar_reserva(
             raise EstadoReservaInvalido(
                 "Solo se puede cancelar una reserva confirmada."
             )
-        if _tiene_atencion(conexion, reserva_id):
+        if reserva_tiene_atencion(conexion, reserva_id):
             raise EstadoReservaInvalido(
                 "La reserva ya tiene una atención y no se puede cancelar."
+            )
+        if atencion_ya_comenzo(contexto["bloque"], ahora, configuracion.zona_horaria):
+            raise EstadoReservaInvalido(
+                "La hora de la atención ya comenzó; no se puede cancelar."
             )
 
         cursor = conexion.execute(
@@ -217,6 +211,10 @@ def cancelar_reserva(
                 fecha_local,
             ),
         )
+        if not por_psicologa:
+            registrar_cargo_con_aviso(
+                conexion, contexto, MOTIVO_CANCELACION, configuracion, ahora,
+            )
         conexion.commit()
     except Exception:
         conexion.rollback()
@@ -242,19 +240,24 @@ def reagendar_reserva(
     ahora: datetime | None = None,
 ) -> dict:
     configuracion = configuracion or cargar_configuracion()
-    ahora = ahora or ahora_utc()
-    fecha_local = ahora.astimezone(zona()).isoformat(timespec="seconds")
 
     conexion.execute("BEGIN IMMEDIATE")
     try:
+        ahora = ahora or ahora_utc()
+        local = ahora.astimezone(zona(configuracion.zona_horaria))
+        fecha_local = local.isoformat(timespec="seconds")
         contexto = _contexto(conexion, reserva_id)
         if contexto["reserva"]["estado"] != ESTADO_CONFIRMADA:
             raise EstadoReservaInvalido(
                 "Solo se puede reagendar una reserva confirmada."
             )
-        if _tiene_atencion(conexion, reserva_id):
+        if reserva_tiene_atencion(conexion, reserva_id):
             raise EstadoReservaInvalido(
                 "La reserva ya tiene una atención y no se puede reagendar."
+            )
+        if atencion_ya_comenzo(contexto["bloque"], ahora, configuracion.zona_horaria):
+            raise EstadoReservaInvalido(
+                "La hora de la atención ya comenzó; no se puede reagendar."
             )
 
         nuevo_bloque = _obtener_bloque(conexion, nuevo_bloque_id)
@@ -262,7 +265,13 @@ def reagendar_reserva(
             raise BloqueNoDisponible(
                 "El bloque seleccionado es el bloque actual de la reserva."
             )
-        if not _bloque_disponible(conexion, nuevo_bloque_id):
+        inicio = local.date()
+        fin = inicio + timedelta(days=DIAS_ALTERNATIVAS - 1)
+        if not consultar_bloques_reservables(
+            conexion, "b.id = ? AND b.fecha BETWEEN ? AND ?",
+            (nuevo_bloque_id, inicio.isoformat(), fin.isoformat()),
+            ahora=ahora, zona_horaria=configuracion.zona_horaria,
+        ):
             raise BloqueNoDisponible(
                 "El bloque seleccionado ya no está disponible."
             )

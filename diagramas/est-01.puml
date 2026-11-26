@@ -32,7 +32,7 @@ PEN --> CON : paciente confirma asistencia\n[solicitud pendiente más reciente; 
 
 PEN --> CAN : paciente informa que no asistirá\n[solicitud pendiente más reciente; token válido si viene del correo]\n/ consumir token, registrar respuesta y fechaRespuesta\n/ marcar solicitud como respondida\n/ registrar cargo de $5.000 asociado al paciente y a la reserva\n/ liberar bloque y encolar aviso del cargo
 
-PEN --> SIN : llega la hora de la atención\n[sin respuesta y solicitud pendiente]\n/ marcar solicitud como vencida con respuesta "sin respuesta"\n/ fechaRespuesta = nula; fechaCierre = fecha y hora de atención\n/ registrar cargo de $5.000 y encolar su aviso
+PEN --> SIN : llega la hora de la atención\n[sin respuesta y solicitud pendiente]\n/ marcar solicitud como vencida con respuesta "sin respuesta"\n/ fechaRespuesta = nula; fechaCierre = fecha y hora de atención\n/ registrar cargo de $5.000 y encolar su aviso\n  solo si SMTP aceptó antes una solicitud del ciclo vigente
 
 CON --> CAN : paciente confirma la cancelación\n/ registrar cargo de $5.000 asociado al paciente y a la reserva\n/ liberar bloque y encolar aviso del cargo
 

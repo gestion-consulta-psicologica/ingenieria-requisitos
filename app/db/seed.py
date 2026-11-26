@@ -60,10 +60,11 @@ def cargar_datos_ejemplo(ruta: str | None = None):
             )
 
         reservas = (
-            (1, 1, 1, "2026-11-01T09:00:00", "Pendiente de confirmación"),
-            (2, 1, 3, "2026-11-02T09:00:00", "Confirmada"),
-            (3, 1, 5, "2026-11-05T09:00:00", "Confirmada"),
-            (4, 2, 6, "2026-11-05T10:00:00", "Confirmada"),
+            (1, 1, 1, "2026-11-01T09:00:00-03:00", "Pendiente de confirmación"),
+            (2, 1, 3, "2026-11-02T09:00:00-03:00", "Confirmada"),
+            # Ya originaron su atención y su pago (HU-05A): EST-01 las deja Finalizadas.
+            (3, 1, 5, "2026-11-05T09:00:00-03:00", "Finalizada"),
+            (4, 2, 6, "2026-11-05T10:00:00-03:00", "Finalizada"),
         )
         for reserva in reservas:
             conexion.execute(

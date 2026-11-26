@@ -20,10 +20,14 @@
 <body>
   <header>
     <h1>Gestión de consulta psicológica</h1>
+    {% include "nav.html" %}
   </header>
   <main>
     {% if error %}
     <div class="error"><p>{{ error }}</p></div>
+    <p><a href="/disponibilidad">Volver a la disponibilidad</a></p>
+    {% elif resultado is defined %}
+    <p role="status">{{ resultado }}</p>
     <p><a href="/disponibilidad">Volver a la disponibilidad</a></p>
     {% else %}
     <div class="aviso">
@@ -44,6 +48,7 @@
     <section>
       <h2>Confirmar asistencia</h2>
       <form method="post" action="/respuesta/confirmar/{{ token }}">
+        <input type="hidden" name="csrf" value="{{ request.state.csrf }}">
         <button type="submit">Confirmar asistencia</button>
       </form>
     </section>
@@ -51,11 +56,12 @@
     <section>
       <h2>Informar que no asistirás</h2>
       <form method="post" action="/respuesta/cancelar/{{ token }}">
+        <input type="hidden" name="csrf" value="{{ request.state.csrf }}">
         <button type="submit" class="secundario">No asistiré</button>
       </form>
     </section>
     {% endif %}
-    <p><a href="/reservas/{{ reserva.reserva_id }}">Ver el detalle de la reserva</a></p>
+    <p><a href="/disponibilidad">Volver a la disponibilidad</a></p>
     {% endif %}
   </main>
 </body>

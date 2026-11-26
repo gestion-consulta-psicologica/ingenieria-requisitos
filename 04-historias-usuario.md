@@ -48,9 +48,9 @@ Como paciente, quiero registrar mis datos personales en la plataforma, para pode
 
 **Criterios de aceptación:**
 
-- **CA1 — Registro del paciente:** Dado que el paciente ingresó un RUT que no está registrado, cuando ingresa su nombre completo, su RUT y al menos un medio de contacto (teléfono o correo) y guarda, entonces el sistema registra al paciente y confirma el registro.
+- **CA1 — Registro del paciente:** Dado que el paciente ingresó un RUT que no está registrado, cuando ingresa su nombre completo, su RUT y su correo electrónico (el teléfono es opcional) y guarda, entonces el sistema registra al paciente y confirma el registro. El correo es obligatorio porque la solicitud de confirmación de HU-03 se envía por correo (decisión del 2026-11-25).
 
-- **CA2 — Datos obligatorios:** Dado que el paciente está registrando sus datos, cuando intenta guardar sin nombre completo, RUT o medio de contacto, entonces el sistema no registra al paciente y le informa qué dato falta.
+- **CA2 — Datos obligatorios:** Dado que el paciente está registrando sus datos, cuando intenta guardar sin nombre completo, RUT o correo electrónico, o con un correo sin formato válido, entonces el sistema no registra al paciente y le informa qué dato falta.
 
 - **CA3 — RUT ya registrado:** Dado que el paciente ingresa un RUT que ya existe en el sistema, cuando intenta registrar sus datos, entonces el sistema no duplica al paciente y utiliza el registro existente.
 
@@ -74,7 +74,7 @@ Como paciente, quiero confirmar si mantengo o no una hora que tengo reservada, p
 
 - **CA5 — Respuesta sin solicitud pendiente:** Dado que el paciente tiene una hora reservada, cuando intenta confirmar o informar que no asistirá sin una solicitud pendiente de respuesta, entonces el sistema rechaza la operación con HTTP 409 y no modifica la reserva, las solicitudes ni el cargo.
 
-- **CA6 — Sin respuesta:** Dado que el paciente no responde la solicitud pendiente más reciente y llega la hora de la atención, cuando el planificador automático cierra el plazo, entonces la solicitud queda en estado «vencida» con respuesta «sin respuesta» y fecha de cierre, sin registrar fecha de respuesta del paciente; la reserva queda en estado «Sin confirmar», se registra el cargo de $5.000 asociado al paciente y a la reserva y se encola el aviso de cargo por correo electrónico.
+- **CA6 — Sin respuesta:** Dado que el paciente no responde la solicitud pendiente más reciente y llega la hora de la atención, el planificador marca la solicitud como «vencida» con respuesta «sin respuesta» y fecha de cierre, sin fecha de respuesta del paciente, y deja la reserva «Sin confirmar». El cargo de $5.000 y su aviso proceden solo si SMTP aceptó el envío de una solicitud de confirmación del ciclo vigente antes del inicio de la atención.
 
 - **CA7 — Reemplazo de la solicitud anterior:** Dado que existe una solicitud de víspera pendiente, cuando el planificador envía el recordatorio por correo electrónico, entonces la solicitud anterior pasa a estado «reemplazada» con su fecha de cierre, su correo pendiente se cancela y el recordatorio queda como la única solicitud pendiente, en una misma transacción.
 
@@ -159,8 +159,14 @@ Como psicóloga, quiero registrar el estado de pago de una atención en la plata
 - **CA3 — Asociación con la atención:** Dado que la psicóloga registra el estado de pago, cuando el sistema guarda el registro, entonces este queda asociado a la atención correspondiente y puede consultarse desde su información.
 
 - **CA4 — Confirmación del registro:** Dado que la psicóloga ha ingresado la información del estado de pago, cuando guarda el registro correctamente, entonces el sistema muestra una confirmación de que la operación se completó.
+
+- **CA5 — Pago de cargos (extensión del 2026-11-25):** Dado que el paciente tiene un cargo de $5.000 (por cancelar, no confirmar o no asistir sin justificación), cuando registra el comprobante de su transferencia, entonces el sistema lo asocia al cargo sin cambiar su estado, y cuando la psicóloga lo verifica, el cargo queda Pagado si el total comprobado iguala $5.000 o Pago incompleto con la diferencia pendiente si es menor. Un cargo Pagado no admite más comprobantes y sale del listado de cargos por cobrar.
+
+**Alcance ampliado (2026-11-25):** los cargos registrados en HU-03, HU-04 y HU-08 se pagan como la atención: el paciente registra el comprobante (como en HU-05A) y la psicóloga registra el estado (esta historia).
   
 ## HU-07 — Emitir boleta
+
+**Estado de entrega:** pendiente de integración externa por definición de alcance. La implementación se retomará tras acordar con la psicóloga el sistema tributario, el canal de emisión, las autorizaciones y la configuración. Se conservan los cuatro criterios de aceptación. [Dependencias de la entrega posterior](./README.md#pendientes-para-la-entrega-a-la-psicóloga)
 
 Como psicóloga, quiero emitir una boleta desde la plataforma mediante un servicio de emisión integrado, para reducir el tiempo destinado a tareas administrativas.
 
@@ -208,6 +214,8 @@ Como psicóloga, quiero actualizar la ficha clínica del paciente en una platafo
 - **CA2 — Actualización de información clínica:** Dado que la psicóloga ha accedido a la ficha clínica y cuenta con los permisos necesarios, cuando registra o modifica información clínica y guarda los cambios, entonces el sistema informa que la actualización se ha realizado correctamente.
 - **CA3 — Persistencia de los cambios:** Dado que la psicóloga ha guardado correctamente los cambios en la ficha clínica, cuando vuelve a consultar esa ficha, entonces el sistema muestra la información actualizada.
 - **CA4 — Acceso no autorizado:** Dado que un usuario no cuenta con los permisos necesarios para acceder a una ficha clínica, cuando intenta consultar o modificar esa información, entonces el sistema deniega el acceso e impide la consulta o modificación de los datos clínicos.
+
+**Verificación de HU-09 en demostración.** CA1–CA3 cubren la consulta y edición de antecedentes de anamnesis y el registro de evoluciones de atenciones realizadas, conservando los registros anteriores. CA4 usa un paciente autenticado sin permiso clínico y verifica la denegación de consulta y modificación y su bitácora sin contenido clínico. Quedan pendientes las cuentas persistentes y el cifrado para datos reales.
 
 ## HU-10 - derivación a psiquiatra
 

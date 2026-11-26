@@ -116,12 +116,32 @@ def test_registrar_reserva_exitosa(conexion):
     insertar_bloque(conexion, 10, "2026-11-12", "16:00", "16:50")
 
     resultado = registrar_reserva(conexion, 10, "22.222.222-2")
+    aviso = conexion.execute(
+        "SELECT reserva_id FROM correo_pendiente WHERE tipo = 'aviso_reserva'"
+    ).fetchone()
+    assert aviso["reserva_id"] == resultado["reserva"]["id"]
 
     assert resultado["reserva"]["estado"] == "Pendiente de confirmación"
     assert resultado["reserva"]["paciente_id"] == 1
     assert resultado["reserva"]["bloque_horario_id"] == 10
     assert resultado["paciente"]["id"] == 1
     assert resultado["bloque"]["id"] == 10
+
+
+def test_reserva_se_revierte_si_no_se_puede_encolar_el_aviso(conexion):
+    from dataclasses import replace
+
+    from app.configuracion import cargar_configuracion
+
+    preparar_psicologa_y_pacientes(conexion)
+    insertar_bloque(conexion, 10, "2026-11-12", "16:00", "16:50")
+    configuracion = replace(cargar_configuracion(), max_intentos=0)
+
+    with pytest.raises(sqlite3.IntegrityError, match="no quedó encolado"):
+        registrar_reserva(conexion, 10, "22.222.222-2", configuracion=configuracion)
+
+    assert conexion.execute("SELECT COUNT(*) FROM reserva").fetchone()[0] == 0
+    assert conexion.execute("SELECT COUNT(*) FROM correo_pendiente").fetchone()[0] == 0
 
 
 def test_registrar_reserva_bloque_ocupado(conexion):
@@ -243,10 +263,11 @@ def test_formulario_reserva_muestra_bloque(base_temporal, conexion):
 def test_paciente_reserva_bloque_disponible(base_temporal, conexion, caso):
     preparar_psicologa_y_pacientes(conexion)
     insertar_bloque(conexion, 10, "2026-11-12", "16:00", "16:50")
-    with TestClient(crear_app(base_temporal)) as cliente:
+    with TestClient(crear_app(base_temporal, clave_paciente_demo="clave-prueba")) as cliente:
         respuesta = cliente.post(
             "/reservar/10",
             data={"rut": "222222222"},
+            auth=("paciente", "clave-prueba"),
             follow_redirects=False,
         )
         assert respuesta.status_code == 303
@@ -344,6 +365,18 @@ def test_disponibilidad_enlaza_reservar(base_temporal, conexion):
 
     assert respuesta.status_code == 200
     assert 'href="/reservar/14"' in respuesta.text
+
+
+def test_bloque_ocupado_no_deriva_a_registro_de_paciente(base_temporal, conexion):
+    preparar_psicologa_y_pacientes(conexion)
+    insertar_bloque(conexion, 11, "2026-11-12", "16:00", "16:50")
+    insertar_reserva(conexion, 1, 11, "Pendiente de confirmación")
+
+    with TestClient(crear_app(base_temporal)) as cliente:
+        respuesta = cliente.post("/reservar/11", data={"rut": "99.999.999-9"})
+
+    assert respuesta.status_code == 409
+    assert "El bloque ya no está disponible" in respuesta.text
 
 
 def test_bloque_y_reserva_inexistentes_responden_404(base_temporal):

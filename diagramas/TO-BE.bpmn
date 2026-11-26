@@ -112,11 +112,11 @@
       <bpmn:incoming>Flow_Recordatorio</bpmn:incoming>
       <bpmn:outgoing>Flow_RecordatorioFin</bpmn:outgoing>
     </bpmn:serviceTask>
-    <bpmn:serviceTask id="Activity_Cargo" name="Registrar cargo y notificar por correo">
+    <bpmn:serviceTask id="Activity_Cargo" name="Cerrar solicitud; registrar y notificar cargo solo si SMTP aceptó una solicitud del ciclo vigente antes del inicio">
       <bpmn:incoming>Flow_SinRespuesta</bpmn:incoming>
       <bpmn:outgoing>Flow_SinRespuestaFin</bpmn:outgoing>
     </bpmn:serviceTask>
-    <bpmn:serviceTask id="Activity_Cancelar" name="Cancelar reserva y liberar bloque">
+    <bpmn:serviceTask id="Activity_Cancelar" name="Cancelar reserva, registrar cargo y liberar bloque">
       <bpmn:incoming>Flow_0e0b60c</bpmn:incoming>
       <bpmn:outgoing>Flow_CancelarFin</bpmn:outgoing>
     </bpmn:serviceTask>

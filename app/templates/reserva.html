@@ -24,10 +24,7 @@
 <body>
   <header>
     <h1>Gestión de consulta psicológica</h1>
-    <label for="rol">Rol de demostración:</label>
-    <select id="rol" name="rol">
-      <option value="Paciente" selected>Paciente</option>
-    </select>
+    {% include "nav.html" %}
   </header>
 
   <main>
@@ -65,6 +62,7 @@
     {% endif %}
 
     <form method="post" action="/reservar/{{ bloque.id }}">
+      <input type="hidden" name="csrf" value="{{ request.state.csrf }}">
       <div>
         <label for="rut">RUT del paciente:</label>
         <input
@@ -81,6 +79,9 @@
         <a href="/disponibilidad">Volver a la disponibilidad</a>
       </p>
     </form>
+    {% if request.app.state.cuentas_persistentes and not request.state.cuenta %}
+    <p><a href="/cuenta/registro?bloque_id={{ bloque.id }}">Crear cuenta para reservar este bloque</a></p>
+    {% endif %}
   </main>
 </body>
 </html>

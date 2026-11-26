@@ -23,13 +23,20 @@
 <body>
   <header>
     <h1>Gestión de consulta psicológica</h1>
-    <p class="rol">Rol de demostración: Psicóloga · Sin autenticación real.</p>
+    {% include "nav.html" %}
   </header>
 
   <main>
     <h2>Comprobar pago</h2>
+    <p>
+      {% if request.app.state.cuentas_persistentes or request.app.state.clave_psicologa_demo %}
+      <a href="/psicologa">Volver al panel de la psicóloga</a>
+      {% else %}
+      <a href="/disponibilidad">Ir a disponibilidad</a>
+      {% endif %}
+    </p>
     <p class="aviso">
-      Atenciones con pago pendiente. La comprobación no modifica el estado del pago;
+      Atenciones con pago pendiente o incompleto. La comprobación no modifica el estado del pago;
       el registro corresponde a la siguiente actividad.
     </p>
 
@@ -69,7 +76,7 @@
     </section>
     {% else %}
     <div class="vacio">
-      <p>No hay atenciones con pago pendiente.</p>
+      <p>No hay atenciones con saldo por revisar.</p>
     </div>
     {% endif %}
   </main>

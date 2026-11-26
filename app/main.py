@@ -4,17 +4,26 @@ import logging
 from contextlib import asynccontextmanager
 from datetime import date
 from pathlib import Path
+from secrets import token_bytes, token_urlsafe
+from urllib.parse import urlsplit
 
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 
 from app.configuracion import ConfiguracionCorreo, cargar_configuracion
-from app.db.conexion import inicializar_base
+from app.db.conexion import inicializar_base, ruta_operativa
+from app.rutas.cuentas import estado_sesion, router as cuentas_router, verificar_csrf
+from app.rutas.derivaciones import router as derivaciones_router
 from app.rutas.disponibilidad import router as disponibilidad_router
 from app.rutas.paciente import router as paciente_router
 from app.rutas.pagos import router as pagos_router
+from app.rutas.psicologa import router as psicologa_router
+from app.rutas.clinica import router as clinica_router
+from app.rutas.cargos import router as cargos_router
 from app.rutas.reserva import router as reserva_router
+from app.servicios.cifrado import Cifrador, cifrador_desde_entorno, cifrar_datos_pendientes
+from app.db.conexion import conectar
 from app.servicios.correo import ServicioCorreo, ServicioCorreoSMTP
 from app.servicios.planificador import PlanificadorCorreos, estado_planificador
 from app.tiempo import a_local_texto
@@ -68,9 +77,32 @@ def crear_app(
     servicio_correo: ServicioCorreo | None = None,
     configuracion: ConfiguracionCorreo | None = None,
     planificador_activo: bool | None = None,
+    *,
+    clave_psicologa_demo: str | None = None,
+    clave_paciente_demo: str | None = None,
+    cuentas_persistentes: bool = False,
+    cifrador: Cifrador | None = None,
 ) -> FastAPI:
-    ruta = inicializar_base(ruta_db)
+    if cuentas_persistentes:
+        if clave_paciente_demo or clave_psicologa_demo:
+            raise ValueError("Las cuentas persistentes y el acceso de demostración son excluyentes.")
+        ruta_db = ruta_operativa(ruta_db)
     config = configuracion or cargar_configuracion()
+    if cuentas_persistentes and servicio_correo is None and config.configurado:
+        url = urlsplit(config.url_publica)
+        if (config.smtp_seguridad == "ninguna" or url.scheme != "https"
+                or not url.hostname or url.username or url.query or url.fragment):
+            raise ValueError("Para enviar correo operativo configura SMTP con TLS y una URL pública HTTPS.")
+    ruta = inicializar_base(ruta_db)
+    # RD-02: la ficha clínica se cifra en reposo. El modo con cuentas exige una
+    # clave persistente; la demo y las pruebas usan una temporal.
+    cifrador = cifrador or cifrador_desde_entorno(obligatorio=cuentas_persistentes)
+    if cifrador.persistente:
+        conexion_cifrado = conectar(ruta)
+        try:
+            cifrar_datos_pendientes(conexion_cifrado, cifrador)
+        finally:
+            conexion_cifrado.close()
     correo = servicio_correo or ServicioCorreoSMTP(config)
     activo = (
         config.planificador_activo
@@ -92,19 +124,32 @@ def crear_app(
     app = FastAPI(
         title="Gestión de consulta psicológica",
         lifespan=lifespan,
+        dependencies=[Depends(verificar_csrf)],
     )
     app.state.ruta_db = str(ruta)
+    app.state.cifrador = cifrador
     app.state.configuracion_correo = config
     app.state.servicio_correo = correo
     app.state.correo_configurado = correo.configurado()
     app.state.correo_motivo = correo.motivo_no_configurado()
     app.state.planificador = planificador
+    app.state.clave_psicologa_demo = clave_psicologa_demo
+    app.state.clave_paciente_demo = clave_paciente_demo
+    app.state.cuentas_persistentes = cuentas_persistentes
+    app.state.clave_acceso_reserva = None if cuentas_persistentes else token_bytes(32)
+    app.state.csrf_psicologa_demo = None if cuentas_persistentes else token_urlsafe()
+    app.middleware("http")(estado_sesion)
 
     if not correo.configurado():
         logger.warning(
             "El servicio de correo no está configurado: %s",
             correo.motivo_no_configurado(),
         )
+        if cuentas_persistentes:
+            logger.warning(
+                "Modo con cuentas sin correo: los pacientes no podrán registrarse "
+                "ni recuperar el acceso hasta configurar SMTP."
+            )
     if not activo:
         logger.warning("El planificador automático de correos está desactivado.")
 
@@ -122,6 +167,11 @@ def crear_app(
     app.include_router(reserva_router)
     app.include_router(paciente_router)
     app.include_router(pagos_router)
+    app.include_router(psicologa_router)
+    app.include_router(clinica_router)
+    app.include_router(cargos_router)
+    app.include_router(cuentas_router)
+    app.include_router(derivaciones_router)
 
     @app.get("/", include_in_schema=False)
     def inicio():

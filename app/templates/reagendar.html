@@ -23,6 +23,7 @@
 <body>
   <header>
     <h1>Gestión de consulta psicológica</h1>
+    {% include "nav.html" %}
   </header>
 
   <main>
@@ -61,6 +62,7 @@
             <td>{{ bloque.modalidad }}</td>
             <td>
               <form method="post" action="/reservas/{{ reserva.reserva_id }}/reagendar">
+                <input type="hidden" name="csrf" value="{{ request.state.csrf }}">
                 <input type="hidden" name="bloque_id" value="{{ bloque.id }}">
                 <button type="submit">Elegir este horario</button>
               </form>

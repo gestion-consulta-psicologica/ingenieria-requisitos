@@ -22,7 +22,11 @@ def _sembrar(base_temporal) -> None:
 
 
 def _cliente(base_temporal):
-    return TestClient(crear_app(base_temporal, planificador_activo=False))
+    cliente = TestClient(crear_app(
+        base_temporal, planificador_activo=False, clave_psicologa_demo="clave-prueba",
+    ))
+    cliente.auth = ("psicologa", "clave-prueba")
+    return cliente
 
 
 def test_migracion_007_crea_tablas_y_registra_version(base_temporal):
@@ -248,8 +252,8 @@ def test_hu05_psicologa_revisa_y_continua_al_registro(base_temporal):
 
     assert respuesta.status_code == 200
     assert "Registrar estado de pago" in respuesta.text
-    assert "disabled" in respuesta.text
-    assert "no calcula ni cambia el estado" in respuesta.text
+    assert 'action="/pagos/1/estado"' in respuesta.text
+    assert "Consultar el pago no cambia su estado." in respuesta.text
 
     conexion = conectar(base_temporal)
     try:

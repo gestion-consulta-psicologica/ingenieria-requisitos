@@ -14,10 +14,12 @@ Variantes representadas:
 - **Entrega por cola:** el planificador reclama el correo, lo envía por SMTP y registra `Message-ID` y fecha. Si el servidor falla, reprograma el intento con espera exponencial; si las credenciales se rechazan, lo marca fallido; si no hay correo del paciente, queda omitido.
 - **alt — el paciente confirma su asistencia:** desde la plataforma o el enlace seguro, el token se consume, la solicitud pendiente más reciente queda respondida y la reserva queda confirmada.
 - **alt — el paciente responde que no asistirá:** la solicitud pendiente más reciente queda respondida, la reserva queda cancelada, se registra un cargo de $5.000 asociado al paciente y a la reserva, el bloque horario se libera y se encola el aviso del cargo por correo electrónico. Esta respuesta pertenece a CU-03; CU-04 es la cancelación independiente desde la gestión de la reserva y no es una extensión de CU-03.
-- **opt — el paciente no responde hasta la hora de la atención:** la solicitud queda vencida con respuesta «sin respuesta» y fecha de cierre, sin fecha de respuesta del paciente; la reserva queda sin confirmar, se registra el cargo de $5.000 asociado al paciente y a la reserva, y se encola el aviso de cargo por correo.
+- **opt — el paciente no responde hasta la hora de la atención:** la solicitud vence con respuesta «sin respuesta» y fecha de cierre, y la reserva queda sin confirmar. El cargo de $5.000 y su aviso proceden solo si SMTP aceptó antes una solicitud del ciclo vigente.
 - **Error:** si no existe una solicitud pendiente, o la solicitud más reciente ya está respondida, reemplazada o vencida, el sistema rechaza la respuesta con HTTP 409 sin modificar datos. Un token inexistente responde 404 y uno usado, vencido o de otra acción responde 409.
 
 ## DSS-02 — Emitir boleta de honorarios
+
+Diseño de HU-07 para una etapa posterior. La integración externa está fuera del alcance de la entrega académica.
 - Caso de uso: [CU-08](./09-casos-de-uso.md)
 - Historia: [HU-07](./04-historias-usuario.md#hu-07--emitir-boleta)
 - Sistemas externos que participan: SII
@@ -77,4 +79,4 @@ Variantes representadas:
 - **alt — la atención no existe:** el sistema informa que no se encontró la atención y no modifica datos.
 - **alt — la atención tiene comprobantes:** el sistema muestra el nombre y el RUT del paciente, el monto de la atención, el monto pagado y el estado del pago, junto con cada comprobante (monto, fecha de transferencia y cuenta de destino).
 - **alt — la atención no tiene comprobante:** el sistema informa la ausencia de comprobante y muestra la atención en el listado de atenciones con pago pendiente.
-- **Continuación:** el sistema ofrece «Registrar estado de pago» (inactiva hasta que se implemente HU-06). El estado del pago no se modifica: las transiciones de EST-02 pertenecen a HU-06.
+- **Continuación:** el panel de demostración ofrece «Registrar estado de pago» cuando hay comprobantes que se pueden verificar. La consulta conserva el estado. Las transiciones de EST-02 ocurren al guardar la verificación en HU-06.

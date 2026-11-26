@@ -18,14 +18,15 @@
     .advertencia { background: #fffbeb; border: 1px solid #f59e0b; border-radius: .5rem; padding: .75rem 1rem; margin-bottom: 1rem; color: #92400e; }
     .error { background: #fef2f2; border: 1px solid #fca5a5; border-radius: .5rem; padding: .75rem 1rem; margin-bottom: 1rem; color: #991b1b; }
     .detalle { color: #4b5563; font-size: .9rem; }
-    .acciones button { font: inherit; padding: .45rem .8rem; border-radius: .375rem; border: 1px solid #9ca3af; background: #e5e7eb; color: #6b7280; cursor: not-allowed; }
+    .acciones button { font: inherit; padding: .45rem .8rem; border-radius: .375rem; border: 1px solid #0f766e; background: #0f766e; color: white; }
+    .acciones button:disabled { border-color: #9ca3af; background: #e5e7eb; color: #6b7280; cursor: not-allowed; }
     a { color: #0f766e; }
   </style>
 </head>
 <body>
   <header>
     <h1>Gestión de consulta psicológica</h1>
-    <p class="rol">Rol de demostración: Psicóloga · Sin autenticación real.</p>
+    {% include "nav.html" %}
   </header>
 
   <main>
@@ -38,9 +39,8 @@
     <p><a href="/pagos">Volver al listado de pagos pendientes</a></p>
     {% else %}
 
-    <p class="aviso">
-      Consulta de solo lectura. La comprobación no determina ni modifica el estado del pago.
-    </p>
+    {% if actualizado %}<p class="aviso" role="status">El estado del pago quedó registrado.</p>{% endif %}
+    <p class="aviso">Consultar el pago no cambia su estado.</p>
 
     <section>
       <h3>Atención</h3>
@@ -54,6 +54,7 @@
       <p><strong>Tipo de atención:</strong> {{ detalle.atencion.tipo_atencion }}</p>
       <p><strong>Estado de la atención:</strong> {{ detalle.atencion.estado }}</p>
       <p><strong>Número de atención:</strong> {{ detalle.atencion.id }}</p>
+      <p><a href="/reservas/{{ detalle.reserva_id }}">Ver reserva asociada</a></p>
     </section>
 
     <section>
@@ -61,6 +62,9 @@
       <p><strong>Monto de la atención:</strong> {{ detalle.pago.monto_atencion|clp }}</p>
       <p><strong>Monto pagado:</strong> {{ detalle.pago.monto_pagado|clp }}</p>
       <p><strong>Estado del pago:</strong> {{ detalle.pago.estado }}</p>
+      {% if detalle.pago.estado == "Pago incompleto" %}
+      <p><strong>Diferencia pendiente:</strong> {{ (detalle.pago.monto_atencion - detalle.pago.monto_pagado)|clp }}</p>
+      {% endif %}
     </section>
 
     <section>
@@ -72,6 +76,7 @@
             <th>Monto</th>
             <th>Fecha de transferencia</th>
             <th>Cuenta de destino</th>
+            {% if habilitado %}<th>Verificación</th>{% endif %}
           </tr>
         </thead>
         <tbody>
@@ -80,6 +85,16 @@
             <td>{{ comprobante.monto|clp }}</td>
             <td>{{ comprobante.fecha_transferencia }}</td>
             <td>{{ comprobante.cuenta_destino }}</td>
+            {% if habilitado %}
+            <td>
+              {% if comprobante.verificado %}
+              Verificado
+              {% else %}
+              <label><input type="checkbox" name="comprobantes" value="{{ comprobante.id }}" form="verificar-pago">
+                Verificar comprobante {{ comprobante.id }}</label>
+              {% endif %}
+            </td>
+            {% endif %}
           </tr>
           {% endfor %}
         </tbody>
@@ -93,11 +108,26 @@
 
     <section class="acciones">
       <h3>Registrar estado de pago</h3>
+      {% if habilitado and detalle.comprobantes %}
+      <form id="verificar-pago" method="post" action="/pagos/{{ detalle.atencion.id }}/estado">
+        <input type="hidden" name="csrf" value="{{ request.state.csrf }}">
+        <p>Selecciona los comprobantes revisados y el estado que corresponde al monto comprobado.</p>
+        <label>Estado del pago
+          <select name="estado" required>
+            <option value="">Seleccionar estado</option>
+            <option value="Pago incompleto">Pago incompleto</option>
+            <option value="Pagado">Pagado</option>
+          </select>
+        </label>
+        <button type="submit">Registrar estado de pago</button>
+      </form>
+      {% elif not request.app.state.clave_psicologa_demo %}
       <button type="button" disabled aria-disabled="true">Registrar estado de pago</button>
       <p class="detalle">
-        La opción quedará habilitada cuando se implemente el registro del estado
-        de pago (HU-06). Esta pantalla no calcula ni cambia el estado.
+        El registro del estado está disponible en el panel de demostración.
+        Esta pantalla no calcula ni cambia el estado.
       </p>
+      {% endif %}
     </section>
 
     <p><a href="/pagos">Volver al listado de pagos pendientes</a></p>

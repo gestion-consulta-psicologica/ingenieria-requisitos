@@ -11,7 +11,7 @@ participant ":Sistema de gestión\nde consulta" as SIS
 participant ":Cola de correos\n(correo_pendiente)" as COLA
 participant ":Servicio SMTP\n<<sistema externo>>" as SMTP
 
-note over SIS : Reserva en estado\n"pendiente de confirmación"\nSolo la solicitud pendiente más reciente\nadmite respuesta; si no existe, HTTP 409
+note over SIS : Solo admite respuesta la solicitud\npendiente más reciente cuyo correo fue aceptado por SMTP.\nEn otro caso, HTTP 409.
 
 SIS -> SIS : registrar SolicitudConfirmacion\n(tipo = aviso de víspera,\nestado = pendiente)
 SIS -> SIS : crear tokens de un solo uso\n(confirmar / cancelar;\nsolo se guarda el hash)
@@ -30,6 +30,8 @@ else el paciente responde que no asistirá
   SIS -> SIS : validar y consumir el token\n(usadoEn)
   SIS -> SIS : registrar respuesta\n(estado = respondida,\nrespuesta = no asistirá,\nfechaRespuesta)
   SIS -> SIS : cancelar reserva y liberar bloque
+  SIS -> SIS : registrar cargo de $5.000\npor cancelación del paciente
+  SIS -> COLA : encolar aviso del cargo
   SIS --> PAC : reserva cancelada y bloque horario liberado
 else el paciente no responde
   SIS -> SIS : reemplazar solicitud pendiente\n(estado = reemplazada,\nfechaCierre = fecha de envío)
@@ -41,11 +43,13 @@ else el paciente no responde
   SMTP --> PAC : recordatorio de confirmación\ncon enlaces seguros
   opt el paciente no responde hasta la hora de la atención
     SIS -> SIS : cerrar solicitud\n(estado = vencida,\nrespuesta = sin respuesta,\nfechaRespuesta = nula,\nfechaCierre = fecha y hora de atención)
-    SIS -> SIS : registrar Cargo\n(monto = $5.000,\nmotivo = sin confirmar,\npaciente y reserva)
     note over SIS : la reserva queda "sin confirmar"
-    SIS -> COLA : encolar aviso de cargo
-    COLA -> SMTP : enviar aviso de cargo
-    SMTP --> PAC : aviso de cargo por reserva de hora
+    opt SMTP aceptó antes una solicitud del ciclo vigente
+      SIS -> SIS : registrar cargo de $5.000\npor falta de confirmación
+      SIS -> COLA : encolar aviso de cargo
+      COLA -> SMTP : enviar aviso de cargo
+      SMTP --> PAC : aviso de cargo por reserva de hora
+    end
   end
 end
 
