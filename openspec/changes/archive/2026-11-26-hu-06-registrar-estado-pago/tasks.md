@@ -20,7 +20,13 @@
 - [x] 4.1 `tests/test_recorrido_integrado.py::test_psicologa_verifica_pago_parcial_y_completa_el_saldo` (pago parcial, diferencia y saldo completado).
 - [x] 4.2 `tests/test_hu05_comprobar_pago.py` verifica que la opción de registrar el estado está activa.
 
+## 5. Extensión: pago de cargos (2026-11-25)
+
+- [x] 5.0.1 Migración `018_pago_de_cargos.sql`: `cargo.estado`, `cargo.monto_pagado` y tabla `comprobante_cargo`.
+- [x] 5.0.2 `app/servicios/cargos.py` y `app/rutas/cargos.py`: «Mis cargos», registro de comprobantes, «Cargos por cobrar» y verificación con CSRF.
+- [x] 5.0.3 Enlaces en el menú, el panel y el detalle de la reserva; pruebas en `tests/test_hu06_pagar_cargo.py`.
+
 ## 5. Cierre
 
 - [x] 5.1 Confirmación del estudiante de la ficha `.cin324/historias/HU-06.md`.
-- [ ] 5.2 Sincronizar la especificación en `openspec/specs/` y archivar el cambio.
+- [x] 5.2 Sincronizar la especificación en `openspec/specs/` y archivar el cambio (2026-11-26).

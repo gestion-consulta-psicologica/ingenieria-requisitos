@@ -11,7 +11,7 @@ El prototipo implementa las siguientes historias de usuario:
 - **HU-04 — Reagendar o cancelar una hora:** el paciente cancela una reserva confirmada o la cambia por un bloque libre de los próximos 14 días, con historial de cambios y un nuevo ciclo de confirmación.
 - **HU-05 — Comprobar el pago:** la psicóloga consulta la información del pago de una atención, sus comprobantes y las atenciones con pago pendiente, sin modificar el estado.
 - **HU-05A — Registrar la atención y el comprobante de pago:** la reserva confirmada origina automáticamente la atención y su pago, y el paciente registra uno o más comprobantes de transferencia.
-- **HU-06 — Registrar el estado del pago:** la psicóloga verifica comprobantes y selecciona un estado compatible con el monto comprobado.
+- **HU-06 — Registrar el estado del pago:** la psicóloga verifica comprobantes y selecciona un estado compatible con el monto comprobado. También verifica el pago de los cargos de $5.000, que el paciente paga desde **Mis cargos** con un comprobante de transferencia.
 - **HU-08 — Registrar asistencia:** la psicóloga registra asistencia o inasistencia. Se registra el cargo aprobado en caso de inasistencia injustificada.
 - **HU-09 — Actualizar ficha clínica:** la psicóloga consulta y guarda antecedentes y evoluciones sintéticas. Los intentos de acceso sin permiso quedan en bitácora.
 
@@ -117,7 +117,31 @@ La `015` agrega el usuario y la ficha a la bitácora clínica y el historial de 
 
 ## Configuración del correo electrónico
 
-El envío real usa SMTP. Configura las variables en la terminal antes de iniciar la aplicación; **no guardes credenciales en el repositorio**:
+El envío real usa SMTP. Configura las variables en la terminal antes de iniciar la aplicación; **no guardes credenciales en el repositorio**.
+
+### Con Gmail (Linux / Omarchy)
+
+1. Activa la verificación en 2 pasos de la cuenta de Google y crea una **contraseña de aplicación** en <https://myaccount.google.com/apppasswords> (16 caracteres). No uses tu contraseña normal.
+2. Copia la plantilla **fuera del repositorio** y complétala:
+
+   ```bash
+   mkdir -p ~/.config/consulta
+   cp configuracion/gmail.env.example ~/.config/consulta/correo.env
+   chmod 600 ~/.config/consulta/correo.env
+   nano ~/.config/consulta/correo.env
+   ```
+
+3. Carga las variables y prueba el envío (no toca la base de datos):
+
+   ```bash
+   set -a; source ~/.config/consulta/correo.env; set +a
+   python -m app.probar_correo tu-correo@gmail.com
+   ```
+
+   Si falla, el comando indica la causa probable (contraseña de aplicación, servidor/puerto o remitente).
+4. Para recorrer la demo con correos reales: `python -m app.demo --correo-real`. Usa solo direcciones tuyas o de prueba como pacientes.
+
+### Con otro proveedor (Windows / PowerShell)
 
 ```powershell
 $env:SMTP_HOST = "smtp.example.com"
@@ -135,9 +159,27 @@ Variables y consideraciones:
 - `CORREO_URL_PUBLICA` debe ser una URL accesible desde el dispositivo del paciente, porque se usa para armar los enlaces de confirmación.
 - `PLANIFICADOR_ACTIVO=0` desactiva el planificador para pruebas manuales controladas.
 - `MONTO_ATENCION_CLP` define el monto de las atenciones nuevas y usa **30000** por defecto. La creación automática de la atención y su pago depende de que el planificador esté activo.
-- `CONFIRMACION_HORA_VISPERA` (por defecto `09:00`) y `CONFIRMACION_HORA_RECORDATORIO` (por defecto `08:00`) son configurables; **aún no están confirmadas por el cliente**.
+- `CONFIRMACION_HORA_VISPERA` (por defecto `09:00`) y `CONFIRMACION_HORA_RECORDATORIO` (por defecto `08:00`) son las horas confirmadas por la psicóloga el 2026-11-25; siguen configurables.
 - La zona horaria por defecto es `America/Santiago`.
 - Si el correo no está configurado, la aplicación funciona, pero los correos quedan en la cola como pendientes con el motivo y **nunca se marca un envío como exitoso**.
+
+## Cifrado de la ficha clínica (RD-02)
+
+Los antecedentes, las evoluciones, su historial y la justificación de inasistencias se guardan **cifrados** en SQLite (Fernet: AES con autenticación, librería `cryptography`). La clave se lee de `CONSULTA_CLAVE_CIFRADO` y **nunca se guarda junto a la base**.
+
+```bash
+python -m app.servicios.cifrado            # imprime una clave nueva
+mkdir -p ~/.config/consulta
+nano ~/.config/consulta/clave.env          # pega la línea CONSULTA_CLAVE_CIFRADO=...
+chmod 600 ~/.config/consulta/clave.env
+set -a; source ~/.config/consulta/clave.env; set +a
+```
+
+- El modo con cuentas (`app.asgi`) **no arranca sin la clave**.
+- La demo usa una clave temporal, porque su base también es temporal.
+- Si la base tenía datos clínicos en texto plano, se cifran automáticamente al arrancar con la clave.
+- Si se usa otra clave sobre datos ya cifrados, la aplicación se niega a arrancar en vez de mezclar claves.
+- **Si pierdes la clave, la información clínica no se puede recuperar.** Respáldala por separado de la base de datos.
 
 ## Arranque con cuentas persistentes
 

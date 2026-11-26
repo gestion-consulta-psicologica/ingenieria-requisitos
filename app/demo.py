@@ -16,6 +16,7 @@ from app.db.conexion import conectar
 from app.db.seed import cargar_datos_ejemplo
 from app.main import crear_app
 from app.servicios.confirmacion import TIPO_VISPERA, enviar_solicitud
+from app.servicios.cifrado import Cifrador
 from app.servicios.disponibilidad import crear_bloques_por_hora
 from app.tiempo import ahora_local
 
@@ -54,12 +55,27 @@ class ServicioCorreoDemo:
         return id_mensaje
 
 
-def main(*, bloques_por_hora: bool = False) -> None:
-    configuracion = replace(
-        cargar_configuracion(), smtp_host=None, smtp_remitente=None,
-        planificador_activo=True, intervalo_planificador_segundos=10,
-        url_publica=URL_DEMO,
-    )
+def main(*, bloques_por_hora: bool = False, correo_real: bool = False) -> None:
+    base = cargar_configuracion()
+    if correo_real:
+        # Usa el SMTP del entorno (por ejemplo Gmail, ver configuracion/gmail.env.example).
+        if not base.configurado:
+            raise SystemExit(
+                f"--correo-real requiere SMTP configurado: {base.motivo_no_configurado} "
+                "Carga primero tus variables (ver configuracion/gmail.env.example)."
+            )
+        configuracion = replace(
+            base, planificador_activo=True, intervalo_planificador_segundos=10,
+            url_publica=URL_DEMO,
+        )
+        servicio_correo = None
+    else:
+        configuracion = replace(
+            base, smtp_host=None, smtp_remitente=None,
+            planificador_activo=True, intervalo_planificador_segundos=10,
+            url_publica=URL_DEMO,
+        )
+        servicio_correo = ServicioCorreoDemo()
     ahora = ahora_local(configuracion.zona_horaria)
     hoy = ahora.date()
     lunes = hoy + timedelta(days=7 - hoy.weekday())
@@ -90,10 +106,19 @@ def main(*, bloques_por_hora: bool = False) -> None:
         clave = token_urlsafe(18)
         clave_paciente = token_urlsafe(18)
         app = crear_app(
-            ruta, configuracion=configuracion, servicio_correo=ServicioCorreoDemo(),
+            ruta, configuracion=configuracion, servicio_correo=servicio_correo,
+            # La base de la demo es temporal: basta una clave de cifrado temporal.
+            cifrador=Cifrador.temporal(),
             clave_psicologa_demo=clave, clave_paciente_demo=clave_paciente,
         )
-        print("Correo de demostración: los mensajes se muestran en esta consola.", flush=True)
+        if correo_real:
+            print(
+                f"Correo REAL por {configuracion.smtp_host}: los correos llegan a las "
+                "direcciones de los pacientes. Usa solo direcciones tuyas o de prueba.",
+                flush=True,
+            )
+        else:
+            print("Correo de demostración: los mensajes se muestran en esta consola.", flush=True)
         print(f"Panel local /psicologa · Usuario psicologa · Clave {clave}", flush=True)
         print(f"Paciente de ejemplo · Usuario paciente · Clave {clave_paciente}", flush=True)
         uvicorn.run(app, host="127.0.0.1", port=8000)
@@ -105,4 +130,9 @@ if __name__ == "__main__":
         "--bloques-por-hora", action="store_true",
         help="Cargar la agenda sintética de esta semana y la siguiente con inicios cada hora.",
     )
-    main(bloques_por_hora=argumentos.parse_args().bloques_por_hora)
+    argumentos.add_argument(
+        "--correo-real", action="store_true",
+        help="Enviar los correos por el SMTP configurado en el entorno (p. ej. Gmail) en vez de mostrarlos en consola.",
+    )
+    opciones = argumentos.parse_args()
+    main(bloques_por_hora=opciones.bloques_por_hora, correo_real=opciones.correo_real)

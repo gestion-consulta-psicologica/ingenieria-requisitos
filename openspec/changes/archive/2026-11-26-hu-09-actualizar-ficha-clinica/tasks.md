@@ -19,5 +19,5 @@
 ## 4. Cierre
 
 - [x] 4.1 Confirmación del estudiante de la ficha `.cin324/historias/HU-09.md`.
-- [ ] 4.2 RD-02 — cifrado de la información sensible (pendiente).
-- [ ] 4.3 Sincronizar la especificación en `openspec/specs/` y archivar el cambio.
+- [x] 4.2 RD-02 — cifrado en reposo de la información clínica (`app/servicios/cifrado.py`, migración `017`); pruebas en `tests/test_hu09_ficha_clinica.py`.
+- [x] 4.3 Sincronizar la especificación en `openspec/specs/` y archivar el cambio (2026-11-26).

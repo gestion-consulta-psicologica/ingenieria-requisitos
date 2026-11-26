@@ -10,15 +10,15 @@ Las atenciones realizadas provienen de HU-08. No hay un diagrama de estado para 
 
 **Goals:** consultar y actualizar antecedentes; registrar evoluciones de atenciones realizadas sin alterar las anteriores; restringir el acceso por rol (RD-01) con bitácora.
 
-**Non-Goals:** cifrado de datos (RD-02), exportación, roles distintos de psicóloga y paciente.
+**Non-Goals:** exportación, roles distintos de psicóloga y paciente.
 
 ## Decisions
 
 - **Evolución inmutable:** clave primaria `registro_evolucion.atencion_id`; una por atención.
-- **Historial de antecedentes por trigger** (`trg_ficha_clinica_historial`): cada cambio copia la versión anterior a `ficha_clinica_historial`, sin depender del código de la ruta. Los guardados sin cambios no generan versiones.
+- **Historial de antecedentes:** cada cambio real copia la versión anterior (cifrada) a `ficha_clinica_historial`. Primero lo hacía un trigger (migración `015`); con el cifrado, la comparación pasó al código (migración `017`), que compara el texto descifrado. Los guardados sin cambios no generan versiones.
 - **Bitácora sin contenido clínico:** fecha, rol, usuario, `paciente_id`, operación y resultado; se registran lecturas y escrituras permitidas y denegadas.
 - **Autorización como dependencia** (`autorizar_ficha`) común a las tres rutas.
 
 ## Risks / Trade-offs
 
-- Sin RD-02, la ficha se guarda en texto plano en SQLite; solo deben usarse datos sintéticos hasta implementar el cifrado.
+- **RD-02:** la ficha se cifra en reposo con Fernet y una clave fuera de la base. Si la clave se pierde, la información clínica no se recupera; debe respaldarse por separado.

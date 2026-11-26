@@ -159,6 +159,10 @@ Como psicóloga, quiero registrar el estado de pago de una atención en la plata
 - **CA3 — Asociación con la atención:** Dado que la psicóloga registra el estado de pago, cuando el sistema guarda el registro, entonces este queda asociado a la atención correspondiente y puede consultarse desde su información.
 
 - **CA4 — Confirmación del registro:** Dado que la psicóloga ha ingresado la información del estado de pago, cuando guarda el registro correctamente, entonces el sistema muestra una confirmación de que la operación se completó.
+
+- **CA5 — Pago de cargos (extensión del 2026-11-25):** Dado que el paciente tiene un cargo de $5.000 (por cancelar, no confirmar o no asistir sin justificación), cuando registra el comprobante de su transferencia, entonces el sistema lo asocia al cargo sin cambiar su estado, y cuando la psicóloga lo verifica, el cargo queda Pagado si el total comprobado iguala $5.000 o Pago incompleto con la diferencia pendiente si es menor. Un cargo Pagado no admite más comprobantes y sale del listado de cargos por cobrar.
+
+**Alcance ampliado (2026-11-25):** los cargos registrados en HU-03, HU-04 y HU-08 se pagan como la atención: el paciente registra el comprobante (como en HU-05A) y la psicóloga registra el estado (esta historia).
   
 ## HU-07 — Emitir boleta
 

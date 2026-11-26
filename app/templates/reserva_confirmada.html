@@ -294,6 +294,10 @@
       <p><strong>Monto:</strong> ${{ cargo_monto }}</p>
       <p><strong>Motivo:</strong> {{ cargo.motivo }}</p>
       <p><strong>Fecha:</strong> {{ cargo.fecha }}</p>
+      <p><strong>Estado del cargo:</strong> {{ cargo.estado }}</p>
+      {% if not request.state.lectura_admin %}
+      <p><a href="/cargos/{{ cargo.id }}"><button type="button">{% if cargo.estado == "Pagado" %}Ver pago del cargo{% else %}Pagar cargo{% endif %}</button></a></p>
+      {% endif %}
     </section>
     {% endif %}
 

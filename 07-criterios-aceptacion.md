@@ -355,6 +355,30 @@ Característica: Registro del estado de pago
     Cuando la psicóloga revisa el pago
     Entonces el pago queda en estado "pago incompleto"
     Y el sistema informa una diferencia pendiente de $10.000
+
+  Escenario: El paciente registra el comprobante de un cargo
+    Dado que el paciente tiene un cargo de $5.000 en estado "Pendiente" por cancelar su hora
+    Cuando registra un comprobante por $5.000 con fecha de transferencia y cuenta de destino
+    Entonces el sistema asocia el comprobante al cargo
+    Y el cargo sigue en estado "Pendiente" hasta que la psicóloga lo verifique
+
+  Escenario: La psicóloga verifica el pago de un cargo
+    Dado que el cargo tiene un comprobante por $5.000 sin verificar
+    Cuando la psicóloga verifica el comprobante y registra el estado
+    Entonces el cargo queda en estado "Pagado"
+    Y deja de aparecer en el listado de cargos por cobrar
+
+  Escenario: El paciente paga el cargo en partes
+    Dado que el cargo tiene un comprobante verificado por $3.000
+    Cuando la psicóloga registra el estado del cargo
+    Entonces el cargo queda en estado "Pago incompleto"
+    Y el sistema informa una diferencia pendiente de $2.000
+
+  Escenario: El cargo ya está pagado
+    Dado que el cargo está en estado "Pagado"
+    Cuando el paciente intenta registrar otro comprobante
+    Entonces el sistema no lo registra
+    Y le informa que el cargo ya está pagado
 ```
 
 ## HU-07 — Emitir boleta

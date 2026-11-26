@@ -11,7 +11,8 @@ La información clínica del paciente no está centralizada. HU-09 permite a la 
 - Ficha clínica por paciente con antecedentes de anamnesis editables y conservación de las versiones anteriores.
 - Registro de una evolución por cada atención **realizada**, sin edición posterior.
 - Acceso exclusivo de la psicóloga; los intentos sin permiso se deniegan y quedan en una bitácora sin contenido clínico, con ficha y usuario.
-- **Fuera de alcance:** cifrado (RD-02, pendiente), exportación, edición de evoluciones y acceso del paciente a su ficha.
+- Cifrado en reposo de la información clínica (RD-02).
+- **Fuera de alcance:** exportación, edición de evoluciones y acceso del paciente a su ficha.
 
 ## Capabilities
 
@@ -25,5 +26,5 @@ La información clínica del paciente no está centralizada. HU-09 permite a la 
 
 ## Impact
 
-- Migraciones `012_ficha_clinica.sql`, `013_antecedentes_clinicos.sql` y `015_bitacora_e_historial_ficha.sql`.
+- Migraciones `012_ficha_clinica.sql`, `013_antecedentes_clinicos.sql`, `015_bitacora_e_historial_ficha.sql` y `017_historial_ficha_en_codigo.sql`; `app/servicios/cifrado.py`.
 - `app/rutas/clinica.py` y la plantilla `ficha_clinica.html`.

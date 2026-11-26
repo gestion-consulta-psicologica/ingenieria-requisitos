@@ -1,7 +1,9 @@
+import pytest
 from fastapi.testclient import TestClient
 
 from app.db.seed import cargar_datos_ejemplo
 from app.main import crear_app
+from app.servicios.cifrado import PREFIJO
 
 
 def test_psicologa_registra_y_paciente_no_puede_consultar_ni_modificar(
@@ -36,7 +38,10 @@ def test_psicologa_registra_y_paciente_no_puede_consultar_ni_modificar(
             assert intento.status_code == 403
             assert intento.json() == {"detail": "Acceso denegado."}
     registros = conexion.execute("SELECT observaciones FROM registro_evolucion").fetchall()
-    assert [fila[0] for fila in registros] == [datos["observaciones"]]
+    # RD-02: en la base queda cifrado; la aplicación lo descifra.
+    assert all(fila[0].startswith(PREFIJO) for fila in registros)
+    assert datos["observaciones"] not in str([fila[0] for fila in registros])
+    assert [app.state.cifrador.descifrar(fila[0]) for fila in registros] == [datos["observaciones"]]
     eventos = conexion.execute("SELECT * FROM bitacora_clinica WHERE resultado = 'denegado'").fetchall()
     assert [(e["rol"], e["operacion"]) for e in eventos] == [
         ("Paciente", "lectura"), ("Paciente", "escritura"),
@@ -111,7 +116,8 @@ def test_antecedentes_y_dos_evoluciones_conservan_historial(base_temporal, conex
     evoluciones = conexion.execute(
         "SELECT atencion_id, observaciones, pruebas_aplicadas FROM registro_evolucion ORDER BY atencion_id"
     ).fetchall()
-    assert [tuple(fila) for fila in evoluciones] == [
+    descifrar = app.state.cifrador.descifrar
+    assert [(f[0], descifrar(f[1]), descifrar(f[2])) for f in evoluciones] == [
         (1, "Primera evolución", "Primera prueba"), (nueva, "Segunda evolución", ""),
     ]
     eventos = conexion.execute(
@@ -123,7 +129,8 @@ def test_antecedentes_y_dos_evoluciones_conservan_historial(base_temporal, conex
     historial = conexion.execute(
         "SELECT paciente_id, motivo_consulta FROM ficha_clinica_historial"
     ).fetchall()
-    assert [tuple(fila) for fila in historial] == [(1, "Motivo sintético inicial")]
+    assert [(f[0], app.state.cifrador.descifrar(f[1])) for f in historial] == [(1, "Motivo sintético inicial")]
+    assert historial[0][1].startswith(PREFIJO)
 
 
 def test_guardar_antecedentes_sin_cambios_no_crea_versiones(base_temporal, conexion):
@@ -140,3 +147,36 @@ def test_guardar_antecedentes_sin_cambios_no_crea_versiones(base_temporal, conex
             cliente.post("/psicologa/fichas/1/antecedentes", data=datos, auth=admin)
 
     assert conexion.execute("SELECT COUNT(*) FROM ficha_clinica_historial").fetchone()[0] == 0
+
+
+def test_ficha_cifrada_en_la_base_y_datos_planos_antiguos_se_cifran_al_arrancar(base_temporal, conexion):
+    """RD-02: nada clínico queda legible en SQLite; lo antiguo se cifra al arrancar."""
+    from app.servicios.cifrado import Cifrador, ClaveCifradoInvalida
+
+    cargar_datos_ejemplo(str(base_temporal))
+    # Dato antiguo en texto plano (anterior al cifrado).
+    conexion.execute(
+        "INSERT INTO ficha_clinica (paciente_id, motivo_consulta) VALUES (1, 'Motivo antiguo en claro')"
+    )
+    conexion.commit()
+
+    app = crear_app(base_temporal, clave_psicologa_demo="clave-admin", clave_paciente_demo="otra")
+    guardado = conexion.execute("SELECT motivo_consulta FROM ficha_clinica WHERE paciente_id = 1").fetchone()[0]
+    assert guardado.startswith(PREFIJO) and "Motivo antiguo" not in guardado
+    with TestClient(app) as cliente:
+        assert "Motivo antiguo en claro" in cliente.get(
+            "/psicologa/fichas/1", auth=("psicologa", "clave-admin")).text
+
+    # Con otra clave no se puede leer ni mezclar datos: la app no arranca.
+    otra = Cifrador.temporal()
+    otra.persistente = True
+    with pytest.raises(ClaveCifradoInvalida):
+        crear_app(base_temporal, cifrador=otra)
+
+
+def test_modo_con_cuentas_exige_clave_de_cifrado(base_temporal, monkeypatch):
+    from app.servicios.cifrado import ClaveCifradoInvalida
+
+    monkeypatch.delenv("CONSULTA_CLAVE_CIFRADO", raising=False)
+    with pytest.raises(ClaveCifradoInvalida, match="requiere CONSULTA_CLAVE_CIFRADO"):
+        crear_app(base_temporal, cuentas_persistentes=True)

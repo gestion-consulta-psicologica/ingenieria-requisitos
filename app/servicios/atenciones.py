@@ -174,6 +174,7 @@ def obtener_atencion_de_reserva(
 
 def registrar_asistencia(
     conexion: sqlite3.Connection, atencion_id: int, estado: str, justificacion: str,
+    *, cifrador=None,
 ) -> None:
     justificacion = justificacion.strip()
     if estado not in ("realizada", "inasistencia", "inasistencia justificada"):
@@ -199,7 +200,12 @@ def registrar_asistencia(
             raise AsistenciaInvalida("La atención ya tiene un resultado registrado.")
         conexion.execute(
             "UPDATE atencion SET estado = ?, justificacion_inasistencia = ? WHERE id = ?",
-            (estado, justificacion if estado == "inasistencia justificada" else None, atencion_id),
+            (
+                estado,
+                (cifrador.cifrar(justificacion) if cifrador else justificacion)
+                if estado == "inasistencia justificada" else None,
+                atencion_id,
+            ),
         )
         if estado == "inasistencia":
             conexion.execute(

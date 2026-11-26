@@ -12,7 +12,8 @@ Tras comprobar el pago (HU-05), la psicóloga registra hoy el resultado fuera de
 - El sistema calcula el total comprobado y solo acepta el estado que corresponde: **Pagado** (total = monto) o **Pago incompleto** (total < monto); un total mayor se rechaza.
 - Cada comprobante se marca como verificado para no sumarlo dos veces; se actualiza `montoPagado` y se informa la diferencia pendiente.
 - El listado `/pagos` incluye los pagos en **Pago incompleto**.
-- **Fuera de alcance:** boleta (HU-07), cobro de cargos, integración bancaria y reversión de un pago Pagado.
+- **Extensión (2026-11-25):** los cargos de $5.000 se pagan igual: el paciente registra comprobantes en «Mis cargos» y la psicóloga los verifica en «Cargos por cobrar».
+- **Fuera de alcance:** boleta (HU-07), integración bancaria, condonación de cargos y reversión de un pago Pagado.
 
 ## Capabilities
 
@@ -28,3 +29,4 @@ Tras comprobar el pago (HU-05), la psicóloga registra hoy el resultado fuera de
 
 - Migración `010_comprobante_verificado.sql` (`comprobante_transferencia.verificado`).
 - `app/servicios/pagos.py` (`verificar_pago`), ruta `POST /pagos/{atencion_id}/estado` y plantilla `pago_detalle.html`.
+- Extensión: migración `018_pago_de_cargos.sql`, `app/servicios/cargos.py`, `app/rutas/cargos.py`, plantillas `cargos_lista.html` y `cargo_detalle.html`.

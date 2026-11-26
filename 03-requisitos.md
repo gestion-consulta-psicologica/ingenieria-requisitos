@@ -17,7 +17,7 @@
 | RP-10 | El sistema deberá permitir al paciente seleccionar un nuevo horario disponible. | Funcional | Seleccionar nuevo horario disponible |
 | RP-11 | El sistema deberá actualizar automáticamente la reserva con el nuevo horario seleccionado. | Funcional | Actualizar reserva automáticamente |
 | RP-12 | El sistema deberá permitir a la psicóloga consultar la información necesaria para comprobar el pago asociado a una atención. | Funcional | Comprobar pago con apoyo del sistema |
-| RP-13 | El sistema deberá permitir registrar el estado de pago asociado al paciente y a la atención correspondiente. | Funcional | Registrar estado de pago en sistema |
+| RP-13 | El sistema deberá permitir registrar el estado de pago asociado al paciente y a la atención correspondiente, y también el de los cargos de $5.000 a partir de los comprobantes que registre el paciente. | Funcional | Registrar estado de pago en sistema |
 | RP-14 | El sistema deberá apoyar la emisión de la boleta asociada a una atención pagada. | Funcional | Emitir boleta con apoyo del sistema |
 | RP-15 | El sistema deberá permitir registrar la asistencia del paciente a la atención psicológica. | Funcional | Registrar asistencia en sistema |
 | RP-16 | El sistema deberá permitir actualizar la ficha clínica del paciente dentro de la plataforma centralizada. | Funcional | Actualizar ficha clínica en sistema centralizado |

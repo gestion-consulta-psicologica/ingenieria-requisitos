@@ -13,6 +13,8 @@ os.environ["CONSULTA_DB"] = str(_RUTA_DB_TEMPORAL)
 os.environ["PLANIFICADOR_ACTIVO"] = "0"
 os.environ.pop("SMTP_HOST", None)
 os.environ.pop("SMTP_REMITENTE", None)
+# RD-02: clave fija de prueba para la ficha clínica (no es un secreto real).
+os.environ["CONSULTA_CLAVE_CIFRADO"] = "pQf1sXc0yYk3pYw8sQ9oQm6m3jzq7gQe3rK0vYcHh2Q="
 
 from app.db.conexion import conectar, inicializar_base
 from app.rutas import disponibilidad as ruta_disponibilidad
