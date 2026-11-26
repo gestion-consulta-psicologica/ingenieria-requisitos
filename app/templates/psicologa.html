@@ -90,6 +90,9 @@
         <li{% if reserva.atencion_id %} id="atencion-{{ reserva.atencion_id }}"{% endif %}>
           {{ reserva.fecha|fecha_dia }} · {{ reserva.hora_inicio }} · {{ reserva.nombre_completo }}
           · <a href="/reservas/{{ reserva.id }}">Reserva {{ reserva.id }}</a> · {{ reserva.estado }}
+          {% if request.app.state.cuentas_persistentes and reserva.estado != "Cancelada" %}
+          · <a href="/psicologa/derivaciones/nueva/{{ reserva.id }}">Derivar consulta</a>
+          {% endif %}
           {% if request.app.state.cuentas_persistentes or request.app.state.clave_paciente_demo %}
           · <a href="/psicologa/fichas/{{ reserva.paciente_id }}">Ficha clínica</a>
           {% endif %}

@@ -155,6 +155,8 @@ def ingresar(
     bloque = destino_bloque or cuenta["bloque_preferido_id"]
     if cuenta["rol"] == "psicologa":
         destino = "/psicologa"
+    elif cuenta["rol"] == "psiquiatra":
+        destino = "/psiquiatra/derivaciones"
     else:
         destino = f"/reservar/{bloque}" if bloque else "/disponibilidad"
         if cuenta["bloque_preferido_id"]:

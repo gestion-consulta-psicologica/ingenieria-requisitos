@@ -52,7 +52,8 @@ def autorizar_ficha(
             request.state.usuario_clinico = usuario
             return
         registrar_acceso(
-            conexion, "Paciente" if cuenta else None, operacion, "denegado",
+            conexion, {"paciente": "Paciente", "psiquiatra": "Psiquiatra"}.get(cuenta["rol"]) if cuenta else None,
+            operacion, "denegado",
             paciente_id, usuario,
         )
         conexion.commit()

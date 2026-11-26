@@ -1,10 +1,13 @@
-{% if request.app.state.cuentas_persistentes %}
+﻿{% if request.app.state.cuentas_persistentes %}
   {% if request.state.cuenta %}
     {% if request.state.cuenta.rol == "paciente" %}
     <a href="/cuenta/reservas">Mis reservas</a>
     <a href="/cargos">Mis cargos</a>
-    {% else %}
+    {% elif request.state.cuenta.rol == "psicologa" %}
     <a href="/psicologa">Panel de la psicóloga</a>
+    <a href="/psicologa/derivaciones">Derivaciones</a>
+    {% elif request.state.cuenta.rol == "psiquiatra" %}
+    <a href="/psiquiatra/derivaciones">Derivaciones recibidas</a>
     {% endif %}
     <form method="post" action="/cuenta/salir">
       <input type="hidden" name="csrf" value="{{ request.state.csrf }}">

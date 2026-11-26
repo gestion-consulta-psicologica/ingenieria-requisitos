@@ -83,9 +83,10 @@ def registrar_cuenta(
 
 
 def habilitada(cuenta: sqlite3.Row | None) -> bool:
-    return bool(cuenta and cuenta["correo_verificado_en"] is not None and (
+    return bool(cuenta and cuenta["activo"] and cuenta["correo_verificado_en"] is not None and (
         cuenta["rol"] == "psicologa"
-        or (cuenta["paciente_id"] is not None and cuenta["identidad_verificada_en"] is not None)
+        or (cuenta["identidad_verificada_en"] is not None
+            and (cuenta["rol"] == "psiquiatra" or cuenta["paciente_id"] is not None))
     ))
 
 

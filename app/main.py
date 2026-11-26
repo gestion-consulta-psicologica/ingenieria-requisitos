@@ -14,6 +14,7 @@ from fastapi.templating import Jinja2Templates
 from app.configuracion import ConfiguracionCorreo, cargar_configuracion
 from app.db.conexion import inicializar_base, ruta_operativa
 from app.rutas.cuentas import estado_sesion, router as cuentas_router, verificar_csrf
+from app.rutas.derivaciones import router as derivaciones_router
 from app.rutas.disponibilidad import router as disponibilidad_router
 from app.rutas.paciente import router as paciente_router
 from app.rutas.pagos import router as pagos_router
@@ -170,6 +171,7 @@ def crear_app(
     app.include_router(clinica_router)
     app.include_router(cargos_router)
     app.include_router(cuentas_router)
+    app.include_router(derivaciones_router)
 
     @app.get("/", include_in_schema=False)
     def inicio():
